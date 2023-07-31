@@ -253,10 +253,10 @@ echo "permit persist :wheel" > /mnt/etc/doas.conf
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
-	umount -R /mnt				#Unmount root volume
-	vgchange -an				#Deactivate volume group
-	cryptsetup luksClose $hostname	#Close LUKS encrypted partition
+	umount -R /mnt				
+	vgchange -an				
+	cryptsetup luksClose $hostname	
 	reboot
 fi
 
-echo -e "\nDone\n"
+echo -e "\nFinish\n"
