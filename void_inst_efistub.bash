@@ -38,7 +38,7 @@ apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chro
 " font-adobe-source-code-pro nftables runit-nftables vsv btop opendoas net-tools zramen"\
 " libreoffice-calc libreoffice-writer firefox thunderbird"
 
-apps_intel="linux-firmware-intel mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader xf86-video-intel intel-ucode"
+apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
 
 apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-firewall plasma-applet-active-window-control skanlite gwenview"\
@@ -175,7 +175,7 @@ echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
 #echo '[ -f /boot/vmlinuz-${VERSION} ] && mv /boot/vmlinuz-${VERSION} /boot/vmlinuz-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
-#echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 #echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
@@ -202,18 +202,17 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
 
 
-for service in ${rm_services[@]}; do
+for serv in ${rm_services[@]}; do
 
-	if [[ -e /mnt/var/service/$service ]]; then
+	if [[ -e /mnt/var/service/$serv ]]; then
 		chroot /mnt unlink /var/service/$service
 	fi
 done
 
-for service in ${en_services[@]}; do
+for serv in ${en_services[@]}; do
 
-	if [[ ! -e /mnt/var/service/$service ]]; then
-		chroot /mnt ln -s /etc/sv/$service /var/service
-	fi
+	chroot /mnt ln -s /etc/sv/$serv /var/service
+	
 done
 
 #apparmor
