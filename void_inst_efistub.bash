@@ -34,9 +34,9 @@ void_repo="https://repo-fastly.voidlinux.org"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony mpv"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch lm_sensors lsof git unzip unrar flatpak rkhunter pipewire wireplumber fish-shell"\
-" font-adobe-source-code-pro nftables runit-nftables vsv btop opendoas net-tools zramen"\
-" libreoffice-calc libreoffice-writer firefox thunderbird"
+" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell"\
+" font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen"
+ 
 
 apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
 
@@ -48,7 +48,7 @@ apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdec
 apps_minimal="nano apparmor neofetch nftables vsv opendoas fish-shell"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6" "mdadm" "sshd" "acpid")
-en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "nftables" "NetworkManager" "sddm")
+en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
