@@ -2,17 +2,17 @@
 
 username="k2"
 
-luks_pw="123"
+luks_pw="123" #password for disk encryption
 
-root_pw="123"
+root_pw="123" #root password
 
-user_pw="123"
+user_pw="123" #user password
 
 user_groups="wheel,kvm"
 
 efi_part_size="512M"
 
-root_part_size="25G" # if is "" create only a root partition and doesnt create home partition with the remaining space
+root_part_size="25G" # if it is empty "" it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -22,11 +22,11 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="kde" #empty install only base system and apps_minimal
+graphical="kde" #empty "" it will install only base system and apps_minimal
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes"
+secure_boot="yes" # better leave this empty "" you can break your bios
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -73,6 +73,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 
 #Create LUKS2 encrypted partition
+#cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
 vgcreate $hostname /dev/mapper/cryptroot
@@ -168,7 +169,7 @@ echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
 if [[ ! -z $secure_boot ]]; then
 
 chroot /mnt sbctl create-keys
-chroot /mnt sbctl enroll-keys -m
+chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
 fi
 
 
@@ -223,12 +224,15 @@ sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 
-echo 'if [ -e $HOME/.bash_aliases ]; then
-source $HOME/.bash_aliases
-fi' >> /mnt/home/$username/.bashrc
+
+
 
 chroot /mnt touch /home/$username/.bash_aliases
 chroot /mnt chown $username:$username /home/$username/.bash_aliases
+
+echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.bashrc
+echo "neofetch" >> /mnt/home/$username/.bashrc
+
 echo "alias xi='sudo xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
 echo "alias xu='sudo xbps-install -Suy'" >> /mnt/home/$username/.bash_aliases
 echo "alias xs='xbps-query -Rs'" >> /mnt/home/$username/.bash_aliases
@@ -237,11 +241,11 @@ echo "alias xq='xbps-query'" >> /mnt/home/$username/.bash_aliases
 echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
-echo "neofetch" >> /mnt/home/$username/.bashrc
 
 
-chroot /mnt chsh -s /usr/bin/fish
-echo "source /home/$username/bash_aliases" >> /mnt/home/$username/.config/fish/fish_config
+chroot /mnt chsh -s /usr/bin/fish $username
+
+echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.config/fish/fish_config
 echo "neofetch" >> /mnt/home/$username/.config/fish/fish_config
 
 
