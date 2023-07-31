@@ -22,14 +22,16 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="kde" #empty install only base system
+graphical="kde" #empty install only base system and apps_minimal
 
-disk="/dev/sda" #or de /dev/vda for virt-manager 
+disk="/dev/sda" #or /dev/vda for virt-manager
 
-#secure_boot=""
+secure_boot="yes"
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
+
+ARCH="x86_64"
 
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony mpv"\
@@ -45,7 +47,7 @@ apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdec
 " kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
 
 #for test
-apps_minimal="nano apparmor neofetch nftables vsv opendoas fish-shell"
+apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6" "mdadm" "sshd" "acpid")
 en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
@@ -113,9 +115,9 @@ fi
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
- 	echo y | xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
+ 	echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
 
-luks_uuid=$(blkid -o value -s UUID $luks_part)
+#luks_uuid=$(blkid -o value -s UUID $luks_part)
 
 chroot /mnt chown root:root /
 chroot /mnt chmod 755 /
@@ -130,21 +132,26 @@ EOF
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
-echo "LANG=$language" > /mnt/etc/locale.conf
+
+
 
 if [[ -z $libc ]]; then
-
+    echo "LANG=$language" > /mnt/etc/locale.conf
     echo "en_US.UTF-8 UTF-8" >> /mnt/etc/default/libc-locales
     xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
-echo -e "/dev/$hostname/root	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
+luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
+luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
+boot_uuid=$(blkid -o value -s UUID  /mnt/dev/$disk'1')
+
+echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
-	echo -e "/dev/$hostname/home	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
 fi
 
-	echo -e "$efi_part	/boot	vfat	defaults	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$boot_uuid	  /boot	vfat	defaults	0	2" >> /mnt/etc/fstab
 
 
 
@@ -158,7 +165,11 @@ echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
 echo "fs.protected_fifos=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
 echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
 
-luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
+if [[ ! -z $secure_boot ]]; then
+
+chroot /mnt sbctl create-keys
+chroot /mnt sbctl enroll-keys -m
+fi
 
 
 # Options for the kernel hook script installed by the efibootmgr package.
@@ -166,28 +177,22 @@ echo "MODIFY_EFI_ENTRIES=1" > /mnt/etc/default/efibootmgr-kernel-hook
 # To allow efibootmgr to modify boot entries, set
 # MODIFY_EFI_ENTRIES=1
 # Kernel command-line options.  Example:
-echo 'OPTIONS="loglevel=4 apparmor=1 security=apparmor rd.luks.allow-discards rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
+echo 'OPTIONS="loglevel=4 apparmor=1 security=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Disk where EFI Partition is.  Default is /dev/sda
 
 echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Partition number of EFI Partition.  Default is 1
 echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
+
 #echo '[ -f /boot/vmlinuz-${VERSION} ] && mv /boot/vmlinuz-${VERSION} /boot/vmlinuz-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
-#echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'KERNEL_CMDLINE="loglevel=4 apparmor=1 security=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/dracut-uefi-hook
-
-
-
-#if [[ ! -z $secure_boot ]]; then
-
-#chroot /mnt sbctl create-keys
-#fi
 
 xbps-reconfigure -far /mnt/
 
@@ -234,6 +239,12 @@ echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 echo "neofetch" >> /mnt/home/$username/.bashrc
 
+
+chroot /mnt chsh -s /usr/bin/fish
+echo "source /home/$username/bash_aliases" >> /mnt/home/$username/.config/fish/fish_config
+echo "neofetch" >> /mnt/home/$username/.config/fish/fish_config
+
+
 #nftables
 #copy a example from arch wiki
 #chroot /mnt touch /etc/nftables.conf
@@ -254,9 +265,7 @@ echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
 	umount -R /mnt				
-	vgchange -an				
-	cryptsetup luksClose $hostname	
-	reboot
+	shutdown -r now
 fi
 
 echo -e "\nFinish\n"
