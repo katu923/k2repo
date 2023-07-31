@@ -236,7 +236,7 @@ echo "neofetch" >> /mnt/home/$username/.bashrc
 
 #nftables
 #copy a example from arch wiki
-chroot /mnt touch /etc/nftables.conf
+#chroot /mnt touch /etc/nftables.conf
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
