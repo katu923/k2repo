@@ -12,7 +12,7 @@ user_groups="wheel,kvm"
 
 efi_part_size="512M"
 
-root_part_size="25G"
+root_part_size="25G" # if is "" create only a root partition and doesnt create home partition with the remaining space
 
 hostname="xpto"
 
@@ -24,7 +24,7 @@ language="en_US.UTF-8"
 
 graphical="kde" #empty install only base system
 
-disk="sda"
+disk="/dev/sda" #or de /dev/vda for virt-manager 
 
 #secure_boot=""
 
@@ -174,7 +174,7 @@ echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
 #echo '[ -f /boot/vmlinuz-${VERSION} ] && mv /boot/vmlinuz-${VERSION} /boot/vmlinuz-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
-echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 #echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 #echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
