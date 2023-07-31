@@ -70,10 +70,10 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 
 
-	#Create LUKS2 encrypted partition
-	echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
-	echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-	vgcreate $hostname /dev/mapper/cryptroot
+#Create LUKS2 encrypted partition
+echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
+echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
+vgcreate $hostname /dev/mapper/cryptroot
 
 if [[ -z $root_part_size  ]]; then
 
