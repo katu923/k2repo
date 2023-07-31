@@ -52,7 +52,6 @@ en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd"
 
 
 if [[ $disk == *"sd"* ]]; then
-
 	efi_part=$(echo $disk'1')
 	luks_part=$(echo $disk'2')
 elif [[ $disk == *"vd"* ]]; then
@@ -65,7 +64,7 @@ fi
 
 #Wipe disk
 wipefs -aq $disk
-#dd if=/dev/zero of=/dev/"$disk_selected" bs=1M count=100
+#dd if=/dev/zero of=/dev/"$disk" bs=16M count=500
 
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
