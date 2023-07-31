@@ -204,9 +204,7 @@ fi
 
 for serv in ${rm_services[@]}; do
 
-	if [[ -e /mnt/var/service/$serv ]]; then
-		chroot /mnt unlink /var/service/$service
-	fi
+	chroot /mnt unlink /var/service/$service
 done
 
 for serv in ${en_services[@]}; do
@@ -236,6 +234,9 @@ echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 echo "neofetch" >> /mnt/home/$username/.bashrc
 
+#nftables
+#copy a example from arch wiki
+chroot /mnt touch /etc/nftables.conf
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
