@@ -36,7 +36,7 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony mpv"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell"\
+" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox"\
 " font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen"
  
 
