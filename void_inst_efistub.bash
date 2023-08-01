@@ -238,6 +238,10 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 #change to fish shell
 #chroot /mnt chsh -s /usr/bin/fish $username
 
+#start pipewire audio
+chroot /mnt cp /usr/share/applications/pipewire.desktop /home/$username/.config/autostart/
+chroot /mnt cp /usr/share/applications/wireplumber.desktop /home/$username/.config/autostart/
+chroot /mnt cp /usr/share/applications/pipewire-pulse.desktop /home/$username/.config/autostart/
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
