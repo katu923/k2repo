@@ -70,8 +70,6 @@ wipefs -aq $disk
 
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
-
-
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
@@ -135,7 +133,6 @@ EOF
 echo $hostname > /mnt/etc/hostname
 
 
-
 if [[ -z $libc ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
     echo "en_US.UTF-8 UTF-8" >> /mnt/etc/default/libc-locales
@@ -144,7 +141,7 @@ fi
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  /mnt/dev/$disk'1')
+boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 
 echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 if [[ ! -z $root_part_size ]]; then
@@ -153,7 +150,6 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 	echo -e "UUID=$boot_uuid	  /boot	vfat	defaults	0	2" >> /mnt/etc/fstab
-
 
 
 #add hostonly to dracut
@@ -188,7 +184,7 @@ echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
 #echo '[ -f /boot/vmlinuz-${VERSION} ] && mv /boot/vmlinuz-${VERSION} /boot/vmlinuz-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
-echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+
 echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
@@ -210,7 +206,7 @@ fi
 
 for serv in ${rm_services[@]}; do
 
-	chroot /mnt unlink /var/service/$service
+	chroot /mnt unlink /var/service/$serv
 done
 
 for serv in ${en_services[@]}; do
@@ -224,13 +220,10 @@ sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 
-
-
-
 chroot /mnt touch /home/$username/.bash_aliases
 chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
-echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.bashrc
+echo "source /home/$username/.bash_aliases" >> /mnt/home/$username/.bashrc
 echo "neofetch" >> /mnt/home/$username/.bashrc
 
 echo "alias xi='sudo xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
@@ -242,16 +235,9 @@ echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 
+#change to fish shell
+#chroot /mnt chsh -s /usr/bin/fish $username
 
-chroot /mnt chsh -s /usr/bin/fish $username
-
-echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.config/fish/fish_config
-echo "neofetch" >> /mnt/home/$username/.config/fish/fish_config
-
-
-#nftables
-#copy a example from arch wiki
-#chroot /mnt touch /etc/nftables.conf
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
