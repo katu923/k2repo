@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#this script only works with uefi
+#you must change the variables to your taste
+
+
 username="k2"
 
 luks_pw="123" #password for disk encryption
@@ -26,7 +30,7 @@ graphical="kde" #empty "" it will install only base system and apps_minimal
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes" # better leave this empty "" you can break your bios
+#secure_boot="yes" # better leave this empty "" you can break your bios
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -162,11 +166,11 @@ echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
 echo "fs.protected_fifos=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
 echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
 
-if [[ ! -z $secure_boot ]]; then
+#if [[ ! -z $secure_boot ]]; then
 
-chroot /mnt sbctl create-keys
-chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
-fi
+#chroot /mnt sbctl create-keys
+#chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
+#fi
 
 
 # Options for the kernel hook script installed by the efibootmgr package.
@@ -182,10 +186,9 @@ echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
 
-#echo '[ -f /boot/vmlinuz-${VERSION} ] && mv /boot/vmlinuz-${VERSION} /boot/vmlinuz-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+#echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
@@ -235,13 +238,7 @@ echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 
-#change to fish shell
-#chroot /mnt chsh -s /usr/bin/fish $username
 
-#start pipewire audio
-chroot /mnt cp /usr/share/applications/pipewire.desktop /home/$username/.config/autostart/
-chroot /mnt cp /usr/share/applications/wireplumber.desktop /home/$username/.config/autostart/
-chroot /mnt cp /usr/share/applications/pipewire-pulse.desktop /home/$username/.config/autostart/
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
