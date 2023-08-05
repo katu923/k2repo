@@ -244,12 +244,6 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
 
-chroot /mnt chsh -s /usr/bin/fish $username
-
-echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.config/fish/config.fish
-
-echo "neofetch" >> /mnt/home/$username/.config/fish/config.fish
-
 #chroot /mnt touch /etc/iwd/main.conf
 #echo "[General]" > /mnt/etc/iwd/main.conf
 ##echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
