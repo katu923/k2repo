@@ -249,8 +249,9 @@ chroot /mnt chsh -s /usr/bin/fish
 chroot /mnt chsh -s /usr/bin/fish $username
 
 chroot /mnt fish
+chroot /mnt exit
 
-chroot /mnt cp -R /root/.config/fish/ /home/$username/.config/fish/
+chroot /mnt cp -R /root/.config/fish/* /home/$username/.config/fish/*
 
 chroot /mnt chown $username:$username /home/$username/.config/fish/
 
