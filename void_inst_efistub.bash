@@ -244,9 +244,9 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
 
-chroot /mnt chsh -s /user/bin/fish
+chroot /mnt chsh -s /usr/bin/fish
 
-chroot /mnt chsh -s /user/bin/fish kafu
+chroot /mnt chsh -s /usr/bin/fish $username
 
 chroot /mnt fish
 
