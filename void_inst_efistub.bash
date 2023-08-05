@@ -237,7 +237,7 @@ echo "alias xr='sudo xbps-remove -oOR'" >> /mnt/home/$username/.bash_aliases
 echo "alias xq='xbps-query'" >> /mnt/home/$username/.bash_aliases
 echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
-echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
+echo "alias dmesg='sudo dmesg'" >> /mnt/home/$username/.bash_aliases
 
 
 
