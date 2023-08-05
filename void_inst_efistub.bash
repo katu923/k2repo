@@ -53,7 +53,7 @@ apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdec
 #for test
 apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
 
-rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6" "mdadm" "sshd" "acpid")
+rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
 
 
@@ -244,20 +244,11 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
 
-chroot /mnt chsh -s /usr/bin/fish
-
 chroot /mnt chsh -s /usr/bin/fish $username
 
-chroot /mnt fish
-chroot /mnt exit
+echo "source $HOME/.bash_aliases" >> /mnt/home/$username/.config/fish/config.fish
 
-chroot /mnt cp -R /root/.config/fish/* /home/$username/.config/fish/*
-
-chroot /mnt chown $username:$username /home/$username/.config/fish/
-
-chroot /mnt echo "source $HOME/.bash_aliases" >> /home/$username/.config/fish/config.fish
-
-chroot /mnt echo "neofetch" >> /home/$username/.config/fish/config.fish
+echo "neofetch" >> /mnt/home/$username/.config/fish/config.fish
 
 #chroot /mnt touch /etc/iwd/main.conf
 #echo "[General]" > /mnt/etc/iwd/main.conf
