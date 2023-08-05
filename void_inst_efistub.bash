@@ -70,7 +70,8 @@ fi
 
 #Wipe disk
 wipefs -aq $disk
-#dd if=/dev/zero of=/dev/"$disk" bs=16M count=500
+
+#dd if=/dev/zero of=/dev$disk bs=16M count=500
 
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
@@ -153,7 +154,7 @@ if [[ ! -z $root_part_size ]]; then
 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
 fi
 
-	echo -e "UUID=$boot_uuid	  /boot	vfat	defaults	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$boot_uuid	  /boot	    vfat	defaults	0	2" >> /mnt/etc/fstab
 
 
 #add hostonly to dracut
@@ -242,6 +243,20 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
+
+chroot /mnt chsh -s /user/bin/fish
+
+chroot /mnt chsh -s /user/bin/fish kafu
+
+chroot /mnt fish
+
+chroot /mnt cp -R /root/.config/fish/ /home/$username/.config/fish/
+
+chroot /mnt chown $username:$username /home/$username/.config/fish/
+
+chroot /mnt echo "source $HOME/.bash_aliases" >> /home/$username/.config/fish/config.fish
+
+chroot /mnt echo "neofetch" >> /home/$username/.config/fish/config.fish
 
 #chroot /mnt touch /etc/iwd/main.conf
 #echo "[General]" > /mnt/etc/iwd/main.conf
