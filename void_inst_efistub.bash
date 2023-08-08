@@ -203,6 +203,14 @@ xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 if [[ $graphical == "kde" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel
+
+#pipewire
+chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
+chroot /mnt ln -s /usr/share/applications/wireplumber.desktop /etc/xdg/autostart/wireplumber.desktop
+chroot /mnt ln -s /usr/share/applications/pipewire-pulse.desktop /etc/xdg/autostart/pipewire-pulse.desktop
+
+#octoxbps-notifier
+chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
