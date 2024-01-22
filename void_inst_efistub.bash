@@ -41,7 +41,7 @@ ARCH="x86_64"
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
 " neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox thunderbird"\
-" font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen"
+" font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen nftables rkhunter checksec lynis"
  
 
 apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
