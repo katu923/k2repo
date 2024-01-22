@@ -16,7 +16,7 @@ user_groups="wheel,kvm"
 
 efi_part_size="512M"
 
-root_part_size="25G" # if it is empty "" it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="25G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -26,11 +26,11 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="kde" #empty "" it will install only base system and apps_minimal
+graphical="kde" #empty it will install only base system and apps_minimal
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes" # better leave this empty "" you can break your bios
+secure_boot="yes" # better leave this empty you can break your bios
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -38,15 +38,15 @@ void_repo="https://repo-fastly.voidlinux.org"
 ARCH="x86_64"
 
 
-apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony mpv"\
+apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox"\
+" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox thunderbird"\
 " font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen"
  
 
 apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
 
-apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdeconnect okular"\
+apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-firewall plasma-applet-active-window-control skanlite gwenview"\
 " kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
 
@@ -54,7 +54,7 @@ apps_kde="kde5 kde5-baseapps kcron ark user-manager print-manager spectacle kdec
 apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -169,6 +169,8 @@ echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
 
 if [[ ! -z $secure_boot ]]; then
 
+#secure boot in the bios must be in setup mode
+
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
 fi
@@ -186,10 +188,16 @@ echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Partition number of EFI Partition.  Default is 1
 echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
+sed -i "s/efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /vmlinuz-${VERSION} -u "${OPTIONS}"/#efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /vmlinuz-${VERSION} -u "${OPTIONS}"/" /mnt/etc/kernel.d/post-install/50-efibootmgr
+
+sed -i "s/efibootmgr -qo $bootorder/#efibootmgr -qo $bootorder/" /mnt/etc/kernel.d/post-install/50-efibootmgr
+
 
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+
+echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
@@ -216,14 +224,14 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
 
 
-for serv in ${rm_services[@]}; do
+for serv1 in ${rm_services[@]}; do
 
-	chroot /mnt unlink /var/service/$serv
+	chroot /mnt unlink /var/service/$serv1
 done
 
-for serv in ${en_services[@]}; do
+for serv2 in ${en_services[@]}; do
 
-	chroot /mnt ln -s /etc/sv/$serv /var/service
+	chroot /mnt ln -s /etc/sv/$serv2 /var/service
 	
 done
 
