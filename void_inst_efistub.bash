@@ -40,15 +40,18 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox thunderbird"\
-" font-adobe-source-code-pro ufw gufw vsv btop opendoas net-tools zramen nftables rkhunter checksec lynis"
- 
+" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox"\
+" font-adobe-source-code-pro ufw vsv btop opendoas net-tools zramen"
+
+apps_optional="libreoffice thunderbird rkhunter checksec lynis nftables topgrade gimp skype ffmpeg ffmpegthumbnailer" 
 
 apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-firewall plasma-applet-active-window-control skanlite gwenview"\
 " kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
+
+
 
 #for test
 apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
