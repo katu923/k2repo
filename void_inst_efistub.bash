@@ -213,7 +213,7 @@ sed -i "s/# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/" /mnt/etc/sudoers
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 if [[ $graphical == "kde" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
 
 #pipewire
 chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
