@@ -40,15 +40,15 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell firefox"\
-" font-adobe-source-code-pro ufw vsv btop opendoas net-tools zramen"
+" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell chromium chromium-widevine"\
+" font-adobe-source-code-pro nftables runit-nftables vsv btop opendoas net-tools iwd iwgtk"
 
-apps_optional="libreoffice thunderbird rkhunter checksec lynis nftables topgrade gimp skype ffmpeg ffmpegthumbnailer" 
+apps_optional="libreoffice thunderbird rkhunter checksec lynis topgrade skype ffmpeg ffmpegthumbnailer tlp" 
 
-apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode"
+apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode xf86-video-intel"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
-" plasma-wayland-protocols xdg-desktop-portal-kde plasma-firewall plasma-applet-active-window-control skanlite gwenview"\
+" plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
 " kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
 
 
@@ -57,7 +57,7 @@ apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular
 apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "zramen" "ufw" "NetworkManager" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "iwd" "tlp" "nftables" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -262,13 +262,13 @@ echo "alias dmesg='sudo dmesg'" >> /mnt/home/$username/.bash_aliases
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
-
-#chroot /mnt touch /etc/iwd/main.conf
-#echo "[General]" > /mnt/etc/iwd/main.conf
-##echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
-#echo "[Network]" >> /mnt/etc/iwd/main.conf
+chroot /mnt mkdir /etc/iwd
+chroot /mnt touch /etc/iwd/main.conf
+echo "[General]" > /mnt/etc/iwd/main.conf
+echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
+echo "[Network]" >> /mnt/etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /mnt/etc/iwd/main.conf
-#echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
+echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
 
