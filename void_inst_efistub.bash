@@ -280,15 +280,15 @@ chroot /mnt chsh -s /bin/fish $username
 #time zone
 chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
+#ignore packages
 chroot /mnt touch /etc/xbps.d/99-ignorepkgs.conf
-
-
 
 for pkg in ${ignore_pkgs[@]}; do
 
   echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
-
+  chroot /mnt xbps-remove -oOR $pkg	
 done
+
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
