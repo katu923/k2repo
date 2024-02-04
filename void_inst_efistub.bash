@@ -51,7 +51,7 @@ apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
 " kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
 
-ignore_pkgs=("plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
+ignore_pkgs=("plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
 
 #for test
 apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
