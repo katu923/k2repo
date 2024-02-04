@@ -258,7 +258,9 @@ echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='sudo dmesg'" >> /mnt/home/$username/.bash_aliases
 
-
+#fonts
+chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
+xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
 echo "permit persist :wheel" > /mnt/etc/doas.conf
@@ -270,6 +272,8 @@ echo "[Network]" >> /mnt/etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /mnt/etc/iwd/main.conf
 echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+
+chroot /mnt chsh -s /bin/fish $username
 
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
