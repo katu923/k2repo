@@ -20,7 +20,7 @@ root_part_size="25G" # if it is empty it will create only a root partition. (and
 
 hostname="xpto"
 
-fs_type="ext4"
+fs_type="ext4" #only support ext4 or xfs
 
 libc="" #empty is glibc other value is musl
 
@@ -296,6 +296,20 @@ for dns in ${dns_list[@]}; do
   echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
 done
+
+#nftables
+echo -e "flush ruleset\n 
+table inet filter {\n
+	chain input {\n
+	type filter hook input priority 0; policy drop;\n
+                 # accept any localhost traffic\n
+                 iif lo accept\n
+                 # accept traffic originated from us\n
+                 ct state established,related accept\n
+                 # accept neighbour discovery otherwise IPv6 connectivity breaks\n
+                 icmpv6 type { nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept\n
+		 }\n
+}" > /mnt/etc/nftables.conf
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
