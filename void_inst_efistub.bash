@@ -37,6 +37,7 @@ void_repo="https://repo-fastly.voidlinux.org"
 
 ARCH="x86_64"
 
+dns_list=("1.1.1.2" "1.0.0.2")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
@@ -54,7 +55,7 @@ apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular
 ignore_pkgs=("plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
 
 #for test
-apps_minimal="nano apparmor neofetch ufw vsv opendoas fish-shell zramen"
+apps_minimal="nano apparmor nftables runit-nftables vsv opendoas fish-shell"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "iwd" "tlp" "nftables" "sddm")
@@ -289,6 +290,12 @@ for pkg in ${ignore_pkgs[@]}; do
   chroot /mnt xbps-remove -oOR $pkg	
 done
 
+#dns
+for dns in ${dns_list[@]}; do
+
+  echo "nameserver="$dns >> /mnt/etc/resolv.conf
+  	
+done
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
