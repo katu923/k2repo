@@ -257,6 +257,7 @@ echo "alias xq='xbps-query'" >> /mnt/home/$username/.bash_aliases
 echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='sudo dmesg'" >> /mnt/home/$username/.bash_aliases
+echo "alias logs='sudo svlogtail'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -273,6 +274,7 @@ echo "[Network]" >> /mnt/etc/iwd/main.conf
 echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
+#fish shell
 chroot /mnt chsh -s /bin/fish $username
 
 
