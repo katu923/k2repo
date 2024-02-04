@@ -43,7 +43,7 @@ apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chro
 " neofetch git unzip unrar flatpak pipewire wireplumber fish-shell chromium chromium-widevine"\
 " font-adobe-source-code-pro nftables runit-nftables vsv btop opendoas net-tools iwd iwgtk"
 
-apps_optional="libreoffice thunderbird rkhunter checksec lynis topgrade skype ffmpeg ffmpegthumbnailer tlp" 
+apps_optional="libreoffice thunderbird rkhunter checksec lynis topgrade skype ffmpeg ffmpegthumbnailer tlp lm_sensors" 
 
 apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode xf86-video-intel"
 
