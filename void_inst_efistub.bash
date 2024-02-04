@@ -297,19 +297,6 @@ for dns in ${dns_list[@]}; do
   	
 done
 
-#nftables
-echo -e "flush ruleset\n 
-table inet filter {\n
-	chain input {\n
-	type filter hook input priority 0; policy drop;\n
-                 # accept any localhost traffic\n
-                 iif lo accept\n
-                 # accept traffic originated from us\n
-                 ct state established,related accept\n
-                 # accept neighbour discovery otherwise IPv6 connectivity breaks\n
-                 icmpv6 type { nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept\n
-		 }\n
-}" > /mnt/etc/nftables.conf
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
