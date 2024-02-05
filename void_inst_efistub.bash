@@ -12,7 +12,7 @@ root_pw="123" #root password
 
 user_pw="123" #user password
 
-user_groups="wheel,kvm"
+user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size="512M"
 
