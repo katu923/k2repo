@@ -55,7 +55,7 @@ apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular
 ignore_pkgs=("plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
 
 #for test
-apps_minimal="nano apparmor nftables runit-nftables vsv opendoas fish-shell"
+apps_minimal="nano apparmor vsv opendoas fish-shell iwd"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "iwd" "tlp" "nftables" "sddm")
