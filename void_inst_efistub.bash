@@ -1,6 +1,6 @@
 #!/bin/bash
-
-#this script only works with uefi
+#read this script carefully before use it!!
+#this only works with uefi and intel graphics
 #you must change the variables to your taste
 
 
