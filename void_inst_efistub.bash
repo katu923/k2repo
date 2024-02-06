@@ -192,7 +192,7 @@ echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Partition number of EFI Partition.  Default is 1
 echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
-sed -i "s/vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"/#vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"/" /mnt/etc/kernel.d/post-install/50-efibootmgr
+sed -i 's@vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@#vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@g' /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 sed -i "s/efibootmgr -qo $bootorder/#efibootmgr -qo $bootorder/" /mnt/etc/kernel.d/post-install/50-efibootmgr
 
