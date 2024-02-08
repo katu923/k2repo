@@ -201,7 +201,7 @@ echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/
 
 echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+#echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
