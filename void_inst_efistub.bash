@@ -265,7 +265,7 @@ chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts
 xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
-echo "permit persist :wheel" > /mnt/etc/doas.conf
+echo "permit keepenv :wheel" > /mnt/etc/doas.conf
 chroot /mnt mkdir /etc/iwd
 chroot /mnt touch /etc/iwd/main.conf
 echo "[General]" > /mnt/etc/iwd/main.conf
