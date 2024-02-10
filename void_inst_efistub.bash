@@ -20,7 +20,7 @@ root_part_size="25G" # if it is empty it will create only a root partition. (and
 
 hostname="xpto"
 
-fs_type="ext4" #only support ext4 or xfs
+fs_type="xfs" #only support ext4 or xfs
 
 libc="" #empty is glibc other value is musl
 
@@ -38,6 +38,8 @@ void_repo="https://repo-fastly.voidlinux.org"
 ARCH="x86_64"
 
 dns_list=("1.1.1.2" "1.0.0.2")
+
+linux="" #gentoo or empty for void linux
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
@@ -119,6 +121,7 @@ fi
 	mkdir -p /mnt/boot
 	mount $efi_part /mnt/boot
 
+if [[ ! -z $linux ]]; then
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
@@ -289,6 +292,8 @@ for pkg in ${ignore_pkgs[@]}; do
   echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
   chroot /mnt xbps-remove -oOR $pkg	
 done
+
+fi
 
 #dns
 for dns in ${dns_list[@]}; do
