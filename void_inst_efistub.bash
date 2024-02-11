@@ -103,6 +103,7 @@ if [[ ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
 
+if  [[ -z $linux  ]]; then
 mount /dev/$hostname/root /mnt
 
 for dir in dev proc sys run; do
@@ -122,7 +123,6 @@ fi
 	mkdir -p /mnt/boot
 	mount $efi_part /mnt/boot
 
-if [[ ! -z $linux ]]; then
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
@@ -303,7 +303,7 @@ for dns in ${dns_list[@]}; do
   	
 done
 
-fi
+else
 
 #gentoo specific
 cd /mnt/gentoo
@@ -320,8 +320,16 @@ arch-chroot /mnt/gentoo
 source /etc/profile
 export PS1="(chroot) ${PS1}"
 
-mkdir /efi
-mount /dev/$disk'1' /efi
+if [[ ! -z $root_part_size ]]; then
+	mkdir -p /home
+	mount /dev/$hostname/home /home
+fi
+
+	mkfs.vfat $efi_part
+	mkdir -p /efi
+	mount $efi_part /efi
+
+
 mkdir --parents /etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
 
@@ -338,8 +346,8 @@ echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.co
 
 echo "Europe/Lisbon" > /etc/timezone
 emerge --config sys-libs/timezone-data
-
-nano /etc/locale.gen
+echo "en_US ISO-8859-1" >> /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
 
 locale-gen
 emerge --ag sys-kernel/linux-firmware
@@ -362,12 +370,24 @@ rc-service dhcpcd start
 
 echo "$root_pw\n$root_pw" | passwd -q root
 
+rc-update add sshd default
 
+emerge --ask sys-boot/efibootmgr
+mkdir -p /efi/efi/gentoo
+cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
+efibootmgr --create --disk /dev/$disk --part 1 --label "gentoo" --loader "\efi\gentoo\bzImage.efi"
+
+fi
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
-	umount -R /mnt				
-	shutdown -r now
+	exit
+        cd 
+	umount -R /mnt
+ 	umount -l /mnt/gentoo/dev{/shm,/pts,}
+ 	umount -R /mnt/gentoo
+ 	reboot 
+  #shutdown -r now
 fi
 
 echo -e "\nFinish\n"
