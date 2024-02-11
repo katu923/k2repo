@@ -14,9 +14,9 @@ user_pw="123" #user password
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
-efi_part_size="512M"
+efi_part_size="300M"
 
-root_part_size="25G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -306,15 +306,7 @@ done
 else
 
 #gentoo specific
-cd /mnt/gentoo
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc20240204*.xz
-gpg --import /usr/share/openpgp-keys/gentoo-release.asc
-wget -O - https://qa-reports.gentoo.org/output/service-keys.gpg | gpg --import
-
-tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
-
-cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
-
+mount /dev/$hostname/root /mnt/gentoo
 arch-chroot /mnt/gentoo
 
 source /etc/profile
@@ -328,6 +320,14 @@ fi
 	mkfs.vfat $efi_part
 	mkdir -p /efi
 	mount $efi_part /efi
+
+
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
+gpg --import /usr/share/openpgp-keys/gentoo-release.asc
+wget -O - https://qa-reports.gentoo.org/output/service-keys.gpg | gpg --import
+
+tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
+
 
 
 mkdir --parents /etc/portage/repos.conf
