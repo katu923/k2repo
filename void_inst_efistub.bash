@@ -28,7 +28,7 @@ language="en_US.UTF-8"
 
 graphical="kde" #empty it will install only base system and apps_minimal
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
 secure_boot="yes" # better leave this empty you can break your bios
 
@@ -39,7 +39,7 @@ ARCH="x86_64"
 
 dns_list=("1.1.1.2" "1.0.0.2")
 
-linux="" #gentoo or empty for void linux
+linux="gentoo" #gentoo or empty for void linux
 
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
