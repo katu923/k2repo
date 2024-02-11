@@ -293,7 +293,7 @@ for pkg in ${ignore_pkgs[@]}; do
   chroot /mnt xbps-remove -oOR $pkg	
 done
 
-fi
+
 
 #dns
 for dns in ${dns_list[@]}; do
@@ -301,6 +301,33 @@ for dns in ${dns_list[@]}; do
   echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
 done
+
+fi
+
+#gentoo specific
+cd /mnt/gentoo
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc20240204*.xz
+gpg --import /usr/share/openpgp-keys/gentoo-release.asc
+wget -O - https://qa-reports.gentoo.org/output/service-keys.gpg | gpg --import
+
+tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
+
+cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
+
+arch-chroot /mnt/gentoo
+
+source /etc/profile
+export PS1="(chroot) ${PS1}"
+
+mkdir /efi
+mount /dev/$disk'1' /efi
+mkdir --parents /etc/portage/repos.conf
+cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
+
+ echo GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/" >> /etc/portage/make.conf
+echo [binhost] > /etc/portage/binrepos.conf/gentoo.conf
+echo priority = 9999 >> /etc/portage/binrepos.conf/gentoo.conf
+echo sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/ >> /etc/portage/binrepos.conf/gentoo.conf
 
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
