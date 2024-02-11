@@ -41,6 +41,7 @@ dns_list=("1.1.1.2" "1.0.0.2")
 
 linux="" #gentoo or empty for void linux
 
+
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
 " neofetch git unzip unrar flatpak pipewire wireplumber fish-shell chromium chromium-widevine"\
@@ -324,10 +325,42 @@ mount /dev/$disk'1' /efi
 mkdir --parents /etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
 
- echo GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/" >> /etc/portage/make.conf
-echo [binhost] > /etc/portage/binrepos.conf/gentoo.conf
-echo priority = 9999 >> /etc/portage/binrepos.conf/gentoo.conf
-echo sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/ >> /etc/portage/binrepos.conf/gentoo.conf
+ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
+
+echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
+echo 'priority = 9999' >> /etc/portage/binrepos.conf/gentoo.conf
+echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /etc/portage/binrepos.conf/gentoo.conf
+
+echo 'FEATURES="${FEATURES} getbinpkg"' >> /etc/portage/make.conf
+echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
+
+echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.conf
+
+echo "Europe/Lisbon" > /etc/timezone
+emerge --config sys-libs/timezone-data
+
+nano /etc/locale.gen
+
+locale-gen
+emerge --ag sys-kernel/linux-firmware
+echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
+emerge --ask sys-kernel/gentoo-kernel-bin
+echo 'uefi="yes"' >> /etc/dracut.conf
+
+echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
+if [[ ! -z $root_part_size ]]; then
+
+	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+fi
+
+	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
+
+echo $hostname > /etc/hostname
+emerge --ag net-misc/dhcpcd
+rc-update add dhcpcd default
+rc-service dhcpcd start
+
+echo "$root_pw\n$root_pw" | passwd -q root
 
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
