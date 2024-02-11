@@ -39,7 +39,7 @@ ARCH="x86_64"
 
 dns_list=("1.1.1.2" "1.0.0.2")
 
-linux="gentoo" #gentoo or empty for void linux
+linux="" #gentoo or empty for void linux
 
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
