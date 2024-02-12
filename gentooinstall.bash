@@ -23,7 +23,6 @@ fs_type="xfs" #only support ext4 or xfs
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-dns_list=("1.1.1.2" "1.0.0.2")
 
 if [[ $disk == *"sd"* ]]; then
 	efi_part=$(echo $disk'1')
