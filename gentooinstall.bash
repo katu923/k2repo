@@ -12,8 +12,6 @@ root_pw="123" #root password
 
 user_pw="123" #user password
 
-user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
-
 efi_part_size="300M"
 
 root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
@@ -22,19 +20,8 @@ hostname="xpto"
 
 fs_type="xfs" #only support ext4 or xfs
 
-libc="" #empty is glibc other value is musl
-
-language="en_US.UTF-8"
-
-graphical="kde" #empty it will install only base system and apps_minimal
 
 disk="/dev/sda" #or /dev/vda for virt-manager
-
-secure_boot="yes" # better leave this empty you can break your bios
-
-repo="https://repo-fastly.voidlinux.org"
-#after install change mirror with xmirror
-
 
 dns_list=("1.1.1.2" "1.0.0.2")
 
@@ -64,10 +51,10 @@ vgcreate $hostname /dev/mapper/cryptroot
 
 if [[ -z $root_part_size  ]]; then
 
-	pvcreate --name root -l 100%FREE $hostname
+	vgcreate --name root -l 100%FREE $hostname
 else
-	pvcreate --name root -L $root_part_size $hostname
-	pvcreate --name home -l 100%FREE $hostname
+	vgcreate --name root -L $root_part_size $hostname
+	vgcreate --name home -l 100%FREE $hostname
 fi
 
 mkfs.$fs_type -qL root /dev/$hostname/root
