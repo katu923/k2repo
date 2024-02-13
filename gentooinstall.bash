@@ -57,10 +57,10 @@ vgcreate $hostname /dev/mapper/cryptroot
 
 if [[ -z $root_part_size  ]]; then
 
-	vgcreate --name root -l 100%FREE $hostname
+	pvcreate --name root -l 100%FREE $hostname
 else
-	vgcreate --name root -L $root_part_size $hostname
-	vgcreate --name home -l 100%FREE $hostname
+	pvcreate --name root -L $root_part_size $hostname
+	pvcreate --name home -l 100%FREE $hostname
 fi
 
 mkfs.$fs_type -qL root /dev/$hostname/root
