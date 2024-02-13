@@ -116,8 +116,8 @@ $cr echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$h
 
 #CONFIG SYSTEM
 
- echo -e "/dev/sda2	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
- echo -e "/dev/mapper/home	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+ echo -e "/dev/sda2	/	xfs	defaults,noatime	0	1" >> /etc/fstab
+ echo -e "/dev/mapper/home	/home	ext4	defaults,noatime	0	2" >> /etc/fstab
  echo -e "/dev/sda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
 
