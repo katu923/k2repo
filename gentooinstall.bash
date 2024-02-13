@@ -18,16 +18,8 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="xfs" #only support ext4 or xfs
-
-
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-luks_root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
-luks_home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  $disk'1')
-
-cr="chroot /mnt/gentoo"
 
 #PREPARE DISKS
 
@@ -51,35 +43,20 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
-echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-vgcreate $hostname /dev/mapper/cryptroot
+echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat /dev/sda3
+echo $luks_pw | cryptsetup --type luks2 open /dev/sda3 home
 
-if [[ -z $root_part_size  ]]; then
 
-	pvcreate --name root -l 100%FREE $hostname
-else
-	pvcreate --name root -L $root_part_size $hostname
-	pvcreate --name home -l 100%FREE $hostname
-fi
 
-mkfs.$fs_type -qL root /dev/$hostname/root
+mkfs.xfs -qL root /dev/sda2
 
-if [[ ! -z $root_part_size ]]; then
+mkfs.ext4 -qL home /dev/mapper/home
 
-	mkfs.$fs_type -qL home /dev/$hostname/home
-fi
-
-mount /dev/$hostname/root /mnt/gentoo
-
-if [[ ! -z $root_part_size ]]; then
-	mkdir -p /mnt/gentoo/home
-	mount /dev/$hostname/home /mnt/gentoo/home
-fi
-
-	mkfs.vfat $efi_part
-	mkdir -p /mnt/gentoo/efi
-	mount $efi_part /mnt/gentoo/efi
+mount /dev/sda2 /mnt/gentoo
+mount /dev/mapper/home /mnt/gentoo/home
+mkfs.vfat $efi_part
+mkdir -p /mnt/gentoo/efi
+mount $efi_part /mnt/gentoo/efi
 
 #STAGE FILE
 
@@ -147,6 +124,8 @@ fi
 
 	$cr echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
+
+
 $cr echo $hostname > /etc/hostname
 
 $cr echo "$root_pw\n$root_pw" | passwd -q root
@@ -161,7 +140,9 @@ $cr mkdir -p /efi/efi/gentoo
 $cr cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
 $cr efibootmgr --create --disk /dev/$disk --part 1 --label "gentoo_uefi" --loader "\efi\gentoo\bzImage.efi"
 
-
+echo "target=home" >> /etc/conf.d/dmcrypt
+echo 'source="/dev/sda3"' >> /etc/conf.d/dmcrypt
+rc-update add dmcrypt boot
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
