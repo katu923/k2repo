@@ -116,13 +116,9 @@ $cr echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$h
 
 #CONFIG SYSTEM
 
-$cr echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
-if [[ ! -z $root_part_size ]]; then
-
-	$cr echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
-fi
-
-	$cr echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
+ echo -e "/dev/sda2	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
+ echo -e "/dev/mapper/home	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+ echo -e "/dev/sda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
 
 
