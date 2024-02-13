@@ -23,6 +23,10 @@ fs_type="xfs" #only support ext4 or xfs
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
+luks_root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
+luks_home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
+boot_uuid=$(blkid -o value -s UUID  $disk'1')
+
 cr="chroot /mnt/gentoo"
 
 #PREPARE DISKS
@@ -86,24 +90,22 @@ wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-am
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 sed COMMON_FLAGS="-O2 -pipe"
-
-
+sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 #arch-chroot /mnt/gentoo
+echo "MAKEOPTS="-j4 -l4" >> /mnt/gentoo/etc/portage/make.conf
 
-#source /etc/profile
-#export PS1="(chroot) ${PS1}"
+#INSTALL BASE SYSTEM
+cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
+
+mount --types proc /proc /mnt/gentoo/proc
+mount --rbind /sys /mnt/gentoo/sys
+mount --make-rslave /mnt/gentoo/sys
+mount --rbind /dev /mnt/gentoo/dev
+mount --make-rslave /mnt/gentoo/dev
+mount --bind /run /mnt/gentoo/run
+mount --make-slave /mnt/gentoo/run 
 
 
-for dir in dev proc sys run; do
-
-	mkdir -p /mnt/gentoo/$dir
-	mount --rbind /$dir /mnt/gentoo/$dir
-	mount --make-rslave /mnt/gentoo/$dir
-done
-
-luks_root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
-luks_home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  $disk'1')
 
 
 $cr mkdir --parents /etc/portage/repos.conf
@@ -124,14 +126,18 @@ $cr echo "Europe/Lisbon" > /etc/timezone
 $cr emerge --config sys-libs/timezone-data
 $cr echo "en_US ISO-8859-1" >> /etc/locale.gen
 $cr echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-
 $cr locale-gen
-$cr emerge --ag sys-kernel/linux-firmware
+
+#KERNEL CONFIG
+
+$cr emerge sys-kernel/linux-firmware
+$cr emerge sys-firmware/intel-microcode
 $cr echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
-$cr emerge --ask sys-kernel/gentoo-kernel-bin
+$cr emerge sys-kernel/gentoo-kernel-bin
 $cr echo 'uefi="yes"' >>  /etc/dracut.conf
 $cr echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$hostname'/root"' >> /etc/dracut.conf
 
+#CONFIG SYSTEM
 
 $cr echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
 if [[ ! -z $root_part_size ]]; then
@@ -145,7 +151,11 @@ $cr echo $hostname > /etc/hostname
 
 $cr echo "$root_pw\n$root_pw" | passwd -q root
 
-$cr emerge --ask sys-boot/efibootmgr
+$cr emerge sys-fs/xfsprogs
+
+#CONFIG BOOTLOADER
+
+$cr emerge sys-boot/efibootmgr
 
 $cr mkdir -p /efi/efi/gentoo
 $cr cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
