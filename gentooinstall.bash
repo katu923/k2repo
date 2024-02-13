@@ -23,6 +23,9 @@ fs_type="xfs" #only support ext4 or xfs
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
+cr="chroot /mnt/gentoo"
+
+#PREPARE DISKS
 
 if [[ $disk == *"sd"* ]]; then
 	efi_part=$(echo $disk'1')
@@ -74,66 +77,79 @@ fi
 	mkdir -p /mnt/gentoo/efi
 	mount $efi_part /mnt/gentoo/efi
 
+#STAGE FILE
+
 cd /mnt/gentoo
 
 gpg --import /usr/share/openpgp-keys/gentoo-release.asc
 wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
-arch-chroot /mnt/gentoo
-source /etc/profile
-export PS1="(chroot) ${PS1}"
+sed COMMON_FLAGS="-O2 -pipe"
 
+
+#arch-chroot /mnt/gentoo
+
+#source /etc/profile
+#export PS1="(chroot) ${PS1}"
+
+
+for dir in dev proc sys run; do
+
+	mkdir -p /mnt/gentoo/$dir
+	mount --rbind /$dir /mnt/gentoo/$dir
+	mount --make-rslave /mnt/gentoo/$dir
+done
 
 luks_root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  $disk'1')
 
 
-mkdir --parents /etc/portage/repos.conf
-cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
+$cr mkdir --parents /etc/portage/repos.conf
+$cr cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
 
- echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
+ $cr echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
 
-echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
-echo 'priority = 9999' >> /etc/portage/binrepos.conf/gentoo.conf
-echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /etc/portage/binrepos.conf/gentoo.conf
+$cr echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
+$cr echo 'priority = 9999' >> /etc/portage/binrepos.conf/gentoo.conf
+$cr echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /etc/portage/binrepos.conf/gentoo.conf
 
-echo 'FEATURES="${FEATURES} getbinpkg"' >> /etc/portage/make.conf
-echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
+$cr echo 'FEATURES="${FEATURES} getbinpkg"' >> /etc/portage/make.conf
+$cr echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
 
-echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.conf
+$cr echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.conf
 
-echo "Europe/Lisbon" > /etc/timezone
-emerge --config sys-libs/timezone-data
-echo "en_US ISO-8859-1" >> /etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+$cr echo "Europe/Lisbon" > /etc/timezone
+$cr emerge --config sys-libs/timezone-data
+$cr echo "en_US ISO-8859-1" >> /etc/locale.gen
+$cr echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
 
-locale-gen
-emerge --ag sys-kernel/linux-firmware
-echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
-emerge --ask sys-kernel/gentoo-kernel-bin
-echo 'uefi="yes"' >>  /etc/dracut.conf
-echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$hostname'/root"' >> /etc/dracut.conf
+$cr locale-gen
+$cr emerge --ag sys-kernel/linux-firmware
+$cr echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
+$cr emerge --ask sys-kernel/gentoo-kernel-bin
+$cr echo 'uefi="yes"' >>  /etc/dracut.conf
+$cr echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$hostname'/root"' >> /etc/dracut.conf
 
 
-echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
+$cr echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
-	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+	$cr echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
 fi
 
-	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
+	$cr echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
-echo $hostname > /etc/hostname
+$cr echo $hostname > /etc/hostname
 
-echo "$root_pw\n$root_pw" | passwd -q root
+$cr echo "$root_pw\n$root_pw" | passwd -q root
 
-emerge --ask sys-boot/efibootmgr
+$cr emerge --ask sys-boot/efibootmgr
 
-mkdir -p /efi/efi/gentoo
-cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
-efibootmgr --create --disk /dev/$disk --part 1 --label "gentoo_uefi" --loader "\efi\gentoo\bzImage.efi"
+$cr mkdir -p /efi/efi/gentoo
+$cr cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
+$cr efibootmgr --create --disk /dev/$disk --part 1 --label "gentoo_uefi" --loader "\efi\gentoo\bzImage.efi"
 
 
 
