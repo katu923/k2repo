@@ -12,7 +12,7 @@ root_pw="123" #root password
 
 user_pw="123" #user password
 
-efi_part_size="300M"
+efi_part_size="512M"
 
 root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
@@ -64,11 +64,11 @@ gpg --import /usr/share/openpgp-keys/gentoo-release.asc
 wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
-sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
+
 #arch-chroot /mnt/gentoo
 
 
-echo "MAKEOPTS="-j4 -l4" >> /mnt/gentoo/etc/portage/make.conf
+
 
 #INSTALL BASE SYSTEM
 
@@ -97,7 +97,8 @@ mount $efi_part /efi
  mkdir --parents /etc/portage/repos.conf
  cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
 emerge-webrsync
- 
+ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /etc/portage/make.conf
+ echo "MAKEOPTS="-j4 -l4" >> /etc/portage/make.conf
  echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
 
  echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
