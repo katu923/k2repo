@@ -124,9 +124,10 @@ emerge-webrsync
  emerge sys-kernel/linux-firmware
  emerge sys-firmware/intel-microcode
  echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
- 
- echo 'uefi="yes"' >>  /etc/dracut.conf
- echo 'kernel_cmdline="root=/dev/sda2 apparmor=1 security=apparmor"' >> /etc/dracut.conf
+ mkdir -p /etc/dracut.conf.d
+ touch /etc/dracut.conf.d/10-dracut.conf
+ echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="root=/dev/sda2 apparmor=1 security=apparmor"' >> /etc/dracut.conf.d/10-dracut.conf
 
 mkdir -p /efi/EFI/Linux
 
@@ -145,6 +146,15 @@ emerge cryptsetup
 emerge systemd-utils
 emerge iwd
 mkdir -p /etc/iwd
+
+touch /etc/iwd/main.conf
+echo "[General]" > /etc/iwd/main.conf
+echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
+echo "[Network]" >> /etc/iwd/main.conf
+#echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
+echo "NameResolvingService=none" >> /etc/iwd/main.conf
+#echo "EnableIPv6=false" >> /etc/iwd/main.conf
+
 
 
 echo "target=home" >> /etc/conf.d/dmcrypt
