@@ -143,6 +143,9 @@ mkdir -p /efi/EFI/Linux
  emerge sys-fs/xfsprogs
 emerge cryptsetup
 emerge systemd-utils
+emerge iwd
+mkdir -p /etc/iwd
+
 
 echo "target=home" >> /etc/conf.d/dmcrypt
 echo 'source="/dev/sda3"' >> /etc/conf.d/dmcrypt
