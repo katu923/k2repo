@@ -54,9 +54,7 @@ mkfs.ext4 -qL home /dev/mapper/home
 
 mount /dev/sda2 /mnt/gentoo
 mount /dev/mapper/home /mnt/gentoo/home
-mkfs.vfat $efi_part
-mkdir -p /mnt/gentoo/efi
-mount $efi_part /mnt/gentoo/efi
+
 
 #STAGE FILE
 
@@ -66,7 +64,6 @@ gpg --import /usr/share/openpgp-keys/gentoo-release.asc
 wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
-sed COMMON_FLAGS="-O2 -pipe"
 sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 #arch-chroot /mnt/gentoo
 
@@ -74,11 +71,10 @@ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.
 echo "MAKEOPTS="-j4 -l4" >> /mnt/gentoo/etc/portage/make.conf
 
 #INSTALL BASE SYSTEM
-cat << EOF | chroot /mnt/gentoo /bin/bash
-#<do anything as gentoo wiki explain or according your needs>
- 
 
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
+
+
 
 mount --types proc /proc /mnt/gentoo/proc
 mount --rbind /sys /mnt/gentoo/sys
@@ -88,12 +84,20 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
+cat << EOF | chroot /mnt/gentoo /bin/bash
+#<do anything as gentoo wiki explain or according your needs>
 
+source /etc/profile 
+export PS1="(chroot) ${PS1}"
 
+mkfs.vfat $efi_part
+mkdir -p /efi
+mount $efi_part /efi
 
  mkdir --parents /etc/portage/repos.conf
  cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
-
+emerge-webrsync
+ 
  echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
 
  echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
@@ -110,15 +114,20 @@ mount --make-slave /mnt/gentoo/run
  echo "en_US ISO-8859-1" >> /etc/locale.gen
  echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
  locale-gen
+ 
+ env-update && source /etc/profile && export PS1="(chroot) ${PS1}"
+
 
 #KERNEL CONFIG
 
  emerge sys-kernel/linux-firmware
  emerge sys-firmware/intel-microcode
  echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
- emerge sys-kernel/gentoo-kernel-bin
+ 
  echo 'uefi="yes"' >>  /etc/dracut.conf
  echo 'kernel_cmdline="root=/dev/sda2 apparmor=1 security=apparmor"' >> /etc/dracut.conf
+
+mkdir -p /efi/EFI/Linux
 
 #CONFIG SYSTEM
 
@@ -126,26 +135,33 @@ mount --make-slave /mnt/gentoo/run
  echo -e "/dev/mapper/home	/home	ext4	defaults,noatime	0	2" >> /etc/fstab
  echo -e "/dev/sda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
-
-
  echo $hostname > /etc/hostname
 
  echo "$root_pw\n$root_pw" | passwd -q root
 
  emerge sys-fs/xfsprogs
+emerge cryptsetup
+emerge systemd-utils
 
+echo "target=home" >> /etc/conf.d/dmcrypt
+echo 'source="/dev/sda3"' >> /etc/conf.d/dmcrypt
+emerge -aunDN @world
+emerge sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
  emerge sys-boot/efibootmgr
 
- mkdir -p /efi/EFI/Linux
-  
- efibootmgr --create --disk /dev/$disk --part 1 -l "\efi\gentoo\bzImage.efi"
+cp /efi/EFI/Linux/*-dist.efi linux.efi
+ 
+ efibootmgr -c --disk /dev/$disk --part 1 -l "\EFI\Linux\linux.efi"
 
-echo "target=home" >> /etc/conf.d/dmcrypt
-echo 'source="/dev/sda3"' >> /etc/conf.d/dmcrypt
+
 rc-update add dmcrypt boot
+
+
 EOF
+#fim
+
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
@@ -153,7 +169,7 @@ if [[ $tmp == "y" ]]; then
         
 	 	umount -l /mnt/gentoo/dev{/shm,/pts,}
  	umount -R /mnt/gentoo
- 	reboot 
+# 	reboot 
   #shutdown -r now
 fi
 
