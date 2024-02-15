@@ -14,7 +14,7 @@ user_pw="123" #user password
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
-efi_part_size="300M"
+efi_part_size="512M"
 
 root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
@@ -197,7 +197,6 @@ sed -i 's@vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@
 
 sed -i "s/efibootmgr -qo $bootorder/#efibootmgr -qo $bootorder/" /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-
 echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
@@ -304,13 +303,9 @@ done
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
-	exit
-        cd 
 	umount -R /mnt
- 	umount -l /mnt/gentoo/dev{/shm,/pts,}
- 	umount -R /mnt/gentoo
  	reboot 
-  #shutdown -r now
+  shutdown -r now
 fi
 
 echo -e "\nFinish\n"
