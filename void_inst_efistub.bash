@@ -39,9 +39,6 @@ ARCH="x86_64"
 
 dns_list=("1.1.1.2" "1.0.0.2")
 
-linux="" #gentoo or empty for void linux
-
-
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
 " neofetch git unzip unrar flatpak pipewire wireplumber fish-shell chromium chromium-widevine"\
@@ -103,7 +100,7 @@ if [[ ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
 
-if  [[ -z $linux  ]]; then
+
 mount /dev/$hostname/root /mnt
 
 for dir in dev proc sys run; do
@@ -303,81 +300,7 @@ for dns in ${dns_list[@]}; do
   	
 done
 
-else
 
-#gentoo specific
-mount /dev/$hostname/root /mnt/gentoo
-arch-chroot /mnt/gentoo
-
-source /etc/profile
-export PS1="(chroot) ${PS1}"
-
-if [[ ! -z $root_part_size ]]; then
-	mkdir -p /home
-	mount /dev/$hostname/home /home
-fi
-
-	mkfs.vfat $efi_part
-	mkdir -p /efi
-	mount $efi_part /efi
-
-
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
-gpg --import /usr/share/openpgp-keys/gentoo-release.asc
-wget -O - https://qa-reports.gentoo.org/output/service-keys.gpg | gpg --import
-
-tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
-
-
-
-mkdir --parents /etc/portage/repos.conf
-cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
-
- echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
-
-echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
-echo 'priority = 9999' >> /etc/portage/binrepos.conf/gentoo.conf
-echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /etc/portage/binrepos.conf/gentoo.conf
-
-echo 'FEATURES="${FEATURES} getbinpkg"' >> /etc/portage/make.conf
-echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
-
-echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.conf
-
-echo "Europe/Lisbon" > /etc/timezone
-emerge --config sys-libs/timezone-data
-echo "en_US ISO-8859-1" >> /etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-
-locale-gen
-emerge --ag sys-kernel/linux-firmware
-echo "sys-kernel/installkernel dracut uki" >> /etc/portage/package.use/installkernel
-emerge --ask sys-kernel/gentoo-kernel-bin
-echo 'uefi="yes"' >> /etc/dracut.conf
-
-echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
-if [[ ! -z $root_part_size ]]; then
-
-	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
-fi
-
-	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
-
-echo $hostname > /etc/hostname
-emerge --ag net-misc/dhcpcd
-rc-update add dhcpcd default
-rc-service dhcpcd start
-
-echo "$root_pw\n$root_pw" | passwd -q root
-
-rc-update add sshd default
-
-emerge --ask sys-boot/efibootmgr
-mkdir -p /efi/efi/gentoo
-cp /boot/vmlinuz-* /efi/efi/gentoo/bzImage.efi 
-efibootmgr --create --disk /dev/$disk --part 1 --label "gentoo" --loader "\efi\gentoo\bzImage.efi"
-
-fi
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
 if [[ $tmp == "y" ]]; then
