@@ -18,7 +18,7 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
 
 #PREPARE DISKS
@@ -43,16 +43,16 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat /dev/sda3
-echo $luks_pw | cryptsetup --type luks2 open /dev/sda3 home
+echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat /dev/vda3
+echo $luks_pw | cryptsetup --type luks2 open /dev/vda3 home
 
 
 
-mkfs.xfs -qL root /dev/sda2
+mkfs.xfs -qL root /dev/vda2
 
 mkfs.ext4 -qL home /dev/mapper/home
 
-mount /dev/sda2 /mnt/gentoo
+mount /dev/vda2 /mnt/gentoo
 mount /dev/mapper/home /mnt/gentoo/home
 
 
@@ -76,15 +76,9 @@ cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
 
 
-mount --types proc /proc /mnt/gentoo/proc
-mount --rbind /sys /mnt/gentoo/sys
-mount --make-rslave /mnt/gentoo/sys
-mount --rbind /dev /mnt/gentoo/dev
-mount --make-rslave /mnt/gentoo/dev
-mount --bind /run /mnt/gentoo/run
-mount --make-slave /mnt/gentoo/run 
+arch-chroot /mnt/gentoo
 
-cat << EOF | chroot /mnt/gentoo /bin/bash
+cat << EOF | /bin/bash
 #<do anything as gentoo wiki explain or according your needs>
 
 source /etc/profile 
