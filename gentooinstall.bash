@@ -127,15 +127,15 @@ emerge-webrsync
  mkdir -p /etc/dracut.conf.d
  touch /etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="root=/dev/sda2 apparmor=1 security=apparmor"' >> /etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="root=/dev/vda2 lsm=selinux"' >> /etc/dracut.conf.d/10-dracut.conf
 
 mkdir -p /efi/EFI/Linux
 
 #CONFIG SYSTEM
 
- echo -e "/dev/sda2	/	xfs	defaults,noatime	0	1" >> /etc/fstab
+ echo -e "/dev/vda2	/	xfs	defaults,noatime	0	1" >> /etc/fstab
  echo -e "/dev/mapper/home	/home	ext4	defaults,noatime	0	2" >> /etc/fstab
- echo -e "/dev/sda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
+ echo -e "/dev/vda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
 
  echo $hostname > /etc/hostname
 
@@ -158,7 +158,7 @@ echo "NameResolvingService=none" >> /etc/iwd/main.conf
 
 
 echo "target=home" >> /etc/conf.d/dmcrypt
-echo 'source="/dev/sda3"' >> /etc/conf.d/dmcrypt
+echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
 emerge -aunDN @world
 emerge sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
@@ -167,7 +167,7 @@ emerge sys-kernel/gentoo-kernel-bin
 
 cp /efi/EFI/Linux/*-dist.efi linux.efi
  
- efibootmgr -c --disk /dev/$disk --part 1 -l "\EFI\Linux\linux.efi"
+ efibootmgr -c --disk /dev/vda --part 1 -l "\EFI\Linux\linux.efi"
 
 
 rc-update add dmcrypt boot
