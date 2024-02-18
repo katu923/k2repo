@@ -14,7 +14,7 @@ user_pw="123" #user password
 
 efi_part_size="512M"
 
-root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="25G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -95,6 +95,7 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
+chroot /mnt/gentoo/ touch /etc/resolv.conf
 chroot /mnt/gentoo/ echo "nameserver 1.1.1.2" > /etc/resolv.conf
 chroot /mnt/gentoo/ echo "nameserver 1.0.0.2" >> /etc/resolv.conf
 chroot /mnt/gentoo/ mkdir --parents /etc/portage/repos.conf
