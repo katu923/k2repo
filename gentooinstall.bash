@@ -79,13 +79,10 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240204T134829Z.tar.xz
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened-selinux-openrc/stage3-amd64-hardened-selinux-openrc-20240211T161834Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
-
-
 
 arch-chroot /mnt/gentoo
 exit
@@ -166,7 +163,7 @@ chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
 #echo "target=home" >> /etc/conf.d/dmcrypt
 #echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
 chroot /mnt/gentoo/ emerge -aunDN @world
-chroot /mnt/gentoo/ emerge sys-kernel/gentoo-kernel-bin
+chroot /mnt/gentoo/ emerge -avg sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
  chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
