@@ -84,8 +84,14 @@ tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
 
-arch-chroot /mnt/gentoo
-exit
+#arch-chroot /mnt/gentoo
+mount --types proc /proc /mnt/gentoo/proc
+mount --rbind /sys /mnt/gentoo/sys
+mount --make-rslave /mnt/gentoo/sys
+mount --rbind /dev /mnt/gentoo/dev
+mount --make-rslave /mnt/gentoo/dev
+mount --bind /run /mnt/gentoo/run
+mount --make-slave /mnt/gentoo/run 
 
 chroot /mnt/gentoo/ echo "nameserver 1.1.1.2" > /etc/resolv.conf
 chroot /mnt/gentoo/ echo "nameserver 1.0.0.2" >> /etc/resolv.conf
