@@ -143,7 +143,7 @@ chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >>
  chroot /mnt/gentoo/ touch /etc/dracut.conf.d/10-dracut.conf
  chroot /mnt/gentoo/ echo 'add_dracutmodules+=" lvm crypt dm "' >>  /etc/dracut.conf.d/10-dracut.conf
  chroot /mnt/gentoo/ echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-dracut.conf
- chroot /mnt/gentoo/ echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"  >> /etc/dracut.conf.d/10-dracut.conf
+ chroot /mnt/gentoo/ echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"'  >> /etc/dracut.conf.d/10-dracut.conf
  chroot /mnt/gentoo/ mkdir -p /efi/EFI/Linux
 
 #CONFIG SYSTEM
