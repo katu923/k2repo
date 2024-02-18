@@ -99,7 +99,7 @@ chroot /mnt/gentoo/ mkdir --parents /etc/portage/repos.conf
 chroot /mnt/gentoo/ cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
 chroot /mnt/gentoo/ emerge-webrsync
 chroot /mnt/gentoo/ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /etc/portage/make.conf
-chroot /mnt/gentoo/ echo "MAKEOPTS="-j4 -l4" >> /etc/portage/make.conf
+#chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
 chroot /mnt/gentoo/ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
 
  chroot /mnt/gentoo/ echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
@@ -168,6 +168,7 @@ chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
 #echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
+
 chroot /mnt/gentoo/ emerge -aunDN @world
 chroot /mnt/gentoo/ emerge -avg sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
