@@ -95,66 +95,66 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
-chroot /mnt/gentoo/ touch /etc/resolv.conf
-chroot /mnt/gentoo/ echo "nameserver 1.1.1.2" > /etc/resolv.conf
-chroot /mnt/gentoo/ echo "nameserver 1.0.0.2" >> /etc/resolv.conf
-chroot /mnt/gentoo/ mkdir --parents /etc/portage/repos.conf
-chroot /mnt/gentoo/ cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
+touch /mnt/gentoo/etc/resolv.conf
+echo "nameserver 1.1.1.2" > /mnt/gentoo/etc/resolv.conf
+echo "nameserver 1.0.0.2" >> /mnt/gentoo/etc/resolv.conf
+mkdir --parents /mnt/gentoo/etc/portage/repos.conf
+cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 chroot /mnt/gentoo/ emerge-webrsync
-chroot /mnt/gentoo/ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /etc/portage/make.conf
+sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 #chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
-chroot /mnt/gentoo/ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /etc/portage/make.conf
+echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 
- chroot /mnt/gentoo/ echo '[binhost]' > /etc/portage/binrepos.conf/gentoo.conf
- chroot /mnt/gentoo/ echo 'priority = 9999' >> /etc/portage/binrepos.conf/gentoo.conf
- chroot /mnt/gentoo/ echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /etc/portage/binrepos.conf/gentoo.conf
+ echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 
- chroot /mnt/gentoo/ echo 'FEATURES="${FEATURES} getbinpkg"' >> /etc/portage/make.conf
- chroot /mnt/gentoo/ echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
+ echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
+ echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 
- chroot /mnt/gentoo/ echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /etc/portage/make.conf
+ echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
 
- chroot /mnt/gentoo/ echo "Europe/Lisbon" > /etc/timezone
+ echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
  chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
- chroot /mnt/gentoo/ echo "en_US ISO-8859-1" >> /etc/locale.gen
- chroot /mnt/gentoo/ echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+ echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  chroot /mnt/gentoo/ locale-gen
  
  #KERNEL CONFIG
 
  chroot /mnt/gentoo/ emerge sys-kernel/linux-firmware
  #emerge sys-firmware/intel-microcode
- chroot /mnt/gentoo/ echo "sys-kernel/installkernel dracut uki" > /etc/portage/package.use/installkernel
- chroot /mnt/gentoo/ echo "sys-fs/lvm2 lvm" > /etc/portage/package.use/lvm2
- chroot /mnt/gentoo/ echo "sys-apps/systemd-utils boot kernel-install" > /etc/portage/package.use/systemd-utils
+ echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
+ echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
+ echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
 
 home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
 luks_root_uuid=$(blkid -o value -s UUID  /dev/$disk'2')
 boot_uuid=$(blkid -o value -s UUID  /dev/$disk'1')
 
-chroot /mnt/gentoo/ echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
+chroot /mnt/gentoo/ echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
-chroot /mnt/gentoo/ echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+chroot /mnt/gentoo/ echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
 fi
 
-chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >> /etc/fstab
+chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
  
- chroot /mnt/gentoo/ mkdir -p /etc/dracut.conf.d
- chroot /mnt/gentoo/ touch /etc/dracut.conf.d/10-dracut.conf
- chroot /mnt/gentoo/ echo 'add_dracutmodules+=" lvm crypt dm "' >>  /etc/dracut.conf.d/10-dracut.conf
- chroot /mnt/gentoo/ echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-dracut.conf
- chroot /mnt/gentoo/ echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"'  >> /etc/dracut.conf.d/10-dracut.conf
- chroot /mnt/gentoo/ mkdir -p /efi/EFI/Linux
+ mkdir -p /mnt/gentoo/etc/dracut.conf.d
+ touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"'  >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
 
  
-chroot /mnt/gentoo/ echo $hostname > /etc/hostname
+echo $hostname > /mnt/gentoo/etc/hostname
 
- chroot /mnt/gentoo/ echo "$root_pw\n$root_pw" | passwd -q root
+ echo "$root_pw\n$root_pw" | passwd -q root
 
 chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
 
@@ -172,13 +172,13 @@ chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
 #echo "target=home" >> /etc/conf.d/dmcrypt
 #echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
 
-chroot /mnt/gentoo/ emerge -aunDN @world
+#chroot /mnt/gentoo/ emerge -aunDN @world
 chroot /mnt/gentoo/ emerge -avg sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
  chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
 
-chroot /mnt/gentoo/ cp /efi/EFI/Linux/*-dist.efi linux.efi
+cp /mnt/gentoo/efi/EFI/Linux/*-dist.efi linux.efi
  
  chroot /mnt/gentoo/ efibootmgr -c --disk /dev/vda --part 1 -l "\EFI\Linux\linux.efi"
 
