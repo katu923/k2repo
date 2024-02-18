@@ -121,30 +121,37 @@ chroot /mnt/gentoo/ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> 
  chroot /mnt/gentoo/ echo "sys-kernel/installkernel dracut uki" > /etc/portage/package.use/installkernel
  chroot /mnt/gentoo/ echo "sys-fs/lvm2 lvm" > /etc/portage/package.use/lvm2
  chroot /mnt/gentoo/ echo "sys-apps/systemd-utils boot kernel-install" > /etc/portage/package.use/systemd-utils
- 
+
+home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
+root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
+luks_root_uuid=$(blkid -o value -s UUID  /dev/$disk'2')
+boot_uuid=$(blkid -o value -s UUID  /dev/$disk'1')
+
+chroot /mnt/gentoo/ echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
+if [[ ! -z $root_part_size ]]; then
+
+chroot /mnt/gentoo/ echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
+fi
+
+chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >> /etc/fstab
+
  
  chroot /mnt/gentoo/ mkdir -p /etc/dracut.conf.d
  chroot /mnt/gentoo/ touch /etc/dracut.conf.d/10-dracut.conf
  chroot /mnt/gentoo/ echo 'adddracutmodules=" lvm crypt dm"' >>  /etc/dracut.conf.d/10-dracut.conf
  chroot /mnt/gentoo/ echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-dracut.conf
- 
- chroot /mnt/gentoo/ echo 'kernel_cmdline="rd.luks.uuid= root=UUID="  >> /etc/dracut.conf.d/10-dracut.conf
-
-chroot /mnt/gentoo/ mkdir -p /efi/EFI/Linux
+ chroot /mnt/gentoo/ echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"  >> /etc/dracut.conf.d/10-dracut.conf
+ chroot /mnt/gentoo/ mkdir -p /efi/EFI/Linux
 
 #CONFIG SYSTEM
 
- echo -e "/dev/vda2	/	xfs	defaults,noatime	0	1" >> /etc/fstab
- echo -e "/dev/mapper/home	/home	ext4	defaults,noatime	0	2" >> /etc/fstab
- echo -e "/dev/vda1  /efi	    vfat	umask=0077	0	2" >> /etc/fstab
-
+ 
 chroot /mnt/gentoo/ echo $hostname > /etc/hostname
 
  chroot /mnt/gentoo/ echo "$root_pw\n$root_pw" | passwd -q root
 
- #emerge sys-fs/xfsprogs
-chroot /mnt/gentoo/ emerge cryptsetup
-chroot /mnt/gentoo/ emerge systemd-utils
+chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
+
 #emerge iwd
 #mkdir -p /etc/iwd
 
@@ -162,18 +169,16 @@ chroot /mnt/gentoo/ emerge -aunDN @world
 chroot /mnt/gentoo/ emerge sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
- chroot /mnt/gentoo/ emerge sys-boot/efibootmgr
+ chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
 
 chroot /mnt/gentoo/ cp /efi/EFI/Linux/*-dist.efi linux.efi
  
  chroot /mnt/gentoo/ efibootmgr -c --disk /dev/vda --part 1 -l "\EFI\Linux\linux.efi"
 
 
-rc-update add dmcrypt boot
-rc-update add lvm boot
+chroot /mnt/gentoo/ rc-update add dmcrypt boot
+chroot /mnt/gentoo/ rc-update add lvm boot
 
-
-EOF
 #fim
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
