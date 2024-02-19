@@ -105,6 +105,8 @@ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.
 #chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 
+ mkdir -p /mnt/etc/portage/binrepos.conf
+ touch /mnt/etc/portage/binrepos.conf/gentoo.conf
  echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
@@ -146,7 +148,7 @@ chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >>
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="rd.luks.uuid='$luks_uuid 'root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
@@ -157,6 +159,7 @@ echo $hostname > /mnt/gentoo/etc/hostname
  echo "$root_pw\n$root_pw" | passwd -q root
 
 chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
+
 
 #emerge iwd
 #mkdir -p /etc/iwd
