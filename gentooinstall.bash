@@ -105,8 +105,8 @@ sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.
 #chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 
- mkdir -p /mnt/etc/portage/binrepos.conf
- touch /mnt/etc/portage/binrepos.conf/gentoo.conf
+ mkdir -p /mnt/gentoo/etc/portage/binrepos.conf
+ touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
