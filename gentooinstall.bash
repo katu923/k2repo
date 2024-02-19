@@ -128,10 +128,10 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
  echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
 
-home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
-root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
-luks_root_uuid=$(blkid -o value -s UUID  /dev/$disk'2')
-boot_uuid=$(blkid -o value -s UUID  /dev/$disk'1')
+home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
+root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
+luks_uuid=$(blkid -o value -s UUID /dev/$disk'2')
+boot_uuid=$(blkid -o value -s UUID /dev/$disk'1')
 
 chroot /mnt/gentoo/ echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
 if [[ ! -z $root_part_size ]]; then
@@ -146,7 +146,7 @@ chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >>
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="rd.luks.uuid='$luks_root_uuid' root=UUID='$root_uuid'"'  >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
