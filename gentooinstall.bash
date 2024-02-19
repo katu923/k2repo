@@ -188,6 +188,8 @@ cp /mnt/gentoo/efi/EFI/Linux/*-dist.efi linux.efi
 
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
+#relabeling -selinux
+chroot /mnt/gentoo rlpkg -a -r
 
 #fim
 
