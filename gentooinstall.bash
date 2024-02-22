@@ -82,7 +82,7 @@ fi
 
 cd /mnt/gentoo
 # wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240211T161834Z.tar.xz
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/stage3-amd64-desktop-systemd-20231210T170356Z.tar.xz
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-systemd/stage3-amd64-systemd-20231210T170356Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
