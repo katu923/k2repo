@@ -160,8 +160,8 @@ echo $hostname > /mnt/gentoo/etc/hostname
 
  echo "$root_pw\n$root_pw" | passwd -q root
 
-chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup iwd
-
+#chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup iwd
+chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
 
 #emerge iwd
 mkdir -p /etc/iwd
@@ -181,15 +181,15 @@ echo "NameResolvingService=none" >> /etc/iwd/main.conf
 chroot /mnt/gentoo/ emerge -avg sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
- chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
+ #chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
 
 cp /mnt/gentoo/efi/EFI/Linux/*-dist.efi linux.efi
  
- chroot /mnt/gentoo/ efibootmgr -c --disk /dev/vda --part 1 -l "\EFI\Linux\linux.efi"
+ chroot /mnt/gentoo/ efibootmgr -c --disk /dev/$disk --part 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
-chroot /mnt/gentoo/ rc-update add dmcrypt boot
-chroot /mnt/gentoo/ rc-update add lvm boot
+#chroot /mnt/gentoo/ rc-update add dmcrypt boot
+#chroot /mnt/gentoo/ rc-update add lvm boot
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
 
