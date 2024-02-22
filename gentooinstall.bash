@@ -128,7 +128,8 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
- echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
+ #echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
+echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
