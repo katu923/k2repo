@@ -166,6 +166,8 @@ fi
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'uefi_secureboot_cert="/usr/share/secureboot/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'uefi_secureboot_key="/usr/share/secureboot/keys/db/db.key"' >> >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # change sysctl
 echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
