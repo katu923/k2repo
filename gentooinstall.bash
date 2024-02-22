@@ -4,7 +4,7 @@
 #you must change the variables to your taste
 
 
-username="k2"
+#username="k2"
 
 luks_pw="123" #password for disk encryption
 
@@ -14,13 +14,13 @@ user_pw="123" #user password
 
 efi_part_size="512M"
 
-root_part_size="25G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="45G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
 fs_type="ext4"
 
-disk="/dev/vda" #or /dev/vda for virt-manager
+disk="/dev/sda" #or /dev/vda for virt-manager
 
 
 #PREPARE DISKS
@@ -81,7 +81,7 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened-selinux-openrc/stage3-amd64-hardened-selinux-openrc-20240211T161834Z.tar.xz
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240211T161834Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
@@ -109,7 +109,7 @@ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/port
  touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
  echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64-v3/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 
  echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
  echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
@@ -124,8 +124,8 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  
  #KERNEL CONFIG
 
- chroot /mnt/gentoo/ emerge sys-kernel/linux-firmware
- #emerge sys-firmware/intel-microcode
+ chroot /mnt/gentoo emerge -avg sys-kernel/linux-firmware
+ chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
  echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
@@ -135,20 +135,20 @@ root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
 luks_uuid=$(blkid -o value -s UUID /dev/$disk'2')
 boot_uuid=$(blkid -o value -s UUID /dev/$disk'1')
 
-chroot /mnt/gentoo/ echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
+chroot /mnt/gentoo echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
-chroot /mnt/gentoo/ echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
+chroot /mnt/gentoo echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
 fi
 
-chroot /mnt/gentoo/ echo -e "UUID=$boot_uuid	  /efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
  
  mkdir -p /mnt/gentoo/etc/dracut.conf.d
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="lsm=selinux rd.luks.uuid='$luks_uuid 'root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="lsm=apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
@@ -158,18 +158,18 @@ echo $hostname > /mnt/gentoo/etc/hostname
 
  echo "$root_pw\n$root_pw" | passwd -q root
 
-chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup
+chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup iwd
 
 
 #emerge iwd
-#mkdir -p /etc/iwd
+mkdir -p /etc/iwd
 
-#touch /etc/iwd/main.conf
-#echo "[General]" > /etc/iwd/main.conf
-#echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
-#echo "[Network]" >> /etc/iwd/main.conf
+touch /etc/iwd/main.conf
+echo "[General]" > /etc/iwd/main.conf
+echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
+echo "[Network]" >> /etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
-#echo "NameResolvingService=none" >> /etc/iwd/main.conf
+echo "NameResolvingService=none" >> /etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /etc/iwd/main.conf
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
@@ -189,7 +189,7 @@ cp /mnt/gentoo/efi/EFI/Linux/*-dist.efi linux.efi
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 #relabeling -selinux
-chroot /mnt/gentoo rlpkg -a -r
+#chroot /mnt/gentoo rlpkg -a -r
 
 #fim
 
