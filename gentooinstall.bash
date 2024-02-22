@@ -82,7 +82,7 @@ fi
 
 cd /mnt/gentoo
 # wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240211T161834Z.tar.xz
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-systemd/stage3-amd64-systemd-20231210T170356Z.tar.xz
+#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-systemd/stage3-amd64-systemd-20231210T170356Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
@@ -129,8 +129,8 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
- #echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
-echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
+ echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
+#echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
@@ -160,8 +160,8 @@ echo $hostname > /mnt/gentoo/etc/hostname
 
  echo "$root_pw\n$root_pw" | passwd -q root
 
-#chroot /mnt/gentoo/ emerge -avg lvm2 systemd-utils cryptsetup iwd
-chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
+#chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
 
 #emerge iwd
 mkdir -p /etc/iwd
@@ -178,18 +178,18 @@ echo "NameResolvingService=none" >> /etc/iwd/main.conf
 #echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
 
 #chroot /mnt/gentoo/ emerge -aunDN @world
-chroot /mnt/gentoo/ emerge -avg sys-kernel/gentoo-kernel-bin
+chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
  #chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
 
-cp /mnt/gentoo/efi/EFI/Linux/*-dist.efi linux.efi
+cp /mnt/gentoo/efi/EFI/Linux/*dist.efi linux.efi
  
- chroot /mnt/gentoo/ efibootmgr -c --disk /dev/$disk --part 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+ efibootmgr -c -d /dev/$disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
-#chroot /mnt/gentoo/ rc-update add dmcrypt boot
-#chroot /mnt/gentoo/ rc-update add lvm boot
+chroot /mnt/gentoo/ rc-update add dmcrypt boot
+chroot /mnt/gentoo/ rc-update add lvm boot
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
 
