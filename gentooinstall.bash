@@ -120,7 +120,7 @@ chroot /mnt/gentoo/ emerge-webrsync
  echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
-echo 'VIDEO_CARDS="qxl"'
+echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf
 
 #openrc
 # echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
