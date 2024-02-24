@@ -14,7 +14,7 @@ user_pw="123" #user password
 
 efi_part_size="512M"
 
-root_part_size="45G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="18G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -81,6 +81,8 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/stage3-amd64-desktop-systemd-20231210T170356Z.tar.xz
+
 # wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240211T161834Z.tar.xz
 #wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-systemd/stage3-amd64-systemd-20231210T170356Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
@@ -96,41 +98,50 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
-touch /mnt/gentoo/etc/resolv.conf
-echo "nameserver 1.1.1.2" > /mnt/gentoo/etc/resolv.conf
-echo "nameserver 1.0.0.2" >> /mnt/gentoo/etc/resolv.conf
+#touch /mnt/gentoo/etc/resolv.conf
+#echo "nameserver 1.1.1.2" > /mnt/gentoo/etc/resolv.conf
+#echo "nameserver 1.0.0.2" >> /mnt/gentoo/etc/resolv.conf
+cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
+
 mkdir --parents /mnt/gentoo/etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 chroot /mnt/gentoo/ emerge-webrsync
 #sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 #chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
-echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
+#echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 
- mkdir -p /mnt/gentoo/etc/portage/binrepos.conf
- touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64-v3/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ #mkdir -p /mnt/gentoo/etc/portage/binrepos.conf
+ #touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ #echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ #echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+ #echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64-v3/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 
  echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
  echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
+echo 'VIDEO_CARDS="qxl"'
 
- echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
- chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+#openrc
+# echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
+# chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+#systemd
+ln -sf ../usr/share/zoneinfo/Europe/Brussels /mnt/gentoo/etc/localtime
+
  echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  chroot /mnt/gentoo/ locale-gen
+
  
  #KERNEL CONFIG
 
  chroot /mnt/gentoo emerge -avg sys-kernel/linux-firmware
- chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
+ #chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
+ #openrc
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
- echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
-#echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
+ #echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
+ echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
@@ -158,20 +169,21 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  
 echo $hostname > /mnt/gentoo/etc/hostname
 
- echo "$root_pw\n$root_pw" | passwd -q root
+ chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
 
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
-#chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
+#openrc
+#chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
+chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
 
 #emerge iwd
 mkdir -p /etc/iwd
 
-touch /etc/iwd/main.conf
-echo "[General]" > /etc/iwd/main.conf
-echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
-echo "[Network]" >> /etc/iwd/main.conf
+#touch /etc/iwd/main.conf
+#echo "[General]" > /etc/iwd/main.conf
+##echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
+#echo "[Network]" >> /etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
-echo "NameResolvingService=none" >> /etc/iwd/main.conf
+#echo "NameResolvingService=none" >> /etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /etc/iwd/main.conf
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
@@ -185,11 +197,11 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 
 cp /mnt/gentoo/efi/EFI/Linux/*dist.efi linux.efi
  
- efibootmgr -c -d /dev/$disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+ chroot /mnt/gentoo efibootmgr -c -d /dev/$disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
-chroot /mnt/gentoo/ rc-update add dmcrypt boot
-chroot /mnt/gentoo/ rc-update add lvm boot
+#chroot /mnt/gentoo/ rc-update add dmcrypt boot
+#chroot /mnt/gentoo/ rc-update add lvm boot
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
 
