@@ -185,7 +185,7 @@ chroot /mnt/gentoo/ rc-update add lvm boot
 
 #fim
 
-passwd root < echo $root_pw
+
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
