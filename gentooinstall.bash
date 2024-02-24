@@ -154,18 +154,18 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup
 #systemd
 chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
 
-mkdir -p /etc/iwd
+#mkdir -p /etc/iwd
 
-chroot /mnt/gentoo touch /etc/iwd/main.conf
-chroot /mnt/gentoo echo "[General]" > /etc/iwd/main.conf
-chroot /mnt/gentoo echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
-chroot /mnt/gentoo echo "[Network]" >> /etc/iwd/main.conf
+#chroot /mnt/gentoo touch /etc/iwd/main.conf
+#chroot /mnt/gentoo echo "[General]" > /etc/iwd/main.conf
+#chroot /mnt/gentoo echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
+#chroot /mnt/gentoo echo "[Network]" >> /etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
-chroot /mnt/gentoo echo "NameResolvingService=none" >> /etc/iwd/main.conf
+#chroot /mnt/gentoo echo "NameResolvingService=none" >> /etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /etc/iwd/main.conf
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
