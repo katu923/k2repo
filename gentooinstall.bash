@@ -81,10 +81,7 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/stage3-amd64-desktop-systemd-20231210T170356Z.tar.xz
-
-# wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240211T161834Z.tar.xz
-#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/current-stage3-amd64-systemd/stage3-amd64-systemd-20231210T170356Z.tar.xz
+wget https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240218T170410Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
@@ -98,9 +95,6 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
-#touch /mnt/gentoo/etc/resolv.conf
-#echo "nameserver 1.1.1.2" > /mnt/gentoo/etc/resolv.conf
-#echo "nameserver 1.0.0.2" >> /mnt/gentoo/etc/resolv.conf
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
 mkdir --parents /mnt/gentoo/etc/portage/repos.conf
@@ -108,13 +102,6 @@ cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gento
 chroot /mnt/gentoo/ emerge-webrsync
 #sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 #chroot /mnt/gentoo/ echo 'MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf
-#echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
-
- #mkdir -p /mnt/gentoo/etc/portage/binrepos.conf
- #touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- #echo '[binhost]' > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- #echo 'priority = 9999' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
- #echo 'sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64-v3/' >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 
  echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
  echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
@@ -123,10 +110,10 @@ chroot /mnt/gentoo/ emerge-webrsync
 echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf
 
 #openrc
-# echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
-# chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
+chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
 #systemd
-ln -sf ../usr/share/zoneinfo/Europe/Brussels /mnt/gentoo/etc/localtime
+#ln -sf ../usr/share/zoneinfo/Europe/Brussels /mnt/gentoo/etc/localtime
 
  echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
@@ -135,14 +122,12 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
  
  #KERNEL CONFIG
 
- chroot /mnt/gentoo emerge -avg sys-kernel/linux-firmware
- #chroot /mnt/gentoo emerge -avg sys-firmware/intel-microcode
- #openrc
+ chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+  #openrc
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
- #echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
- echo "sys-apps/systemd boot" > /mnt/gentoo/etc/portage/package.use/systemd
-
+ echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
+ 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
 luks_uuid=$(blkid -o value -s UUID $disk'2')
@@ -161,30 +146,26 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="lsm=apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
-
  
 echo $hostname > /mnt/gentoo/etc/hostname
 
- chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
-
 #openrc
-#chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
 #systemd
 chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
 
-#emerge iwd
-#mkdir -p /etc/iwd
+mkdir -p /etc/iwd
 
-#touch /etc/iwd/main.conf
-#echo "[General]" > /etc/iwd/main.conf
-##echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
-#echo "[Network]" >> /etc/iwd/main.conf
+chroot /mnt/gentoo touch /etc/iwd/main.conf
+chroot /mnt/gentoo echo "[General]" > /etc/iwd/main.conf
+chroot /mnt/gentoo echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
+chroot /mnt/gentoo echo "[Network]" >> /etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
-#echo "NameResolvingService=none" >> /etc/iwd/main.conf
+chroot /mnt/gentoo echo "NameResolvingService=none" >> /etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /etc/iwd/main.conf
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
@@ -194,19 +175,19 @@ chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
 chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER
 
- #chroot /mnt/gentoo/ emerge -avg sys-boot/efibootmgr
-
-cp /mnt/gentoo/efi/EFI/Linux/*dist.efi linux.efi
+ cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
  
  chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
-#chroot /mnt/gentoo/ rc-update add dmcrypt boot
-#chroot /mnt/gentoo/ rc-update add lvm boot
+chroot /mnt/gentoo/ rc-update add dmcrypt boot
+chroot /mnt/gentoo/ rc-update add lvm boot
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
 
 #fim
+
+passwd root < echo $root_pw
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
