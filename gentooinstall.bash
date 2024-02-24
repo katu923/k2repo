@@ -156,7 +156,7 @@ echo $hostname > /mnt/gentoo/etc/hostname
 #openrc
 chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup
 #systemd
-chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
+#chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
 
 #mkdir -p /etc/iwd
 
