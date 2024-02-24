@@ -154,9 +154,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup
-#systemd
-#chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr
 
 #mkdir -p /etc/iwd
 
