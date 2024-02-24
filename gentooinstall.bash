@@ -10,7 +10,7 @@ luks_pw="123" #password for disk encryption
 
 root_pw="123" #root password
 
-user_pw="123" #user password
+#user_pw="123" #user password
 
 efi_part_size="512M"
 
@@ -20,7 +20,7 @@ hostname="xpto"
 
 fs_type="ext4"
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
 
 #PREPARE DISKS
@@ -145,8 +145,8 @@ echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
-luks_uuid=$(blkid -o value -s UUID /dev/$disk'2')
-boot_uuid=$(blkid -o value -s UUID /dev/$disk'1')
+luks_uuid=$(blkid -o value -s UUID $disk'2')
+boot_uuid=$(blkid -o value -s UUID $disk'1')
 
 chroot /mnt/gentoo echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
 if [[ ! -z $root_part_size ]]; then
@@ -173,10 +173,11 @@ echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
 #chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup iwd
-chroot /mnt/gentoo/ emerge -avg lvm2 cryptsetup iwd efibootmgr
+#systemd
+chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup iwd efibootmgr systemd
 
 #emerge iwd
-mkdir -p /etc/iwd
+#mkdir -p /etc/iwd
 
 #touch /etc/iwd/main.conf
 #echo "[General]" > /etc/iwd/main.conf
@@ -197,7 +198,7 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 
 cp /mnt/gentoo/efi/EFI/Linux/*dist.efi linux.efi
  
- chroot /mnt/gentoo efibootmgr -c -d /dev/$disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+ chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
 #chroot /mnt/gentoo/ rc-update add dmcrypt boot
