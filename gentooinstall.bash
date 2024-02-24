@@ -4,7 +4,7 @@
 #you must change the variables to your taste
 
 
-#username="k2"
+username="k2"
 
 luks_pw="123" #password for disk encryption
 
@@ -185,7 +185,7 @@ chroot /mnt/gentoo/ rc-update add lvm boot
 
 #fim
 
-
+chroot /mnt/gentoo useradd -m -G users,wheel,audio,video -s /bin/bash $username
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
