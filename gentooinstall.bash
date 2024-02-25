@@ -185,7 +185,7 @@ chroot /mnt/gentoo/ rc-update add lvm boot
 
 #fim
 
-chroot /mnt/gentoo useradd -m -G users,wheel,audio,video -s /bin/bash $username
+chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
