@@ -14,7 +14,7 @@ root_pw="123" #root password
 
 efi_part_size="512M"
 
-root_part_size="18G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -81,7 +81,7 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-wget https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-openrc/stage3-amd64-openrc-20240218T170410Z.tar.xz
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20240225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
