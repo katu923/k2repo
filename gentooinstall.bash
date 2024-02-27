@@ -100,6 +100,9 @@ cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 mkdir --parents /mnt/gentoo/etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 chroot /mnt/gentoo/ emerge-webrsync
+
+touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+
 echo > "[binhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 echo >> "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
 echo >> "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
