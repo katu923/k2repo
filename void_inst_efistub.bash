@@ -20,7 +20,7 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="xfs" #only support ext4 or xfs
+fs_type="ext4" #only support ext4 or xfs
 
 libc="" #empty is glibc other value is musl
 
@@ -28,7 +28,7 @@ language="en_US.UTF-8"
 
 graphical="kde" #empty it will install only base system and apps_minimal
 
-disk="/dev/vda" #or /dev/vda for virt-manager
+disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="yes" # better leave this empty you can break your bios
 
@@ -188,7 +188,7 @@ echo "MODIFY_EFI_ENTRIES=1" > /mnt/etc/default/efibootmgr-kernel-hook
 # To allow efibootmgr to modify boot entries, set
 # MODIFY_EFI_ENTRIES=1
 # Kernel command-line options.  Example:
-echo 'OPTIONS="loglevel=4 apparmor=1 security=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
+echo 'OPTIONS="quiet lsm=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Disk where EFI Partition is.  Default is /dev/sda
 
 echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
