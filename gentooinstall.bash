@@ -189,6 +189,8 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
+chroot /mnt/gentoo/ rc-update add apparmor boot
+
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
 
