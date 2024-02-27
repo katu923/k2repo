@@ -117,7 +117,7 @@ echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
-echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"
+echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
 echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
 chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
