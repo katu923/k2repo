@@ -110,6 +110,7 @@ echo >> "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/1
 
  echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
  echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
+echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
