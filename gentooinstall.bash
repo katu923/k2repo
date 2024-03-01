@@ -101,11 +101,9 @@ mkdir --parents /mnt/gentoo/etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 chroot /mnt/gentoo/ emerge-webrsync
 
-touch /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
-
-echo > "[binhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
-echo >> "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
-echo >> "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoo.conf
+echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "priority = 1" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
 #sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
@@ -116,17 +114,15 @@ echo >> "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/1
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
-echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
+#echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
 echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
 chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
-#systemd
-#ln -sf ../usr/share/zoneinfo/Europe/Brussels /mnt/gentoo/etc/localtime
 
- echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
+echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
- chroot /mnt/gentoo/ locale-gen
+chroot /mnt/gentoo/ locale-gen
 
  
  #KERNEL CONFIG
@@ -155,7 +151,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'quiet lsm=apparmor kernel_cmdline="rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="quiet lsm=apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
@@ -163,17 +159,17 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd ufw 
 
-#mkdir -p /etc/iwd
+mkdir -p /mnt/gentoo/etc/iwd
 
-#chroot /mnt/gentoo touch /etc/iwd/main.conf
-#chroot /mnt/gentoo echo "[General]" > /etc/iwd/main.conf
-#chroot /mnt/gentoo echo "EnableNetworkConfiguration=true" >> /etc/iwd/main.conf
-#chroot /mnt/gentoo echo "[Network]" >> /etc/iwd/main.conf
-#echo "RoutePriorityOffset=200" >> /etc/iwd/main.conf
-#chroot /mnt/gentoo echo "NameResolvingService=none" >> /etc/iwd/main.conf
-#echo "EnableIPv6=false" >> /etc/iwd/main.conf
+touch /etc/iwd/main.conf
+echo "[General]" > /mnt/gentoo/etc/iwd/main.conf
+echo "EnableNetworkConfiguration=true" >> /mnt/gentoo/etc/iwd/main.conf
+echo "[Network]" >> /mnt/gentoo/etc/iwd/main.conf
+#echo "RoutePriorityOffset=200" >> /mnt/gentoo/etc/iwd/main.conf
+echo "NameResolvingService=none" >> /mnt/gentoo/etc/iwd/main.conf
+#echo "EnableIPv6=false" >> /mnt/gentoo/etc/iwd/main.conf
 
 #echo "target=home" >> /etc/conf.d/dmcrypt
 #echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
@@ -190,6 +186,8 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
+chroot /mnt/gentoo rc-update add ufw boot
+
 
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
