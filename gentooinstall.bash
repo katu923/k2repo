@@ -95,6 +95,8 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
+chroot /mnt/gentoo source /etc/profile
+
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
 mkdir --parents /mnt/gentoo/etc/portage/repos.conf
@@ -109,8 +111,7 @@ echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1
 sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
 
- echo 'FEATURES="${FEATURES} getbinpkg"' >> /mnt/gentoo/etc/portage/make.conf
- echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
+echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
@@ -159,7 +160,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd ufw doas sbctl
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd ufw doas sbctl cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -193,7 +194,8 @@ chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
 chroot /mnt/gentoo rc-update add ufw boot
-
+chroot /mnt/gentoo rc-update add cronie default
+chroot /mnt/gentoo rc-update add sysklogd default
 
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
