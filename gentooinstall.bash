@@ -163,7 +163,7 @@ chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparm
 
 mkdir -p /mnt/gentoo/etc/iwd
 
-touch /etc/iwd/main.conf
+touch /mnt/gentoo/etc/iwd/main.conf
 echo "[General]" > /mnt/gentoo/etc/iwd/main.conf
 echo "EnableNetworkConfiguration=true" >> /mnt/gentoo/etc/iwd/main.conf
 echo "[Network]" >> /mnt/gentoo/etc/iwd/main.conf
