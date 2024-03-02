@@ -108,7 +108,7 @@ echo "priority = 1" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
-sed -i 's@"-02 -pipe"@"-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
+sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
 
 echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
@@ -206,6 +206,9 @@ chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 #doas
 echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
+chroot /mnt/gentoo chown -c root:root /etc/doas.conf
+chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
+
 
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
