@@ -152,7 +152,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="quiet lsm=apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="quiet lsm=lockdown,capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid'"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
@@ -160,7 +160,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd ufw doas sbctl cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd ufw doas sbctl cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -196,6 +196,7 @@ chroot /mnt/gentoo/ rc-update add apparmor boot
 chroot /mnt/gentoo rc-update add ufw boot
 chroot /mnt/gentoo rc-update add cronie default
 chroot /mnt/gentoo rc-update add sysklogd default
+chroot /mnt/gentoo rc-update add auditd default
 
 #relabeling -selinux
 #chroot /mnt/gentoo rlpkg -a -r
