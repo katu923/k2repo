@@ -163,7 +163,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd ufw doas sbctl cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd firewalld doas sbctl cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -196,7 +196,7 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
-chroot /mnt/gentoo rc-update add ufw boot
+chroot /mnt/gentoo rc-update add firewalld boot
 chroot /mnt/gentoo rc-update add cronie default
 chroot /mnt/gentoo rc-update add sysklogd default
 chroot /mnt/gentoo rc-update add auditd default
