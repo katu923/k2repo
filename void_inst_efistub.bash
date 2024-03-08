@@ -28,9 +28,9 @@ language="en_US.UTF-8"
 
 graphical="kde" #empty it will install only base system and apps_minimal
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
-secure_boot="yes" # better leave this empty you can break your bios
+secure_boot="" # better leave this empty you can break your bios
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -117,8 +117,8 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 	mkfs.vfat $efi_part
-	mkdir -p /mnt/boot
-	mount $efi_part /mnt/boot
+	mkdir -p /mnt/efi
+	mount $efi_part /mnt/efi
 
 
 mkdir -p /mnt/var/db/xbps/keys
@@ -159,15 +159,16 @@ if [[ ! -z $root_part_size ]]; then
 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
 fi
 
-	echo -e "UUID=$boot_uuid	  /boot	    vfat	defaults	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$boot_uuid	  /efi	    vfat	defaults	0	2" >> /mnt/etc/fstab
 
 
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
-echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'uefi_secureboot_cert="/usr/share/secureboot/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'uefi_secureboot_key="/usr/share/secureboot/keys/db/db.key"' >> >> /mnt/etc/dracut.conf.d/10-boot.conf
+#echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+#echo 'uefi_secureboot_cert="/usr/share/secureboot/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+#echo 'uefi_secureboot_key="/usr/share/secureboot/keys/db/db.key"' >> >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # change sysctl
 echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
