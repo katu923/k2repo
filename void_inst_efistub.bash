@@ -1,4 +1,4 @@
-#!/bin/bash
+_stub#!/bin/bash
 #read this script carefully before use it!!
 #this only works with uefi and intel graphics
 #you must change the variables to your taste
@@ -165,7 +165,7 @@ fi
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
-#echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 #echo 'uefi_secureboot_cert="/usr/share/secureboot/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 #echo 'uefi_secureboot_key="/usr/share/secureboot/keys/db/db.key"' >> >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -189,26 +189,27 @@ echo "MODIFY_EFI_ENTRIES=1" > /mnt/etc/default/efibootmgr-kernel-hook
 # To allow efibootmgr to modify boot entries, set
 # MODIFY_EFI_ENTRIES=1
 # Kernel command-line options.  Example:
-echo 'OPTIONS="quiet lsm=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
+#echo 'OPTIONS="quiet lsm=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Disk where EFI Partition is.  Default is /dev/sda
 
 echo 'DISK="'$disk'"' >> /mnt/etc/default/efibootmgr-kernel-hook
 # Partition number of EFI Partition.  Default is 1
-echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
+#echo "PART=1" >> /mnt/etc/default/efibootmgr-kernel-hook
 
-sed -i 's@vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@#vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@g' /mnt/etc/kernel.d/post-install/50-efibootmgr
+#sed -i 's@vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@#vmlinuz-${VERSION} -u "${OPTIONS}"/vmlinuz-${VERSION} -u "${OPTIONS}"@g' /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-sed -i "s/efibootmgr -qo $bootorder/#efibootmgr -qo $bootorder/" /mnt/etc/kernel.d/post-install/50-efibootmgr
+#sed -i "s/efibootmgr -qo $bootorder/#efibootmgr -qo $bootorder/" /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+#echo 'efibootmgr -qc $args -L "Void Linux with kernel ${major_version}" -l /efi/EFi/void/linux-${VERSION}.efi -u "${OPTIONS}"' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
-echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
+#echo 'sbctl sign -s /boot/efi/EFI/void/linux-${VERSION}.efi' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 #echo 'efibootmgr -qo $bootorder' >> /mnt/etc/kernel.d/post-install/50-efibootmgr
 
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
-echo 'KERNEL_CMDLINE="loglevel=4 apparmor=1 security=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/dracut-uefi-hook
+#echo 'KERNEL_CMDLINE="loglevel=4 apparmor=1 security=apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/default/dracut-uefi-hook
+#falta a path do boot
 
 xbps-reconfigure -far /mnt/
 
