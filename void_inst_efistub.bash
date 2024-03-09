@@ -185,7 +185,7 @@ echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 mkdir -p /mnt/efi/EFI/Linux
 
 
-xbps-reconfigure -far /mnt/
+#xbps-reconfigure -far /mnt/
 
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
@@ -251,7 +251,7 @@ echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
-xbps-reconfigure -fr fontconfig /mnt/
+#xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
 echo "permit keepenv :wheel" > /mnt/etc/doas.conf
@@ -285,6 +285,8 @@ for dns in ${dns_list[@]}; do
   echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
 done
+
+xbps-reconfigure -far /mnt/ 
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
