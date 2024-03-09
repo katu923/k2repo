@@ -148,6 +148,8 @@ if [[ -z $libc ]]; then
     xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
+chroot /mnt/ ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
