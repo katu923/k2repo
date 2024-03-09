@@ -1,4 +1,4 @@
-_stub#!/bin/bash
+#!/bin/bash
 #read this script carefully before use it!!
 #this only works with uefi and intel graphics
 #you must change the variables to your taste
@@ -30,7 +30,7 @@ graphical="kde" #empty it will install only base system and apps_minimal
 
 disk="/dev/vda" #or /dev/vda for virt-manager
 
-secure_boot="" # better leave this empty you can break your bios
+secure_boot="" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -39,26 +39,25 @@ ARCH="x86_64"
 
 dns_list=("1.1.1.2" "1.0.0.2")
 
-apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony vlc"\
-" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils octoxbps xmirror"\
-" neofetch git unzip unrar flatpak pipewire wireplumber fish-shell chromium chromium-widevine"\
-" font-adobe-source-code-pro nftables runit-nftables vsv btop opendoas net-tools iwd iwgtk"
+apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
+" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
+" neofetch pipewire wireplumber font-adobe-source-code-pro ufw vsv btop opendoas net-tools iwd topgrade"
 
-apps_optional="libreoffice thunderbird rkhunter checksec lynis topgrade skype ffmpeg ffmpegthumbnailer tlp lm_sensors" 
+apps_optional="libreoffice firefox thunderbird rkhunter checksec lynis skype ffmpeg ffmpegthumbnailer lm_sensors" 
 
-apps_intel="mesa-dri mesa-vulkan-intel intel-video-accel vulkan-loader intel-ucode xf86-video-intel"
+apps_intel="mesa-dri intel-ucode"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
-" kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks flatpak-kcm kio-gdrive"
+" kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks plasma-firewall"
 
-ignore_pkgs=("plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
+ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
 
 #for test
-apps_minimal="nano apparmor vsv opendoas fish-shell iwd"
+apps_minimal="nano apparmor vsv opendoas iwd"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "iwd" "tlp" "nftables" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -159,15 +158,13 @@ if [[ ! -z $root_part_size ]]; then
 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
 fi
 
-	echo -e "UUID=$boot_uuid	  /efi	    vfat	defaults	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
 
 
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-#echo 'uefi_secureboot_cert="/usr/share/secureboot/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-#echo 'uefi_secureboot_key="/usr/share/secureboot/keys/db/db.key"' >> >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # change sysctl
@@ -177,7 +174,6 @@ echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
 
 if [[ ! -z $secure_boot ]]; then
 
-#secure boot in the bios must be in setup mode
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
@@ -186,10 +182,13 @@ fi
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 
+mkdir -p /mnt/efi/EFI/Linux
+
 xbps-reconfigure -far /mnt/
 
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
+
 if [[ $graphical == "kde" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
 
@@ -199,10 +198,7 @@ chroot /mnt ln -s /usr/share/applications/wireplumber.desktop /etc/xdg/autostart
 chroot /mnt ln -s /usr/share/applications/pipewire-pulse.desktop /etc/xdg/autostart/pipewire-pulse.desktop
 
 #octoxbps-notifier
-chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
-else
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
-fi
+#chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 
 
 for serv1 in ${rm_services[@]}; do
@@ -216,6 +212,11 @@ for serv2 in ${en_services[@]}; do
 	
 done
 
+else
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
+fi
+
+
 #apparmor
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
@@ -227,15 +228,15 @@ chroot /mnt chown $username:$username /home/$username/.bash_aliases
 echo "source /home/$username/.bash_aliases" >> /mnt/home/$username/.bashrc
 echo "neofetch" >> /mnt/home/$username/.bashrc
 
-echo "alias xi='sudo xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
-echo "alias xu='sudo xbps-install -Suy'" >> /mnt/home/$username/.bash_aliases
+echo "alias xi='doas xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
+echo "alias xu='doas xbps-install -Suy'" >> /mnt/home/$username/.bash_aliases
 echo "alias xs='xbps-query -Rs'" >> /mnt/home/$username/.bash_aliases
-echo "alias xr='sudo xbps-remove -oOR'" >> /mnt/home/$username/.bash_aliases
+echo "alias xr='doas xbps-remove -oOR'" >> /mnt/home/$username/.bash_aliases
 echo "alias xq='xbps-query'" >> /mnt/home/$username/.bash_aliases
 echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
-echo "alias dmesg='sudo dmesg'" >> /mnt/home/$username/.bash_aliases
-echo "alias logs='sudo svlogtail'" >> /mnt/home/$username/.bash_aliases
+echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
+echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -252,8 +253,6 @@ echo "[Network]" >> /mnt/etc/iwd/main.conf
 echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
-#fish shell
-chroot /mnt chsh -s /bin/fish $username
 
 #time zone
 chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
