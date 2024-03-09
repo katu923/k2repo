@@ -255,8 +255,9 @@ chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts
 
 #doas
 echo "permit keepenv :wheel" > /mnt/etc/doas.conf
-chroot /mnt mkdir /etc/iwd
-chroot /mnt touch /etc/iwd/main.conf
+
+mkdir /mnt/etc/iwd
+touch /mnt/etc/iwd/main.conf
 echo "[General]" > /mnt/etc/iwd/main.conf
 echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
 echo "[Network]" >> /mnt/etc/iwd/main.conf
