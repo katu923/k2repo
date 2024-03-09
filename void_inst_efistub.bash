@@ -184,6 +184,7 @@ echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 
 mkdir -p /mnt/efi/EFI/Linux
 
+
 xbps-reconfigure -far /mnt/
 
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
@@ -191,7 +192,6 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
-
 #pipewire
 chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
 chroot /mnt ln -s /usr/share/applications/wireplumber.desktop /etc/xdg/autostart/wireplumber.desktop
@@ -215,6 +215,17 @@ done
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
+
+#touch /mnt/etc/kernel.d/post-install/10-uefi-boot
+#echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
+#echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
+#chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
+
+touch /mnt/etc/kernel.d/post-install/99-uefi-boot
+echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
+echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
+echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
+chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 
 #apparmor
@@ -274,6 +285,8 @@ for dns in ${dns_list[@]}; do
   echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
 done
+
+efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
