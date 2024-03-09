@@ -43,7 +43,7 @@ apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chro
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
 " neofetch pipewire wireplumber font-adobe-source-code-pro ufw vsv btop opendoas net-tools iwd topgrade"
 
-apps_optional="libreoffice firefox thunderbird rkhunter checksec lynis skype ffmpeg ffmpegthumbnailer lm_sensors" 
+apps_optional="rkhunter checksec lynis lm_sensors" 
 
 apps_intel="mesa-dri intel-ucode"
 
