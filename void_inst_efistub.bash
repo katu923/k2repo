@@ -218,10 +218,10 @@ else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
 
-#touch /mnt/etc/kernel.d/post-install/10-uefi-boot
-#echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
-#echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
-#chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
+touch /mnt/etc/kernel.d/post-install/10-uefi-boot
+echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
+echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
+chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
@@ -292,7 +292,7 @@ done
 xbps-reconfigure -far /mnt/ 
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
-
+efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
