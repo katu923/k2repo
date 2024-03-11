@@ -37,7 +37,7 @@ void_repo="https://repo-fastly.voidlinux.org"
 
 ARCH="x86_64"
 
-dns_list=("1.1.1.2" "1.0.0.2")
+#dns_list=("1.1.1.2" "1.0.0.2")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
@@ -266,7 +266,7 @@ echo "[General]" > /mnt/etc/iwd/main.conf
 echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
 echo "[Network]" >> /mnt/etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /mnt/etc/iwd/main.conf
-echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
+#echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
 
@@ -285,11 +285,11 @@ done
 
 
 #dns
-for dns in ${dns_list[@]}; do
+#for dns in ${dns_list[@]}; do
 
-  echo "nameserver="$dns >> /mnt/etc/resolv.conf
+#  echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
-done
+#done
 
 xbps-reconfigure -far /mnt/ 
 
