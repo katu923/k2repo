@@ -22,6 +22,7 @@ fs_type="ext4"
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
+secure_boot="yes"
 
 #PREPARE DISKS
 
@@ -163,7 +164,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd firewalld doas sbctl cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -187,33 +188,39 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
  #create uefi boot entry
  chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
-#secure boot
-chroot /mnt/gentoo sbctl create-keys
-chroot /mnt/gentoo sbctl enroll-keys -m -i
-chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 
 #add services
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
-chroot /mnt/gentoo rc-update add firewalld boot
+#chroot /mnt/gentoo rc-update add firewalld boot
 chroot /mnt/gentoo rc-update add cronie default
 chroot /mnt/gentoo rc-update add sysklogd default
 chroot /mnt/gentoo rc-update add auditd default
 
-#relabeling -selinux
-#chroot /mnt/gentoo rlpkg -a -r
-
-#fim
-
 chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
+
 
 #doas
 echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
 chroot /mnt/gentoo chown -c root:root /etc/doas.conf
 chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
 
+touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 
+#secure boot
+if [[ ! -z $secure_boot ]]; then
+chroot /mnt/gentoo emerge -avgq sbctl
+chroot /mnt/gentoo sbctl create-keys
+chroot /mnt/gentoo sbctl enroll-keys -m -i
+chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
+echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+fi
+
+chroot /mnt/gentoo passwd root < cat $root_pw\n$root_pw
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
