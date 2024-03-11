@@ -41,7 +41,7 @@ dns_list=("1.1.1.2" "1.0.0.2")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
-" neofetch pipewire wireplumber font-adobe-source-code-pro ufw iptables-nft vsv btop opendoas net-tools iwd topgrade"
+" neofetch pipewire wireplumber font-adobe-source-code-pro ufw iptables-nft nftables vsv btop opendoas net-tools iwd topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors" 
 
@@ -49,7 +49,7 @@ apps_intel="mesa-dri xf86-video-qxl intel-ucode"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
-" kwalletmanager kolourpaint sddm-kcm partitionmanager kcalc plasma-disks plasma-firewall"
+" kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks plasma-firewall"
 
 ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
 
