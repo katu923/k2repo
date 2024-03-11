@@ -257,6 +257,8 @@ chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts
 
 #doas
 echo "permit keepenv :wheel" > /mnt/etc/doas.conf
+chroot /mnt chown -c root:root /etc/doas.conf
+chroot /mnt chmod -c 0400 /etc/doas.conf
 
 mkdir /mnt/etc/iwd
 touch /mnt/etc/iwd/main.conf
