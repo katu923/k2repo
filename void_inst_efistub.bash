@@ -45,7 +45,7 @@ apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chro
 
 apps_optional="rkhunter checksec lynis lm_sensors" 
 
-apps_intel="mesa-dri intel-ucode"
+apps_intel="mesa-dri xf86-video-qxl intel-ucode"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
