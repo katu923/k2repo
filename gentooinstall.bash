@@ -10,7 +10,7 @@ luks_pw="123" #password for disk encryption
 
 root_pw="123" #root password
 
-#user_pw="123" #user password
+user_pw="123" #user password
 
 efi_part_size="512M"
 
@@ -220,7 +220,11 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
-chroot /mnt/gentoo passwd root < cat $root_pw\n$root_pw
+
+cat << EOF | chroot /mnt/gentoo
+echo "$root_pw\n$root_pw" | passwd -q root
+echo "$user_pw\n$user_pw" | passwd -q $username
+EOF
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
@@ -230,7 +234,7 @@ if [[ $tmp == "y" ]]; then
 	 	umount -l /mnt/gentoo/dev{/shm,/pts,}
  	umount -R /mnt/gentoo
 # 	reboot 
-  #shutdown -r now
+  shutdown -r now
 fi
 
 echo -e "\nFinish\n"
