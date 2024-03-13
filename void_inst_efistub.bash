@@ -20,7 +20,7 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="ext4" #support ext4, xfs or btrfs - if btrfs root_part_size must be empty
+fs_type="btrfs" #support ext4, xfs or btrfs - if btrfs root_part_size must be empty
 
 BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,autodefrag"
 
