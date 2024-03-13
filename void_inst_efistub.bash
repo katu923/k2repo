@@ -111,7 +111,7 @@ mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async /dev/$hostn
 mkdir -p /mnt/{home,.snapshots}
 mount -o compress=zstd,noatime,space_cache=v2,subvol=@home /dev/$hostname/root /mnt/home
 mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots /dev/$hostname/root /mnt/.snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log /dev/$hostname/root /var/log
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log /dev/$hostname/root /mnt/var/log
 else
 
 
@@ -138,7 +138,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-if [[ $fs_type == "xfs" or $fs_type == "ext4" ]]; then
+if [[ $fs_type != "btrfs" ]]; then
  	echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
 else 
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs grub-btrfs grub-x86_64-efi dracut-uefi gummiboot-efistub sbctl
