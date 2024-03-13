@@ -20,7 +20,9 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="ext4" #only support ext4 or xfs
+fs_type="ext4" #support ext4, xfs or btrfs - if btrfs root_part_size must be empty
+
+BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,autodefrag"
 
 libc="" #empty is glibc other value is musl
 
@@ -100,15 +102,16 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
  if [[ $fs_type == "btrfs" ]]; then
+ 
 btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@var_log
 btrfs subvolume create /mnt/@snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async $luks_part /mnt
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async /dev/$hostname/root /mnt
 mkdir -p /mnt/{home,.snapshots}
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@home $luks_part /mnt/home
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots $luks_part /mnt/.snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log $luks_part /var/log
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@home /dev/$hostname/root /mnt/home
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots /dev/$hostname/root /mnt/.snapshots
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log /dev/$hostname/root /var/log
 else
 
 
@@ -170,6 +173,7 @@ luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 
+if [[ $fs_type != "btrfs" ]]; then
 echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
@@ -177,6 +181,17 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
+else
+cat << EOF > /etc/fstab
+    UUID=$boot_uuid    /efi     vfat     defaults,noatime     0 2
+    UUID=$luks_root_uuid    /             btrfs    $BTRFS_OPTS,subvol=@ 0 1 
+    UUID=$luks_root_uuid    /home         btrfs    $BTRFS_OPTS,subvol=@home 0 2 
+    UUID=$luks_root_uuid    /.snapshots   btrfs    $BTRFS_OPTS,subvol=@snapshots 0 2 
+    UUID=$luks_root_uuid    /var/log      btrfs    $BTRFS_OPTS,subvol=@var_log 0 2
+    tmpfs              /tmp          tmpfs    defaults,nosuid,nodev     0 0 
+EOF
+
+fi
 
 
 #add hostonly to dracut
@@ -307,10 +322,18 @@ done
   	
 #done
 
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
+
+ chroot /mnt grub-makeconfig -o /boot/grub/grub.cfg
+
 xbps-reconfigure -far /mnt/ 
+
+if [[ $fs_type != "btrfs" ]]; then
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
+
+ fi
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
