@@ -193,12 +193,13 @@ EOF
 
 fi
 
-
+if [[ $fs_type != "btrfs" ]]; then
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
 
 # change sysctl
 echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
@@ -212,11 +213,12 @@ chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
 fi
 
+if [[ $fs_type != "btrfs" ]]; then
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 
 mkdir -p /mnt/efi/EFI/Linux
-
+fi
 
 #xbps-reconfigure -far /mnt/
 
@@ -248,7 +250,7 @@ done
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
-
+if [[ $fs_type != "btrfs" ]]; then
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -259,7 +261,7 @@ echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
-
+fi
 
 #apparmor
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
