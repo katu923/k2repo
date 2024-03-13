@@ -99,8 +99,21 @@ if [[ ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
 
+ if [[ $fs_type == "btrfs" ]]; then
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@var_log
+btrfs subvolume create /mnt/@snapshots
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async $luks_part /mnt
+mkdir -p /mnt/{home,.snapshots}
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@home $luks_part /mnt/home
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots $luks_part /mnt/.snapshots
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log $luks_part /var/log
+else
+
 
 mount /dev/$hostname/root /mnt
+fi
 
 for dir in dev proc sys run; do
 
@@ -122,8 +135,11 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-
+if [[ $fs_type == "xfs" or $fs_type == "ext4" ]]; then
  	echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
+else 
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs grub-btrfs grub-x86_64-efi dracut-uefi gummiboot-efistub sbctl
+fi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
