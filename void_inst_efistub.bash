@@ -283,7 +283,7 @@ chroot /mnt touch /etc/xbps.d/99-ignorepkgs.conf
 for pkg in ${ignore_pkgs[@]}; do
 
   echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
-  chroot /mnt xbps-remove -oOR $pkg	
+  chroot /mnt xbps-remove -oOR $pkg -y	
 done
 
 
