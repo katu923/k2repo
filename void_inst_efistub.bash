@@ -28,7 +28,7 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="kde" #empty it will install only base system and apps_minimal
+graphical="" #empty it will install only base system and apps_minimal
 
 disk="/dev/vda" #or /dev/vda for virt-manager
 
