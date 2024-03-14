@@ -86,6 +86,7 @@ echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
 vgcreate $hostname /dev/mapper/cryptroot
 
+if [[ $fs_type != "btrfs" ]]; then
 if [[ -z $root_part_size  ]]; then
 
 	lvcreate --name root -l 100%FREE $hostname
@@ -93,12 +94,14 @@ else
 	lvcreate --name root -L $root_part_size $hostname
 	lvcreate --name home -l 100%FREE $hostname
 fi
+fi
 
 mkfs.$fs_type -qL root /dev/$hostname/root
-
+if [[ $fs_type != "btrfs" ]]; then
 if [[ ! -z $root_part_size ]]; then
 
 	mkfs.$fs_type -qL home /dev/$hostname/home
+fi
 fi
 
  if [[ $fs_type == "btrfs" ]]; then
@@ -126,11 +129,12 @@ for dir in dev proc sys run; do
 done
 
 
-if [[ ! -z $root_part_size ]]; then
+ if [[ $fs_type != "btrfs" ]]; then
+  if [[ ! -z $root_part_size ]]; then
 	mkdir -p /mnt/home
 	mount /dev/$hostname/home /mnt/home
 fi
-
+fi
 	mkfs.vfat $efi_part
 	mkdir -p /mnt/efi
 	mount $efi_part /mnt/efi
@@ -138,11 +142,8 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-if [[ $fs_type != "btrfs" ]]; then
- 	echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
-else 
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs grub-btrfs grub-x86_64-efi dracut-uefi gummiboot-efistub sbctl
-fi
+
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -193,13 +194,12 @@ EOF
 
 fi
 
-if [[ $fs_type != "btrfs" ]]; then
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
+
 
 # change sysctl
 echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
@@ -213,12 +213,11 @@ chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
 fi
 
-if [[ $fs_type != "btrfs" ]]; then
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 
 mkdir -p /mnt/efi/EFI/Linux
-fi
+
 
 #xbps-reconfigure -far /mnt/
 
@@ -324,18 +323,17 @@ done
   	
 #done
 
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
+#chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
 
- chroot /mnt grub-makeconfig -o /boot/grub/grub.cfg
+ #chroot /mnt grub-makeconfig -o /boot/grub/grub.cfg
 
 xbps-reconfigure -far /mnt/ 
 
-if [[ $fs_type != "btrfs" ]]; then
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 
- fi
+
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
