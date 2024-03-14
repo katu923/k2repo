@@ -283,7 +283,7 @@ echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
-chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
+#chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
