@@ -41,7 +41,7 @@ ARCH="x86_64"
 #dns_list=("1.1.1.2" "1.0.0.2")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
-" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
+" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror firefox thunderbird"\
 " neofetch pipewire wireplumber font-adobe-source-code-pro ufw iptables-nft nftables vsv btop opendoas net-tools iwd topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors" 
