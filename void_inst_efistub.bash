@@ -183,7 +183,7 @@ fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
 else
-cat << EOF > /etc/fstab
+cat << EOF > /mnt/etc/fstab
     UUID=$boot_uuid    /efi     vfat     defaults,noatime     0 2
     UUID=$luks_root_uuid    /             btrfs    $BTRFS_OPTS,subvol=@ 0 1 
     UUID=$luks_root_uuid    /home         btrfs    $BTRFS_OPTS,subvol=@home 0 2 
