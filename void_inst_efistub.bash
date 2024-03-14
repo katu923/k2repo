@@ -164,9 +164,7 @@ fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
 
-	echo -e "tmpfs	/tmp	tmpfs	defaults,nosuid,nodev	0	0" >> /mnt/etc/fstab
-
-
+	
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
