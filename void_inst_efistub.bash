@@ -20,9 +20,8 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="btrfs" #support ext4, xfs or btrfs - if btrfs root_part_size must be empty
+fs_type="xfs" #support ext4 or xfs
 
-BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,autodefrag"
 
 libc="" #empty is glibc other value is musl
 
@@ -32,7 +31,7 @@ graphical="" #empty it will install only base system and apps_minimal
 
 disk="/dev/vda" #or /dev/vda for virt-manager
 
-secure_boot="" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
+secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -84,10 +83,8 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-
-
-if [[ $fs_type != "btrfs" ]]; then
 vgcreate $hostname /dev/mapper/cryptroot
+
 if [[ -z $root_part_size  ]]; then
 
 	lvcreate --name root -l 100%FREE $hostname
@@ -95,32 +92,18 @@ else
 	lvcreate --name root -L $root_part_size $hostname
 	lvcreate --name home -l 100%FREE $hostname
 fi
-fi
+
 
 mkfs.$fs_type -qL root /dev/$hostname/root
-if [[ $fs_type != "btrfs" ]]; then
 if [[ ! -z $root_part_size ]]; then
 
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
-fi
 
- if [[ $fs_type == "btrfs" ]]; then
+
  
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@var_log
-btrfs subvolume create /mnt/@snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async $luks_part /mnt
-mkdir -p /mnt/{home,.snapshots}
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@home $luks_part/mnt/home
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots $luks_part /mnt/.snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log $luks_part /mnt/var/log
-else
-
 
 mount /dev/$hostname/root /mnt
-fi
 
 for dir in dev proc sys run; do
 
@@ -130,11 +113,9 @@ for dir in dev proc sys run; do
 done
 
 
- if [[ $fs_type != "btrfs" ]]; then
   if [[ ! -z $root_part_size ]]; then
 	mkdir -p /mnt/home
 	mount /dev/$hostname/home /mnt/home
-fi
 fi
 	mkfs.vfat $efi_part
 	mkdir -p /mnt/efi
@@ -143,7 +124,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs grub-btrfs grub-x86_64-efi dracut-uefi gummiboot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
 
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -175,7 +156,6 @@ luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 
-if [[ $fs_type != "btrfs" ]]; then
 echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
@@ -183,19 +163,9 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
-else
 
-luks_uuid=$(blkid -o value -s UUID  /mnt/dev/$luks_part)
-cat << EOF > /mnt/etc/fstab
-    UUID=$boot_uuid    /efi     vfat     defaults,noatime     0 2
-    UUID=$luks_uuid    /             btrfs    $BTRFS_OPTS,subvol=@ 0 1 
-    UUID=$luks_uuid    /home         btrfs    $BTRFS_OPTS,subvol=@home 0 2 
-    UUID=$luks_uuid    /.snapshots   btrfs    $BTRFS_OPTS,subvol=@snapshots 0 2 
-    UUID=$luks_uuid    /var/log      btrfs    $BTRFS_OPTS,subvol=@var_log 0 2
-    tmpfs              /tmp          tmpfs    defaults,nosuid,nodev     0 0 
-EOF
+	echo -e "tmpfs	/tmp	tmpfs	defaults,nosuid,nodev	0	0" >> /mnt/etc/fstab
 
-fi
 
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -324,10 +294,6 @@ done
 #  echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
 #done
-
-#chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
-
- #chroot /mnt grub-makeconfig -o /boot/grub/grub.cfg
 
 xbps-reconfigure -far /mnt/ 
 
