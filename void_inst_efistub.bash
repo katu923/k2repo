@@ -84,9 +84,10 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-vgcreate $hostname /dev/mapper/cryptroot
+
 
 if [[ $fs_type != "btrfs" ]]; then
+vgcreate $hostname /dev/mapper/cryptroot
 if [[ -z $root_part_size  ]]; then
 
 	lvcreate --name root -l 100%FREE $hostname
@@ -110,11 +111,11 @@ btrfs subvolume create /mnt/@
 btrfs subvolume create /mnt/@home
 btrfs subvolume create /mnt/@var_log
 btrfs subvolume create /mnt/@snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async /dev/$hostname/root /mnt
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@,discard=async $luks_part /mnt
 mkdir -p /mnt/{home,.snapshots}
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@home /dev/$hostname/root /mnt/home
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots /dev/$hostname/root /mnt/.snapshots
-mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log /dev/$hostname/root /mnt/var/log
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@home $luks_part/mnt/home
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@snapshots $luks_part /mnt/.snapshots
+mount -o compress=zstd,noatime,space_cache=v2,subvol=@var_log $luks_part /mnt/var/log
 else
 
 
@@ -183,12 +184,14 @@ fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
 else
+
+luks_uuid=$(blkid -o value -s UUID  /mnt/dev/$luks_part)
 cat << EOF > /mnt/etc/fstab
     UUID=$boot_uuid    /efi     vfat     defaults,noatime     0 2
-    UUID=$luks_root_uuid    /             btrfs    $BTRFS_OPTS,subvol=@ 0 1 
-    UUID=$luks_root_uuid    /home         btrfs    $BTRFS_OPTS,subvol=@home 0 2 
-    UUID=$luks_root_uuid    /.snapshots   btrfs    $BTRFS_OPTS,subvol=@snapshots 0 2 
-    UUID=$luks_root_uuid    /var/log      btrfs    $BTRFS_OPTS,subvol=@var_log 0 2
+    UUID=$luks_uuid    /             btrfs    $BTRFS_OPTS,subvol=@ 0 1 
+    UUID=$luks_uuid    /home         btrfs    $BTRFS_OPTS,subvol=@home 0 2 
+    UUID=$luks_uuid    /.snapshots   btrfs    $BTRFS_OPTS,subvol=@snapshots 0 2 
+    UUID=$luks_uuid    /var/log      btrfs    $BTRFS_OPTS,subvol=@var_log 0 2
     tmpfs              /tmp          tmpfs    defaults,nosuid,nodev     0 0 
 EOF
 
