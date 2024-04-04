@@ -41,7 +41,7 @@ ARCH="x86_64"
 #dns_list=("1.1.1.2" "1.0.0.2")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
-" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror"\
+" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " neofetch pipewire wireplumber font-adobe-source-code-pro ufw iptables-nft nftables vsv btop opendoas net-tools iwd topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors firefox thunderbird skype" 
@@ -187,9 +187,6 @@ echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 
 mkdir -p /mnt/efi/EFI/Linux
 
-
-#xbps-reconfigure -far /mnt/
-
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
@@ -228,6 +225,11 @@ echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
+
+#rc.conf
+echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
+echo 'FONT="ter-v22n"' >> /mnt/etc/rc.conf
+echo 'TIMEZONE="Europe/Lisbon"' >> /mnt/etc/rc.conf
 
 
 #apparmor
