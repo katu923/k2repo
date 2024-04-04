@@ -81,7 +81,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
+echo $luks_pw | cryptsetup -q luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
 vgcreate $hostname /dev/mapper/cryptroot
 
@@ -100,8 +100,6 @@ if [[ ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
 
-
- 
 
 mount /dev/$hostname/root /mnt
 
@@ -132,8 +130,8 @@ echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base
 chroot /mnt chown root:root /
 chroot /mnt chmod 755 /
 
-chroot /mnt useradd $username
-chroot /mnt usermod -aG $user_groups $username
+chroot /mnt useradd -m -g users -G $user_groups $username -s /bin/bash
+
 
 cat << EOF | chroot /mnt
 echo "$root_pw\n$root_pw" | passwd -q root
@@ -170,7 +168,7 @@ echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-
+echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # change sysctl
 echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
@@ -258,7 +256,7 @@ echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
 #xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
-echo "permit keepenv :wheel" > /mnt/etc/doas.conf
+echo "permit persist :wheel" > /mnt/etc/doas.conf
 chroot /mnt chown -c root:root /etc/doas.conf
 chroot /mnt chmod -c 0400 /etc/doas.conf
 
