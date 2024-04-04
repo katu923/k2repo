@@ -16,7 +16,7 @@ user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size="512M"
 
-root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="40G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -27,9 +27,9 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="" #empty it will install only base system and apps_minimal
+graphical="kde" #empty it will install only base system and apps_minimal
 
-disk="/dev/vda" #or /dev/vda for virt-manager
+disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
