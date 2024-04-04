@@ -42,23 +42,24 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
-" neofetch pipewire wireplumber font-adobe-source-code-pro ufw iptables-nft nftables vsv btop opendoas net-tools iwd topgrade"
+" neofetch pipewire wireplumber font-adobe-source-code-pro nftables vsv htop opendoas net-tools iwd topgrade"
 
-apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird skype vlc libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
+apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird  bogofilter skype vlc ffmpeg"\
+" bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
 
 apps_intel="mesa-dri xf86-video-intel libva-intel-driver intel-ucode intel-gpu-tools"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
-" kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks plasma-firewall"
+" kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs"
 
-ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "openssh")
+ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "nftables" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
