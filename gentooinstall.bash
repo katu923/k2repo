@@ -46,9 +46,9 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q --cipher aes-xts-plain64 --key-size 256 --hash sha256 --iter-time 5000 --use-random --type luks2 luksFormat $luks_part
-echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-vgcreate $hostname /dev/mapper/cryptroot
+echo $luks_pw | cryptsetup -q luksFormat $luks_part
+echo $luks_pw | cryptsetup --type luks2 open $luks_part crypt
+vgcreate $hostname /dev/mapper/crypt
 
 if [[ -z $root_part_size  ]]; then
 
@@ -115,7 +115,7 @@ echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
-#echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
+echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
 echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
@@ -155,7 +155,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'kernel_cmdline="quiet lsm=lockdown,capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- 
+ echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
