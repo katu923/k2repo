@@ -18,7 +18,7 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="ext4" #xfs or ext4
+fs_type="xfs" #xfs or ext4
 
 disk="/dev/vda" #or /dev/vda for virt-manager
 
