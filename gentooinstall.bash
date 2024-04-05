@@ -14,11 +14,11 @@ user_pw="123" #user password
 
 efi_part_size="512M"
 
-root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="40G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
-fs_type="ext4"
+fs_type="ext4" #xfs or ext4
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
@@ -219,7 +219,7 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
-cat << EOF | chroot /mnt/gentoo
+chroot /mnt/gentoo
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
