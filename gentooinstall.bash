@@ -14,13 +14,13 @@ user_pw="123" #user password
 
 efi_part_size="512M"
 
-root_part_size="40G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
 fs_type="ext4" #xfs or ext4
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
 secure_boot="yes" # better to leave this empty  
 
@@ -153,7 +153,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
  echo 'hostonly="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="quiet lsm=lockdown,capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
  mkdir -p /mnt/gentoo/efi/EFI/Linux
@@ -220,7 +220,7 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
-
+chroot /mnt/gentoo useradd -m -g users -G wheel $username -s /bin/bash
 chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
 chroot /mnt/gentoo echo "$user_pw\n$user_pw" | passwd -q $username
 
