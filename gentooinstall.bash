@@ -82,7 +82,9 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20240225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
+links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
+
+#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20240225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
