@@ -165,7 +165,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr firewalld apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -196,7 +196,7 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
-chroot /mnt/gentoo rc-update add firewalld boot
+#chroot /mnt/gentoo rc-update add firewalld boot
 chroot /mnt/gentoo rc-update add cronie default
 chroot /mnt/gentoo rc-update add sysklogd default
 #chroot /mnt/gentoo rc-update add auditd default
@@ -222,7 +222,7 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
-chroot /mnt/gentoo useradd -m -g users -G wheel $username -s /bin/bash
+
 chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
 chroot /mnt/gentoo echo "$user_pw\n$user_pw" | passwd -q $username
 
