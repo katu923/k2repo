@@ -22,7 +22,7 @@ fs_type="ext4" #xfs or ext4
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes"
+secure_boot="yes" # better to leave this empty  
 
 #PREPARE DISKS
 
@@ -163,7 +163,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr audit apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr firewalld apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -175,12 +175,14 @@ echo "[Network]" >> /mnt/gentoo/etc/iwd/main.conf
 echo "NameResolvingService=none" >> /mnt/gentoo/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/gentoo/etc/iwd/main.conf
 
-#echo "target=home" >> /etc/conf.d/dmcrypt
-#echo 'source="/dev/vda3"' >> /etc/conf.d/dmcrypt
+#resolv.conf --quad9
+echo "nameserver 9.9.9.11" > /mnt/gentoo/etc/resolv.conf
+echo "nameserver 149.112.112.11" >> /mnt/gentoo/etc/resolv.conf
+
 
 #chroot /mnt/gentoo/ emerge -aunDN @world
 chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
-#CONFIG BOOTLOADER
+#CONFIG BOOTLOADER - uefi
 
  cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
  
@@ -192,13 +194,12 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 chroot /mnt/gentoo/ rc-update add dmcrypt boot
 chroot /mnt/gentoo/ rc-update add lvm boot
 chroot /mnt/gentoo/ rc-update add apparmor boot
-#chroot /mnt/gentoo rc-update add firewalld boot
+chroot /mnt/gentoo rc-update add firewalld boot
 chroot /mnt/gentoo rc-update add cronie default
 chroot /mnt/gentoo rc-update add sysklogd default
-chroot /mnt/gentoo rc-update add auditd default
+#chroot /mnt/gentoo rc-update add auditd default
 
 chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
-
 
 #doas
 echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
@@ -219,10 +220,10 @@ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
-chroot /mnt/gentoo
-echo "$root_pw\n$root_pw" | passwd -q root
-echo "$user_pw\n$user_pw" | passwd -q $username
-EOF
+
+chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
+chroot /mnt/gentoo echo "$user_pw\n$user_pw" | passwd -q $username
+
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
