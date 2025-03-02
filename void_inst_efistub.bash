@@ -42,7 +42,7 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
-" neofetch pipewire wireplumber font-adobe-source-code-pro nftables runit-nftables vsv htop opendoas net-tools iwd topgrade"
+" neofetch pipewire wireplumber font-adobe-source-code-pro ufw gufw vsv htop opendoas net-tools iwd topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogofilter skype vlc ffmpeg"\
 " bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
@@ -59,7 +59,7 @@ ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nv
 apps_minimal="nano apparmor vsv opendoas iwd"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "nftables" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm")
 
 
 if [[ $disk == *"sd"* ]]; then
