@@ -132,10 +132,20 @@ chroot /mnt/gentoo/ locale-gen
 
  chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
   #openrc
- echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/installkernel
- echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/lvm2
- echo "sys-apps/systemd-utils boot kernel-install" > /mnt/gentoo/etc/portage/package.use/systemd-utils
- 
+ #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
+ #systemd
+ echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-apps/systemd boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
+ #chroot /mnt/gentoo/ emerge -avgq1 installkernel
+
+ chroot /mnt/gentoo/ systemd-machine-id-setup
+ chroot /mnt/gentoo/ systemd-firstboot --prompt
+ chroot /mnt/gentoo/ systemctl preset-all --preset-mode=enable-only
+ #chroot /mnt/gentoo/ bootctl install
+
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
 luks_uuid=$(blkid -o value -s UUID $disk'2')
@@ -165,7 +175,9 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+#chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+#systemd
+chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -193,13 +205,16 @@ chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 
 
 #add services
-chroot /mnt/gentoo/ rc-update add dmcrypt boot
-chroot /mnt/gentoo/ rc-update add lvm boot
-chroot /mnt/gentoo/ rc-update add apparmor boot
+#chroot /mnt/gentoo/ rc-update add dmcrypt boot
+#chroot /mnt/gentoo/ rc-update add lvm boot
+#chroot /mnt/gentoo/ rc-update add apparmor boot
 #chroot /mnt/gentoo rc-update add firewalld boot
-chroot /mnt/gentoo rc-update add cronie default
-chroot /mnt/gentoo rc-update add sysklogd default
+#chroot /mnt/gentoo rc-update add cronie default
+#chroot /mnt/gentoo rc-update add sysklogd default
 #chroot /mnt/gentoo rc-update add auditd default
+
+#systemd
+chroot /mnt/gentoo systemctl enable lvm2-monitor.service
 
 chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
