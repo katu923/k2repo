@@ -138,8 +138,8 @@ chroot /mnt/gentoo/ locale-gen
  #systemd
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-apps/systemd boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
- #chroot /mnt/gentoo/ emerge -avgq1 installkernel
+ echo "sys-apps/systemd boot" >> /mnt/gentoo/etc/portage/package.use/system
+ chroot /mnt/gentoo/ emerge -avgq installkernel
 
  chroot /mnt/gentoo/ systemd-machine-id-setup
  chroot /mnt/gentoo/ systemd-firstboot --prompt
