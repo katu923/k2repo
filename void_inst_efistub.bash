@@ -49,7 +49,7 @@ apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogo
 
 apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
 
-apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
+apps_kde="kde-plasma kde-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
 " kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs octoxbps"
 
