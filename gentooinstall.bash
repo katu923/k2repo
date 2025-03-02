@@ -130,7 +130,7 @@ chroot /mnt/gentoo/ locale-gen
  
  #KERNEL CONFIG
 
- chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+ #chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
   #openrc
  #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
  #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
@@ -178,7 +178,7 @@ echo $hostname > /mnt/gentoo/etc/hostname
 #openrc
 #chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 #systemd
-chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup efibootmgr iwd doas
 
 mkdir -p /mnt/gentoo/etc/iwd
 
