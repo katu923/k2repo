@@ -42,16 +42,16 @@ ARCH="x86_64"
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
-" neofetch pipewire wireplumber font-adobe-source-code-pro ufw gufw vsv htop opendoas net-tools iwd topgrade"
+" fastfetch pipewire wireplumber font-adobe-source-code-pro ufw gufw vsv htop opendoas net-tools topgrade"
 
-apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogofilter skype vlc ffmpeg"\
+apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogofilter vlc ffmpeg"\
 " bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
 
 apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
 
 apps_kde="kde5 kde5-baseapps kcron ark print-manager spectacle kdeconnect okular"\
 " plasma-wayland-protocols xdg-desktop-portal-kde plasma-applet-active-window-control skanlite gwenview"\
-" kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs"
+" kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs octoxbps"
 
 ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
@@ -199,7 +199,7 @@ chroot /mnt ln -s /usr/share/applications/wireplumber.desktop /etc/xdg/autostart
 chroot /mnt ln -s /usr/share/applications/pipewire-pulse.desktop /etc/xdg/autostart/pipewire-pulse.desktop
 
 #octoxbps-notifier
-#chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
+chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 
 
 for serv1 in ${rm_services[@]}; do
@@ -263,11 +263,11 @@ echo "permit persist :wheel" > /mnt/etc/doas.conf
 chroot /mnt chown -c root:root /etc/doas.conf
 chroot /mnt chmod -c 0400 /etc/doas.conf
 
-mkdir /mnt/etc/iwd
-touch /mnt/etc/iwd/main.conf
-echo "[General]" > /mnt/etc/iwd/main.conf
-echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
-echo "[Network]" >> /mnt/etc/iwd/main.conf
+#mkdir /mnt/etc/iwd
+#touch /mnt/etc/iwd/main.conf
+#echo "[General]" > /mnt/etc/iwd/main.conf
+#echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
+#echo "[Network]" >> /mnt/etc/iwd/main.conf
 #echo "RoutePriorityOffset=200" >> /mnt/etc/iwd/main.conf
 #echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
 #echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
