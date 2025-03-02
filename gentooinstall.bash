@@ -82,9 +82,9 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
-
-#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20240225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
+#links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
+wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250223T170333Z/stage3-amd64-desktop-systemd-20250223T170333Z.tar.xz.asc
+#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
@@ -103,11 +103,11 @@ cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
 mkdir --parents /mnt/gentoo/etc/portage/repos.conf
 cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
-chroot /mnt/gentoo/ emerge-webrsync
+chroot /mnt/gentoo/ emerge-webrsync && getuto
 
 echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 echo "priority = 1" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/17.1/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
 sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
@@ -117,7 +117,7 @@ echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
-echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
+#echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
 echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
