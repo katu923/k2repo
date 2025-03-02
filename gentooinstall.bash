@@ -144,6 +144,7 @@ chroot /mnt/gentoo/ locale-gen
  chroot /mnt/gentoo/ systemd-machine-id-setup
  chroot /mnt/gentoo/ systemd-firstboot --prompt
  chroot /mnt/gentoo/ systemctl preset-all --preset-mode=enable-only
+ chroot /mnt/gentoo/ systemctl preset-all
  #chroot /mnt/gentoo/ bootctl install
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
