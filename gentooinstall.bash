@@ -138,7 +138,7 @@ chroot /mnt/gentoo/ locale-gen
  #systemd
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-apps/systemd cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
  chroot /mnt/gentoo/ emerge -avgq installkernel
 
  chroot /mnt/gentoo/ systemd-machine-id-setup
