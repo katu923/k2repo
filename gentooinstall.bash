@@ -97,7 +97,7 @@ mount --make-rslave /mnt/gentoo/dev
 mount --bind /run /mnt/gentoo/run
 mount --make-slave /mnt/gentoo/run 
 
-chroot /mnt/gentoo source /etc/profile
+#chroot /mnt/gentoo source /etc/profile
 
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
