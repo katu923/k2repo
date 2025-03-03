@@ -178,7 +178,7 @@ echo $hostname > /mnt/gentoo/etc/hostname
 #openrc
 #chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 #systemd
-chroot /mnt/gentoo/ emerge -avgq lvm2 cryptsetup efibootmgr iwd doas
+chroot /mnt/gentoo/ emerge -avgq efibootmgr iwd doas
 
 mkdir -p /mnt/gentoo/etc/iwd
 
