@@ -8,9 +8,9 @@ username="k2"
 
 luks_pw="123" #password for disk encryption
 
-root_pw="123" #root password
+#root_pw="123" #root password
 
-user_pw="123" #user password
+#user_pw="123" #user password
 
 efi_part_size="512M"
 
@@ -116,7 +116,7 @@ echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
- echo 'ACCEPT_LICENSE="-* @FREE @BINARY-REDISTRIBUTABLE"' >> /mnt/gentoo/etc/portage/make.conf
+ echo 'ACCEPT_LICENSE="*"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
@@ -130,7 +130,7 @@ chroot /mnt/gentoo/ locale-gen
  
  #KERNEL CONFIG
 
- #chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+ chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
   #openrc
  #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
  #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
@@ -239,8 +239,9 @@ echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst
 fi
 
 
-chroot /mnt/gentoo echo "$root_pw\n$root_pw" | passwd -q root
-chroot /mnt/gentoo echo "$user_pw\n$user_pw" | passwd -q $username
+chroot /mnt/gentoo passwd root
+chroot /mnt/gentoo passwd $username
+
 
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
