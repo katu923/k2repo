@@ -192,10 +192,14 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
+
 #pipewire
+chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
+chroot /mnt ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
+chroot /mnt ln -s /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/
+
+#start pipewire.desktop for kde gnome etc 
 chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
-chroot /mnt ln -s /usr/share/applications/wireplumber.desktop /etc/xdg/autostart/wireplumber.desktop
-chroot /mnt ln -s /usr/share/applications/pipewire-pulse.desktop /etc/xdg/autostart/pipewire-pulse.desktop
 
 #octoxbps-notifier
 chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
