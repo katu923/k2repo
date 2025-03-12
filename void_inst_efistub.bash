@@ -55,7 +55,7 @@ apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"
 ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
-apps_minimal="nano apparmor vsv opendoas iwd"
+apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm")
