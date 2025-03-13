@@ -40,9 +40,9 @@ ARCH="x86_64"
 
 #dns_list=("1.1.1.2" "1.0.0.2")
 
-apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony"\
+apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
-" fastfetch pipewire wireplumber font-adobe-source-code-pro ufw gufw vsv htop opendoas net-tools topgrade"
+" fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw vsv htop opendoas net-tools octoxbps topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogofilter vlc ffmpeg"\
 " bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
