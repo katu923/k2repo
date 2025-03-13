@@ -245,7 +245,9 @@ chroot /mnt touch /home/$username/.bash_aliases
 chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
 echo "source /home/$username/.bash_aliases" >> /mnt/home/$username/.bashrc
-echo "neofetch" >> /mnt/home/$username/.bashrc
+echo "fastfetch" >> /mnt/home/$username/.bashrc
+echo "complet -cf xbps doas" >> /mnt/home/$username/.bashrc
+
 
 echo "alias xi='doas xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
 echo "alias xu='doas xbps-install -Suy'" >> /mnt/home/$username/.bash_aliases
@@ -256,6 +258,7 @@ echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
 echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
 echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
 echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
+echo "alias e='nano'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 #chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
