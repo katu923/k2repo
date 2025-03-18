@@ -289,21 +289,21 @@ sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 chroot /mnt touch /home/$username/.bash_aliases
 chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
-echo "source /home/$username/.bash_aliases" >> /mnt/home/$username/.bashrc
-echo "fastfetch" >> /mnt/home/$username/.bashrc
-echo "complet -cf xbps doas" >> /mnt/home/$username/.bashrc
+echo -e "source /home/$username/.bash_aliases
+fastfetch
+complet -cf xbps doas" >> /mnt/home/$username/.bashrc
 
 
-echo "alias xi='doas xbps-install -S'" >> /mnt/home/$username/.bash_aliases 
-echo "alias xu='doas xbps-install -Suy'" >> /mnt/home/$username/.bash_aliases
-echo "alias xs='xbps-query -Rs'" >> /mnt/home/$username/.bash_aliases
-echo "alias xr='doas xbps-remove -oOR'" >> /mnt/home/$username/.bash_aliases
-echo "alias xq='xbps-query'" >> /mnt/home/$username/.bash_aliases
-echo "alias xsi='xbps-query -m'" >> /mnt/home/$username/.bash_aliases
-echo "alias sudo='doas'" >> /mnt/home/$username/.bash_aliases
-echo "alias dmesg='doas dmesg'" >> /mnt/home/$username/.bash_aliases
-echo "alias logs='doas svlogtail'" >> /mnt/home/$username/.bash_aliases
-echo "alias e='nano'" >> /mnt/home/$username/.bash_aliases
+echo -e "alias xi='doas xbps-install -S' 
+alias xu='doas xbps-install -Suy'
+alias xs='xbps-query -Rs'
+alias xr='doas xbps-remove -oOR'
+alias xq='xbps-query'
+alias xsi='xbps-query -m'
+alias sudo='doas'
+alias dmesg='doas dmesg'
+alias logs='doas svlogtail'
+alias e='nano'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -316,12 +316,12 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 
 #mkdir /mnt/etc/iwd
 #touch /mnt/etc/iwd/main.conf
-#echo "[General]" > /mnt/etc/iwd/main.conf
-#echo "EnableNetworkConfiguration=true" >> /mnt/etc/iwd/main.conf
-#echo "[Network]" >> /mnt/etc/iwd/main.conf
-#echo "RoutePriorityOffset=200" >> /mnt/etc/iwd/main.conf
-#echo "NameResolvingService=none" >> /mnt/etc/iwd/main.conf
-#echo "EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+echo -e "[General]
+EnableNetworkConfiguration=true
+[Network]
+RoutePriorityOffset=200
+NameResolvingService=none
+EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
 
 #time zone
