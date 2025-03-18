@@ -171,9 +171,9 @@ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # change sysctl
-echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
-echo "fs.protected_fifos=2" >> /mnt/usr/lib/sysctl.d/10-void.conf
-echo "net.ipv4.conf.all.rp_filter=1" >> /mnt/etc/sysctl.conf
+
+echo "fs.protected_regular=2" >> /mnt/usr/lib/sysctl.d/10-void-user.conf
+echo "fs.protected_fifos=2" >> /mnt/usr/lib/sysctl.d/10-void-user.conf
 
 if [[ ! -z $secure_boot ]]; then
 
