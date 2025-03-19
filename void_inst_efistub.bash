@@ -303,7 +303,10 @@ alias xsi='xbps-query -m'
 alias sudo='doas'
 alias dmesg='doas dmesg'
 alias logs='doas svlogtail'
-alias e='nano'" >> /mnt/home/$username/.bash_aliases
+alias e='nano'
+alias de='doas nano'
+alias vsv='doas vsv'
+alias net='netstat -atup'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
