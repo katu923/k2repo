@@ -20,9 +20,9 @@ hostname="xpto"
 
 fs_type="xfs" #xfs or ext4
 
-disk="/dev/vda" #or /dev/vda for virt-manager
+disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes" # better to leave this empty  
+secure_boot="" # better to leave this empty  
 
 #PREPARE DISKS
 
@@ -82,8 +82,8 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-#links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
-wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250223T170333Z/stage3-amd64-desktop-systemd-20250223T170333Z.tar.xz
+links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
+#wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250223T170333Z/stage3-amd64-desktop-systemd-20250223T170333Z.tar.xz
 #wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
@@ -110,7 +110,7 @@ echo "priority = 1" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
-sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
+# sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
 echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
 
 echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
@@ -140,6 +140,7 @@ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/port
  echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
  echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
+ 
  chroot /mnt/gentoo/ emerge -avgq installkernel systemd
  
  echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
@@ -181,7 +182,7 @@ echo $hostname > /mnt/gentoo/etc/hostname
 #openrc
 #chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 #systemd
-chroot /mnt/gentoo/ emerge -avgq efibootmgr iwd doas
+chroot /mnt/gentoo/ emerge -avgq iwd sudo apparmor apparmor-profiles apparmor-utils
 
 mkdir -p /mnt/gentoo/etc/iwd
 
@@ -202,10 +203,10 @@ echo "nameserver 149.112.112.11" >> /mnt/gentoo/etc/resolv.conf
 chroot /mnt/gentoo/ emerge -avgq sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER - uefi
 
- cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
+ #cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
  
  #create uefi boot entry
- chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+ #chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
 #add services
@@ -223,14 +224,14 @@ chroot /mnt/gentoo systemctl enable lvm2-monitor.service
 chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 #doas
-echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
-chroot /mnt/gentoo chown -c root:root /etc/doas.conf
-chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
+#echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
+#chroot /mnt/gentoo chown -c root:root /etc/doas.conf
+#chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
 
-touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 
 #secure boot
 if [[ ! -z $secure_boot ]]; then
@@ -242,8 +243,8 @@ echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst
 fi
 
 
-chroot /mnt/gentoo passwd root
-chroot /mnt/gentoo passwd $username
+#chroot /mnt/gentoo passwd root
+#chroot /mnt/gentoo passwd $username
 
 
 
