@@ -106,7 +106,7 @@ cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gento
 chroot /mnt/gentoo/ emerge-webrsync && getuto
 
 echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "priority = 1" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
