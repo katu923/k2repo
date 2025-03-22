@@ -120,12 +120,12 @@ echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
-echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
-chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+#echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
+#chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
 
-echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
-chroot /mnt/gentoo/ locale-gen
+#echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
+#echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
+#chroot /mnt/gentoo/ locale-gen
 
  
  #KERNEL CONFIG
@@ -136,16 +136,19 @@ chroot /mnt/gentoo/ locale-gen
  #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
  #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
  #systemd
- echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
  echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
- chroot /mnt/gentoo/ emerge -avgq installkernel
-
+ chroot /mnt/gentoo/ emerge -avgq installkernel systemd
+ 
+ echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
+ 
  chroot /mnt/gentoo/ systemd-machine-id-setup
  chroot /mnt/gentoo/ systemd-firstboot --prompt
  chroot /mnt/gentoo/ systemctl preset-all --preset-mode=enable-only
  chroot /mnt/gentoo/ systemctl preset-all
- #chroot /mnt/gentoo/ bootctl install
+ chroot /mnt/gentoo/ bootctl install
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
@@ -161,15 +164,15 @@ fi
 chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
  
- mkdir -p /mnt/gentoo/etc/dracut.conf.d
- touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'hostonly="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'add_dracutmodules+=" lvm crypt dm rootfs-block systemd "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- mkdir -p /mnt/gentoo/efi/EFI/Linux
+ #mkdir -p /mnt/gentoo/etc/dracut.conf.d
+ #touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'hostonly="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'add_dracutmodules+=" lvm crypt dm rootfs-block systemd "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #mkdir -p /mnt/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
  
