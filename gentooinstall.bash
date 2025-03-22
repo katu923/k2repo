@@ -111,7 +111,7 @@ echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0
 
 
 # sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
-echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
+#echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
 
 echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
@@ -122,10 +122,12 @@ echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/port
 #openrc
 #echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
 #chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+#systemd
+ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
 
-#echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
-#echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
-#chroot /mnt/gentoo/ locale-gen
+echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
+chroot /mnt/gentoo/ locale-gen
 
  
  #KERNEL CONFIG
@@ -177,7 +179,7 @@ chroot /mnt/gentoo echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /m
 
 #CONFIG SYSTEM
  
-echo $hostname > /mnt/gentoo/etc/hostname
+#echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
 #chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
