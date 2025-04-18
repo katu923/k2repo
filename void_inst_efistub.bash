@@ -4,14 +4,13 @@
 #you must change the variables to your taste
 
 root_pw=$(dialog --passwordbox "enter root password" 20 20 --output-fd 1)
+clear
 username=$(dialog --inputbox "enter username" 20 20 --output-fd 1)
+clear
 user_pw=$(dialog --passwordbox "enter user password" 20 20 --output-fd 1)
-
+clear
 luks_pw=$(dialog --inputbox "enter luks password" 20 20 --output-fd 1)
-
-
-
-
+clear
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
