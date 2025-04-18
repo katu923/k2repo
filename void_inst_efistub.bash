@@ -3,14 +3,15 @@
 #this only works with uefi and intel graphics
 #you must change the variables to your taste
 
+root_pw=$(dialog --passwordbox "enter root password" 20 20 --output-fd 1)
+username=$(dialog --inputbox "enter username" 20 20 --output-fd 1)
+user_pw=$(dialog --passwordbox "enter user password" 20 20 --output-fd 1)
 
-#username="k2"
+luks_pw=$(dialog --inputbox "enter luks password" 20 20 --output-fd 1)
 
-#luks_pw="123" #password for disk encryption
 
-#root_pw="123" #root password
 
-#user_pw="123" #user password
+
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
