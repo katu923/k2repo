@@ -240,7 +240,7 @@ xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 
 if [[ ! -z $graphical ]]; then
 apps_graphical=$(echo 'apps_'$graphical)
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps apps_graphical $apps_intel $apps_optional
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_graphical $apps_intel $apps_optional
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
 chroot /mnt ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
