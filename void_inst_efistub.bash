@@ -3,13 +3,13 @@
 #this only works with uefi and intel graphics
 #you must change the variables to your taste
 
-root_pw=$(dialog --passwordbox "enter root password" 20 20 --output-fd 1)
+root_pw=$(dialog --passwordbox "enter root password" 0 0 --output-fd 1)
 clear
-username=$(dialog --inputbox "enter username" 20 20 --output-fd 1)
+username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
 clear
-user_pw=$(dialog --passwordbox "enter user password" 20 20 --output-fd 1)
+user_pw=$(dialog --passwordbox "enter user password" 0 0 --output-fd 1)
 clear
-luks_pw=$(dialog --inputbox "enter luks password" 20 20 --output-fd 1)
+luks_pw=$(dialog --inputbox "enter luks password" 0 0 --output-fd 1)
 clear
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
