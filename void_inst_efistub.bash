@@ -44,7 +44,7 @@ apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chro
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw vsv htop opendoas net-tools topgrade"
 
-apps_optional="rkhunter checksec lynis lm_sensors hplip firefox thunderbird bogofilter vlc ffmpeg"\
+apps_optional="rkhunter checksec lynis lm_sensors hplip firefox vivaldi thunderbird bogofilter vlc ffmpeg"\
 " bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
 
 apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
@@ -52,9 +52,9 @@ apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
 apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"\
 " skanlite gwenview kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs NetworkManager octoxbps"
 
-apps_gnome="gnome gnome-apps"
+apps_gnome="gnome gnome-apps NetworkManager octoxbps"
 
-ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
+ignore_pkgs=("sudo" "evolution" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
