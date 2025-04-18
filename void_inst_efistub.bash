@@ -43,7 +43,7 @@ ARCH="x86_64"
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw"\
-" vsv htop opendoas net-tools topgrade"
+" vsv htop opendoas topgrade"
 
 apps_optional="rkhunter checksec lynis lm_sensors hplip firefox vivaldi thunderbird bogofilter vlc ffmpeg"\
 " bash-completion libreoffice-calc libreoffice-writer libreoffice-impress hunspell-pt_PT" 
@@ -241,7 +241,7 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $
 elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
 
-elif [ $graphical == "gnome" || $graphical == "kde"]; then
+elif [[ $graphical != "" ]]; then
 
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
