@@ -235,7 +235,7 @@ echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 mkdir -p /mnt/efi/EFI/Linux
 
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
-xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
+xbps-install -SyR $void_repo/current/$libc -r /mnt void-repo-nonfree
 
 if [[ $graphical != "" ]]; then
 
