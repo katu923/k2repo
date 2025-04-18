@@ -4,13 +4,13 @@
 #you must change the variables to your taste
 
 
-username="k2"
+#username="k2"
 
-luks_pw="123" #password for disk encryption
+#luks_pw="123" #password for disk encryption
 
-root_pw="123" #root password
+#root_pw="123" #root password
 
-user_pw="123" #user password
+#user_pw="123" #user password
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
@@ -27,7 +27,7 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="kde" #empty it will install only base system and apps_minimal
+graphical="" #empty it will install only base system and apps_minimal or kde or gnome
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
@@ -51,6 +51,8 @@ apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
 
 apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"\
 " skanlite gwenview kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs NetworkManager octoxbps"
+
+apps_gnome="gnome gnome-apps"
 
 ignore_pkgs=("sudo" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
@@ -235,9 +237,8 @@ mkdir -p /mnt/efi/EFI/Linux
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
-if [[ $graphical == "kde" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
-
+if [[ $graphical != "" ]]; then
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps apps_$graphical $apps_intel $apps_optional
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
 chroot /mnt ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
@@ -264,6 +265,7 @@ done
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
+
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -306,7 +308,7 @@ alias logs='doas svlogtail'
 alias e='nano'
 alias de='doas nano'
 alias vsv='doas vsv'
-alias net='netstat -atup'" >> /mnt/home/$username/.bash_aliases
+alias net='ss -atup'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -353,8 +355,6 @@ xbps-reconfigure -far /mnt/
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
-
-
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
