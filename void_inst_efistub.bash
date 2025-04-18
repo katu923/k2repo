@@ -312,6 +312,8 @@ alias logs='doas svlogtail'
 alias e='nano'
 alias de='doas nano'
 alias vsv='doas vsv'
+alias reboot='doas reboot'
+alias poweroff='doas poweroff'
 alias net='ss -atup'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
@@ -325,12 +327,12 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 
 #mkdir /mnt/etc/iwd
 #touch /mnt/etc/iwd/main.conf
-echo -e "[General]
-EnableNetworkConfiguration=true
-[Network]
-RoutePriorityOffset=200
-NameResolvingService=none
-EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+#echo -e "[General]
+#EnableNetworkConfiguration=true
+#[Network]
+#RoutePriorityOffset=200
+#NameResolvingService=none
+#EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
 
 #time zone
