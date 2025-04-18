@@ -16,7 +16,7 @@ user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size="512M"
 
-root_part_size="40G" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
 hostname="xpto"
 
@@ -27,11 +27,11 @@ libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="" #empty it will install only base system and apps_minimal or kde or gnome
+graphical="gnome" #empty it will install only base system and apps_minimal or kde or gnome
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
+secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
@@ -238,8 +238,8 @@ mkdir -p /mnt/efi/EFI/Linux
 xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
-if [[ ! -z $graphical ]]; then
-desktop=$(echo 'apps_'$graphical)
+if [[ $graphical != "" ]]; then
+desktop=$(echo '$apps_'$graphical)
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $desktop $apps_intel $apps_optional
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
