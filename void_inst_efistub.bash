@@ -60,7 +60,6 @@ ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
-
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm" "gdm")
 
@@ -238,7 +237,7 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt void-repo-nonfree
 
 if [[ $graphical != "" ]]; then
 
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $'apps_'$graphical $apps_intel $apps_optional
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
 
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
