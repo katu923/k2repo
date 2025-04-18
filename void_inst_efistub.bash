@@ -61,7 +61,7 @@ ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font void-repo-nonfree"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm" "gdm")
 
 
 if [[ $disk == *"sd"* ]]; then
