@@ -29,6 +29,8 @@ language="en_US.UTF-8"
 
 graphical="gnome" #empty it will install only base system and apps_minimal or kde or gnome
 
+desktop=$(echo '$apps_'$graphical)
+
 disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
@@ -220,11 +222,8 @@ fs.protected_hardlinks=1
 fs.protected_fifos=2
 fs.protected_regular=2" > /mnt/etc/sysctl.d/10-void-user.conf
 
-
-
-
+#secure boot
 if [[ ! -z $secure_boot ]]; then
-
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
@@ -239,8 +238,9 @@ xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt/ void-repo-nonfree
 
 if [[ $graphical != "" ]]; then
-desktop=$(echo '$apps_'$graphical)
+
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $desktop $apps_intel $apps_optional
+
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
 chroot /mnt ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
