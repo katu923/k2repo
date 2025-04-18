@@ -31,7 +31,7 @@ graphical="" #empty it will install only base system and apps_minimal or kde or 
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
-secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
+secure_boot="" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
