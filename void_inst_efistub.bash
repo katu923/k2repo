@@ -241,7 +241,7 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $
 elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
 
-elif [[ $graphical == "gnome" || $graphical == "kde"]]; then
+elif [ $graphical == "gnome" || $graphical == "kde"]; then
 
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
