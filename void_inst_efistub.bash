@@ -43,7 +43,7 @@ dns_list=("1.1.1.2" "1.0.0.2")
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw"\
-" nftables vsv htop opendoas topgrade"
+" nftables iptables-nft vsv htop opendoas topgrade"
 
 apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
 
@@ -54,7 +54,7 @@ apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"
 
 apps_gnome="gnome gnome-apps NetworkManager"
 
-ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
+ignore_pkgs=( "iptables" "sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
