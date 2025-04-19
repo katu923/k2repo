@@ -54,7 +54,7 @@ apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"
 
 apps_gnome="gnome gnome-apps NetworkManager"
 
-ignore_pkgs=("iptables" "sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
+ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
