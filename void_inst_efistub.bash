@@ -83,7 +83,7 @@ fi
 
 begin=$(dialog --inputbox "we are about to format the disk, do you want to proceed? (yes or no)" 00 --output-fd 1)
 if [[ $begin == "yes" ]]; then 
-dd if=/dev/urandom of=$disk count=10000 bs=progress 
+dd if=/dev/urandom of=$disk count=5000 status=progress 
 #Wipe disk
 wipefs -aq $disk
 else exit
