@@ -46,7 +46,7 @@ dns_list=("9.9.9.9" "1.1.1.1")
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw"\
-" nftables iptables-nft vsv htop opendoas topgrade octoxbps"
+" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak"
 
 apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
 
@@ -174,7 +174,7 @@ fi
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor,integrity rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # harden sysctl
