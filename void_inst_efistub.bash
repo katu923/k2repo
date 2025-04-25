@@ -16,18 +16,21 @@ user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size="512M"
 
-root_part_size="" # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+root_part_size=$(dialog --inputbox "enter root partition size (example: 40G)" 0 0 --output-fd 1)
 
-hostname="xpto"
-
-fs_type="xfs" #support ext4 or xfs
-
+# if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
+clear
+hostname=$(dialog --inputbox "enter hostname" 0 0 --output-fd 1)
+clear
+fs_type=$(dialog --inputbox "enter partition file system type (possible values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
+clear
 
 libc="" #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical="gnome" #empty it will install only base system and apps_minimal or kde or gnome
+graphical=$(dialog --inputbox "enter graphical interface: (possible values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
+#empty it will install only base system and apps_minimal or kde or gnome
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
@@ -38,7 +41,7 @@ void_repo="https://repo-fastly.voidlinux.org"
 
 ARCH="x86_64"
 
-dns_list=("1.1.1.2" "1.0.0.2")
+dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
@@ -54,7 +57,7 @@ apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
-ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
+ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
 #for test
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
