@@ -245,7 +245,12 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $
 elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
 
-elif [[ ! -z $graphical ]]; then
+else
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
+fi
+
+
+if [[ $graphical != "" ]]; then
 
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
@@ -258,7 +263,6 @@ chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pi
 #octoxbps-notifier
 chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 
-
 for serv1 in ${rm_services[@]}; do
 
 	chroot /mnt unlink /var/service/$serv1
@@ -269,10 +273,8 @@ for serv2 in ${en_services[@]}; do
 	chroot /mnt ln -s /etc/sv/$serv2 /var/service
 	
 done
-
-else
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 fi
+
 
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
