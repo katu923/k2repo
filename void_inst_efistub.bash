@@ -43,16 +43,16 @@ dns_list=("1.1.1.2" "1.0.0.2")
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
 " fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw"\
-" nftables iptables-nft vsv htop opendoas topgrade"
+" nftables iptables-nft vsv htop opendoas topgrade octoxbps"
 
 apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
 
-apps_intel="mesa-dri libva-intel-driver intel-ucode intel-gpu-tools"
+apps_intel="mesa-dri intel-ucode intel-gpu-tools vulkan-loader mesa-vulkan-intel intel-video-accel"
 
 apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"\
 " skanlite gwenview kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs NetworkManager octoxbps"
 
-apps_gnome="gnome gnome-apps NetworkManager"
+apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
 ignore_pkgs=("sudo" "evolution" "epiphany" "plasma-thunderbolt" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
@@ -240,7 +240,7 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $
 elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
 
-elif [[ $graphical != "" ]]; then
+elif [[ ! -z $graphical ]]; then
 
 #pipewire
 chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
