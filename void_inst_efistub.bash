@@ -234,7 +234,7 @@ fs.protected_fifos=2
 fs.protected_regular=2" > /mnt/etc/sysctl.d/10-void-user.conf
 
 #secure boot
-if [[ ! -z $secure_boot ]]; then
+if [[ $secure_boot == "yes" ]]; then
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
