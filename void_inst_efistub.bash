@@ -1,6 +1,6 @@
 #!/bin/bash
-dialog --msgbox "read this script carefully before use it!!"\
-"this only works with uefi and intel graphics"\
+dialog --msgbox "read this script carefully before use it!! "\
+"this only works with uefi and intel graphics "\
 "you must change the variables to your taste" 0 0
 clear
 
