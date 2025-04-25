@@ -1,7 +1,7 @@
 #!/bin/bash
 dialog --msgbox "Read this script carefully before use it, "\
-"this only works with uefi bios and intel graphics, "\
-"you must change the variables to your taste" 0 0
+"this only works with uefi bios" 0 0
+
 clear
 
 root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
