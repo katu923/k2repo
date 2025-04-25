@@ -1,29 +1,29 @@
 #!/bin/bash
-#read this script carefully before use it!!
-#this only works with uefi and intel graphics
-#you must change the variables to your taste
+dialog --msgbox "read this script carefully before use it!!"\
+" this only works with uefi and intel graphics"\
+" you must change the variables to your taste" 0 0
+
 
 root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
-clear
+
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
-clear
+
 user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
-clear
+
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
-clear
+
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size=$(dialog --inputbox "enter efi partition size (for example: 512M" 0 0 --output-fd 1)
-clear
+
 root_part_size=$(dialog --inputbox "enter root partition size (for example: 40G)" 0 0 --output-fd 1)
 
 # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
-clear
+
 hostname=$(dialog --inputbox "enter hostname" 0 0 --output-fd 1)
-clear
+
 fs_type=$(dialog --inputbox "enter partition file system type (possible values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
-clear
 
 libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --output-fd 1) #empty is glibc other value is musl
 
@@ -33,8 +33,11 @@ graphical=$(dialog --inputbox "enter graphical interface: (possible values are: 
 #empty it will install only base system and apps_minimal or kde or gnome
 
 disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1) #or /dev/vda for virt-manager
+
+
+secure_boot=$(dialog --inputbox "enable secure boot? (possible values: yes or no) note: you can break your bios" 0 0 --output-fd 1)
+# better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 clear
-secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
 #after install change mirror with xmirror
