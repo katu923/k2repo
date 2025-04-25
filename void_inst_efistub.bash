@@ -80,9 +80,14 @@ elif [[ $disk == *"nvme"* ]]; then
 	luks_part=$(echo $disk'p2')
 fi
 
+
+begin=$(dialog --inputbox "we are about to format the disk, do you want to proceed? (yes or no)" 00 --output-fd 1)
+if [[ $begin == "yes" ]]; then 
+dd if=/dev/urandom of=$disk count=10000 bs=progress 
 #Wipe disk
 wipefs -aq $disk
-
+else exit
+fi
 #dd if=/dev/zero of=/dev$disk bs=16M count=500
 
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
