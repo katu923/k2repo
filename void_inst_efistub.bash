@@ -14,9 +14,9 @@ clear
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
-efi_part_size="512M"
-
-root_part_size=$(dialog --inputbox "enter root partition size (example: 40G)" 0 0 --output-fd 1)
+efi_part_size=$(dialog --inputbox "enter efi partition size (for example: 512M" 0 0 --output-fd 1)
+clear
+root_part_size=$(dialog --inputbox "enter root partition size (for example: 40G)" 0 0 --output-fd 1)
 
 # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 clear
@@ -25,15 +25,15 @@ clear
 fs_type=$(dialog --inputbox "enter partition file system type (possible values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
 clear
 
-libc="" #empty is glibc other value is musl
+libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --output-fd 1) #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
 graphical=$(dialog --inputbox "enter graphical interface: (possible values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
 #empty it will install only base system and apps_minimal or kde or gnome
 
-disk="/dev/sda" #or /dev/vda for virt-manager
-
+disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1) #or /dev/vda for virt-manager
+clear
 secure_boot="yes" # better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
 
 void_repo="https://repo-fastly.voidlinux.org"
@@ -149,7 +149,9 @@ echo $hostname > /mnt/etc/hostname
 
 if [[ -z $libc ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
-    echo "en_US.UTF-8 UTF-8" >> /mnt/etc/default/libc-locales
+    echo -e "pt_PT.UTF-8 UTF-8  
+             pt_PT ISO-8859-1  
+             pt_PT@euro ISO-8859-15" >> /mnt/etc/default/libc-locales
     xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
@@ -172,7 +174,7 @@ fi
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor,integrity rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # harden sysctl
@@ -286,7 +288,7 @@ chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 #rc.conf
 echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
 echo 'FONT="ter-v22n"' >> /mnt/etc/rc.conf
-echo 'TIMEZONE="Europe/Lisbon"' >> /mnt/etc/rc.conf
+
 
 
 #apparmor
@@ -299,7 +301,7 @@ chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
-complet -cf xbps doas" >> /mnt/home/$username/.bashrc
+complete -cf doas" >> /mnt/home/$username/.bashrc
 
 
 echo -e "alias xi='doas xbps-install -S' 
@@ -323,7 +325,7 @@ chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts
 #xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
-echo "permit persist :wheel" > /mnt/etc/doas.conf
+echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /mnt/etc/doas.conf
 chroot /mnt chown -c root:root /etc/doas.conf
 chroot /mnt chmod -c 0400 /etc/doas.conf
 
