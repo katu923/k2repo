@@ -44,7 +44,7 @@ void_repo="https://repo-fastly.voidlinux.org"
 
 ARCH="x86_64"
 
-dns_list=("9.9.9.9" "1.1.1.1")
+#dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
 " xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
@@ -306,7 +306,7 @@ chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
-complete -cf doas" >> /mnt/home/$username/.bashrc
+complete -cf xi xs" >> /mnt/home/$username/.bashrc
 
 
 echo -e "alias xi='doas xbps-install -S' 
@@ -359,11 +359,11 @@ done
 
 
 #dns
-for dns in ${dns_list[@]}; do
+#for dns in ${dns_list[@]}; do
 
-  echo "nameserver="$dns >> /mnt/etc/resolv.conf
+  #echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
-done
+#done
 
 xbps-reconfigure -far /mnt/ 
 
