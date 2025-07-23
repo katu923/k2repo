@@ -139,7 +139,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -274,7 +274,7 @@ fi
 #firewall
 touch /mnt/etc/nftables.conf
 
-echo -e "flush ruleset
+echo -e 'flush ruleset
 
 table inet my_table {
 	set LANv4 {
@@ -327,7 +327,7 @@ table inet my_table {
 		# Accept every outbound connection
 	}
 
-}" > /mnt/etc/nftables.conf
+}' > /mnt/etc/nftables.conf
 
 
 
