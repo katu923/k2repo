@@ -23,20 +23,19 @@ root_part_size=$(dialog --inputbox "enter root partition size (for example: 40G)
 
 hostname=$(dialog --inputbox "enter hostname" 0 0 --output-fd 1)
 
-fs_type=$(dialog --inputbox "enter partition file system type (possible values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
+fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
 
 libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --output-fd 1) #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
-graphical=$(dialog --inputbox "enter graphical interface: (possible values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
+graphical=$(dialog --inputbox "enter graphical interface: (supported values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
 #empty it will install only base system and apps_minimal or kde or gnome
 
-disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1) #or /dev/vda for virt-manager
+disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1)
 
 
-secure_boot=$(dialog --inputbox "enable secure boot? (possible values: yes or no) note: you can break your bios" 0 0 --output-fd 1)
-# better leave this empty you can break your bios / secure boot in the bios must be in setup mode / yes or empty for disable
+secure_boot=$(dialog --inputbox "enable secure boot? (values: yes or no) note: you can break your bios" 0 0 --output-fd 1)
 clear
 
 void_repo="https://repo-fastly.voidlinux.org"
@@ -46,19 +45,21 @@ ARCH="x86_64"
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-apps="xorg-minimal dejavu-fonts-ttf nano elogind dbus socklog-void apparmor chrony unrar"\
-" xdg-desktop-portal xdg-user-dirs xdg-desktop-portal-gtk xdg-utils xmirror terminus-font"\
-" fastfetch pipewire wireplumber font-adobe-source-code-pro ttf-ubuntu-font-family ufw gufw"\
-" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak"
+apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony"\
+" xmirror fastfetch pipewire wireplumber"\
+" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen"
+
 
 apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
 
-apps_intel="mesa-dri intel-ucode intel-gpu-tools vulkan-loader mesa-vulkan-intel intel-video-accel"
+apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
 apps_kde="kde-plasma kde-baseapps ark print-manager spectacle kdeconnect okular"\
-" skanlite gwenview kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs NetworkManager octoxbps"
+" skanlite gwenview kwalletmanager sddm-kcm partitionmanager kcalc plasma-disks ffmpegthumbs NetworkManager"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
+
+fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font"
 
 ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom")
 
@@ -66,7 +67,8 @@ ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware
 apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "ufw" "sddm" "gdm")
+
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -81,10 +83,11 @@ elif [[ $disk == *"nvme"* ]]; then
 fi
 
 
-begin=$(dialog --inputbox "we are about to format the disk, do you want to proceed? (yes or no)" 00 --output-fd 1)
+begin=$(dialog --inputbox "we are about to format the disk, do you want to proceed? (yes or no)" 0 0 --output-fd 1)
 clear
+
 if [[ $begin == "yes" ]]; then 
-dd if=/dev/urandom of=$disk count=5000 status=progress 
+dd if=/dev/urandom of=$disk count=20000 status=progress
 #Wipe disk
 wipefs -aq $disk
 else exit
@@ -109,6 +112,7 @@ fi
 
 
 mkfs.$fs_type -qL root /dev/$hostname/root
+
 if [[ ! -z $root_part_size ]]; then
 
 	mkfs.$fs_type -qL home /dev/$hostname/home
@@ -136,8 +140,8 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi gummiboot-efistub sbctl
-
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr systemd-boot-efistub sbctl
+chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -182,8 +186,8 @@ fi
 #add hostonly to dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
-echo "uefi_stub=/usr/lib/gummiboot/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # harden sysctl
@@ -204,7 +208,7 @@ vm.unprivileged_userfaultfd=0
 kernel.sysrq=4
 kernel.unprivileged_userns_clone=0
 kernel.perf_event_paranoid=3
-net.ipv4.tcp_syncookies=1
+net.ipv4.tcp_syncookies=1 #or /dev/vda for virt-manager
 net.ipv4.tcp_rfc1337=1
 net.ipv4.conf.all.rp_filter=1
 net.ipv4.conf.default.rp_filter=1
@@ -237,7 +241,7 @@ fs.protected_regular=2" > /mnt/etc/sysctl.d/10-void-user.conf
 if [[ $secure_boot == "yes" ]]; then
 
 chroot /mnt sbctl create-keys
-chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot
+chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot / work with Thinkpads
 fi
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
@@ -249,14 +253,84 @@ xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
 xbps-install -SyR $void_repo/current/$libc -r /mnt void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional $fonts
 
 elif [[ $graphical == "gnome" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional
+xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
 
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
+
+mkdir -p /mnt/etc/iwd
+touch /mnt/etc/iwd/main.conf
+echo -e "[General]
+EnableNetworkConfiguration=true
+[Network]
+RoutePriorityOffset=200
+NameResolvingService=none
+EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+
 fi
+
+#firewall
+touch /mnt/etc/nftables.conf
+
+echo -e "flush ruleset
+
+table inet my_table {
+	set LANv4 {
+		type ipv4_addr
+		flags interval
+
+		elements = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16 }
+	}
+	set LANv6 {
+		type ipv6_addr
+		flags interval
+
+		elements = { fd00::/8, fe80::/10 }
+	}
+
+	chain my_input_lan {
+		udp sport 1900 udp dport >= 1024 meta pkttype unicast limit rate 4/second burst 20 packets accept comment "Accept UPnP IGD port mapping reply"
+
+		udp sport netbios-ns udp dport >= 1024 meta pkttype unicast accept comment "Accept Samba Workgroup browsing replies"
+
+	}
+
+	chain my_input {
+		type filter hook input priority filter; policy drop;
+
+		iif lo accept comment "Accept any localhost traffic"
+		ct state invalid drop comment "Drop invalid connections"
+		fib daddr . iif type != { local, broadcast, multicast } drop comment "Drop packets if the destination IP address is not configured on the incoming interface (strong host model)"
+		ct state { established, related } accept comment "Accept traffic originated from us"
+
+		meta l4proto { icmp, ipv6-icmp } accept comment "Accept ICMP"
+		ip protocol igmp accept comment "Accept IGMP"
+
+		udp dport mdns ip6 daddr ff02::fb accept comment "Accept mDNS"
+		udp dport mdns ip daddr 224.0.0.251 accept comment "Accept mDNS"
+
+		ip6 saddr @LANv6 jump my_input_lan comment "Connections from private IP address ranges"
+		ip saddr @LANv4 jump my_input_lan comment "Connections from private IP address ranges"
+
+		counter comment "Count any other traffic"
+	}
+
+	chain my_forward {
+		type filter hook forward priority filter; policy drop;
+		# Drop everything forwarded to us. We do not forward. That is routers job.
+	}
+
+	chain my_output {
+		type filter hook output priority filter; policy accept;
+		# Accept every outbound connection
+	}
+
+}" > /mnt/etc/nftables.conf
+
+
 
 
 if [[ $graphical != "" ]]; then
@@ -329,7 +403,7 @@ alias de='doas nano'
 alias vsv='doas vsv'
 alias reboot='doas reboot'
 alias poweroff='doas poweroff'
-alias net='ss -atup'" >> /mnt/home/$username/.bash_aliases
+alias ss='ss -atup'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -340,14 +414,6 @@ echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/s
 chroot /mnt chown -c root:root /etc/doas.conf
 chroot /mnt chmod -c 0400 /etc/doas.conf
 
-mkdir /mnt/etc/iwd
-touch /mnt/etc/iwd/main.conf
-echo -e "[General]
-EnableNetworkConfiguration=true
-[Network]
-RoutePriorityOffset=200
-NameResolvingService=none
-EnableIPv6=false" >> /mnt/etc/iwd/main.conf
 
 
 #time zone
