@@ -54,7 +54,7 @@ apps_optional="lynis lm_sensors hplip ffmpeg bash-completion"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager"
+apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
