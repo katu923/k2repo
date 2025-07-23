@@ -121,7 +121,7 @@ programs.dconf.enable = true;
 
   # Enable automatic login for the user.
   services.displayManager.autoLogin.enable = true;
-  services.displayManager.autoLogin.user = "kafu";
+  services.displayManager.autoLogin.user = "k2";
 
   # Install firefox.
 programs.firefox.enable = true;
