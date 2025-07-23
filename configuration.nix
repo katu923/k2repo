@@ -20,7 +20,7 @@ loader.efi.canTouchEfiVariables = true;
 loader.timeout = 1;
 };
 
-  networking.hostName = "X23O"; # Define your hostname.
+  networking.hostName = "Xxxx"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # firewall nftables
