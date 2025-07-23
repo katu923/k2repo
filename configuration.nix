@@ -96,7 +96,7 @@ loader.timeout = 1;
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.kafu = {
     isNormalUser = true;
-    description = "kafu";
+    description = "k2";
     extraGroups = [ "networkmanager" "libvirtd" ];
     packages = with pkgs; [
       thunderbird
