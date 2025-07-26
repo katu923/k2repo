@@ -47,7 +47,7 @@ ARCH="x86_64"
 
 apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony"\
 " xmirror fastfetch pipewire wireplumber"\
-" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen"
+" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
 
 apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
@@ -67,7 +67,7 @@ apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
 
 
 if [[ $disk == *"sd"* ]]; then
