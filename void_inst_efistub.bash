@@ -186,6 +186,8 @@ fi
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
@@ -366,7 +368,6 @@ chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
-echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 #rc.conf
@@ -402,7 +403,8 @@ alias de='doas nano'
 alias vsv='doas vsv'
 alias reboot='doas reboot'
 alias poweroff='doas poweroff'
-alias ss='ss -atup'" >> /mnt/home/$username/.bash_aliases
+alias ss='ss -atup'
+alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
 chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -440,9 +442,8 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
 
 xbps-reconfigure -far /mnt/ 
 
-
-efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
+efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
