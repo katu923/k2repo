@@ -45,7 +45,7 @@ ARCH="x86_64"
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony"\
+apps="nano neovim elogind dbus socklog-void apparmor chrony"\
 " xmirror fastfetch pipewire wireplumber"\
 " nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
@@ -54,7 +54,7 @@ apps_optional="lynis lm_sensors hplip ffmpeg bash-completion"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
-apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover6"
+apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover spectacle flatpack-kcm gparted"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
