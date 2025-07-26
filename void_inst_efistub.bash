@@ -67,8 +67,7 @@ apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" \
-"iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -87,7 +86,7 @@ begin=$(dialog --inputbox "we are about to format the disk, do you want to proce
 clear
 
 if [[ $begin == "yes" ]]; then 
-dd if=/dev/urandom of=$disk count=50000 status=progress
+dd if=/dev/urandom of=$disk count=150000 status=progress
 #Wipe disk
 wipefs -aq $disk
 else exit
@@ -141,7 +140,7 @@ fi
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi systemd-boot-efistub sbctl
-#chroot /mnt xbps-alternatives -s dracut-uefi
+chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
