@@ -67,7 +67,8 @@ apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" \
+"iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -86,7 +87,7 @@ begin=$(dialog --inputbox "we are about to format the disk, do you want to proce
 clear
 
 if [[ $begin == "yes" ]]; then 
-dd if=/dev/urandom of=$disk count=20000 status=progress
+dd if=/dev/urandom of=$disk count=50000 status=progress
 #Wipe disk
 wipefs -aq $disk
 else exit
@@ -140,7 +141,7 @@ fi
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi systemd-boot-efistub sbctl
-chroot /mnt xbps-alternatives -s dracut-uefi
+#chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -186,8 +187,6 @@ fi
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
@@ -243,6 +242,8 @@ if [[ $secure_boot == "yes" ]]; then
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot / work with Thinkpads
+echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
