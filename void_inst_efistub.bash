@@ -418,7 +418,7 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 #ssh / cron
 chroot /mnt chown -c root:root /etc/ssh/sshd_config
 chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
-echo "PermitRoootLogin no" >> cat /mnt/etc/ssh/sshd_config
+echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/cron.daily
 chroot /mnt chmod -c 0400 /etc/cron.daily
 
