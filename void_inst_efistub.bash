@@ -420,6 +420,9 @@ chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
 echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/cron.daily
 chroot /mnt chmod -c 0400 /etc/cron.daily
+chroot /mnt chown -c root:root /boot
+chroot /mnt chmod -c 0400 /boot
+
 
 #blacklist modules and drivers not needed
 touch /mnt/etc/modprobe.d/blacklist.conf
