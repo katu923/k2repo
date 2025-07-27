@@ -437,27 +437,10 @@ chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 #ignore packages
 chroot /mnt touch /etc/xbps.d/99-ignorepkgs.conf
 
-echo -e "ignorepkg=sudo
-ignorepkg=linux-firmware-amd
-ignorepkg=linux-firmware-nvidia
-ignorepkg=linux-firmware-broadcom
-ignorepkg=ipw2100-firmware
-ignorepkg=ipw2200-firmware
-ignorepkg=mobile-broadband-provider-info
-ignorepkg=xf86-input-wacom
-ignorepkg=xf86-video-amdgpu
-ignorepkg=xf86-video-fbdev
-ignorepkg=xf86-video-nouveau
-ignorepkg=xf86-video-vesa
-ignorepkg=xf86-video-vmware
-ignorepkg=zd1211-firmware
-ignorepkg=ksystemstats
-ignorepkg=oxygen
-ignorepkg=plasma-systemmonitor
-ignorepkg=plasma-thunderbolt
-ignorepkg=plasma-workspace-wallpapers" > /mnt/etc/xbps.d/99-ignorepkgs.conf
+ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware")
 
 for pkg in ${ignore_pkgs[@]}; do
+   echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
    chroot /mnt xbps-remove -oOR $pkg -y	
 done
 
