@@ -422,6 +422,15 @@ echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/cron.daily
 chroot /mnt chmod -c 0400 /etc/cron.daily
 
+#blacklist modules and drivers not needed
+touch /mnt/etc/modprobe.d/blacklist.conf
+echo -e "install dccp /bin/false
+install sctp /bin/false
+install rds /bin/false
+install tipc /bin/false
+install firewire-core /bin/false
+install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
+
 
 #time zone
 chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
