@@ -45,8 +45,7 @@ ARCH="x86_64"
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-apps="nano neovim elogind dbus socklog-void apparmor chrony"\
-" xmirror fastfetch pipewire wireplumber"\
+apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
 " nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
 
