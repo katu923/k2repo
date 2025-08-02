@@ -1,6 +1,7 @@
 #!/bin/bash
 dialog --msgbox "Read this script carefully before use it, "\
-"this only works with uefi bios" 0 0
+"this only works with uefi bios and intel graphics cards, "\
+"for nvidia you must change the script" 0 0
 
 clear
 
@@ -30,7 +31,7 @@ libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --out
 language="en_US.UTF-8"
 
 graphical=$(dialog --inputbox "enter graphical interface: (supported values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
-#empty it will install only base system and apps_minimal or kde or gnome
+#empty it will install only base system and apps_minimal
 
 disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1)
 
@@ -46,8 +47,7 @@ ARCH="x86_64"
 #dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
-
+" nftables runit-nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
 apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion" 
 
@@ -180,14 +180,14 @@ fi
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
 
 	
-#add hostonly to dracut
+#dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
-# harden sysctl
+# harden sysctl 
 
 mkdir /mnt/etc/sysctl.d
 touch /mnt/etc/sysctl.d/10-void-user.conf
@@ -260,8 +260,10 @@ xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel
 else
 xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
 
+#iwd
 mkdir -p /mnt/etc/iwd
 touch /mnt/etc/iwd/main.conf
+
 echo -e "[General]
 EnableNetworkConfiguration=true
 [Network]
@@ -332,7 +334,7 @@ chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/aut
 
 for serv1 in ${rm_services[@]}; do
 
-	chroot /mnt unlink /var/service/$serv1
+	unlink /mnt/var/service/$serv1
 done
 
 for serv2 in ${en_services[@]}; do
@@ -398,10 +400,11 @@ echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/s
 chroot /mnt chown -c root:root /etc/doas.conf
 chroot /mnt chmod -c 0400 /etc/doas.conf
 
-#ssh / cron
+#ssh / cron hardening permissions
+
+echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/ssh/sshd_config
 chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
-echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/cron.daily
 chroot /mnt chmod -c 0400 /etc/cron.daily
 
