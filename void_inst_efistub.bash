@@ -49,7 +49,7 @@ apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pi
 " nftables iptables-nft vsv htop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
 
-apps_optional="lynis lm_sensors hplip ffmpeg bash-completion" 
+apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion" 
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
