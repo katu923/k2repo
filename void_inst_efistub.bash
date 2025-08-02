@@ -1,4 +1,5 @@
 #!/bin/bash
+
 dialog --msgbox "Read this script carefully before use it, "\
 "this only works with uefi bios and intel graphics cards, "\
 "for nvidia you must change the script" 0 0
