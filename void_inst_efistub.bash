@@ -36,7 +36,6 @@ graphical=$(dialog --inputbox "enter graphical interface: (supported values are:
 
 disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1)
 
-
 secure_boot=$(dialog --inputbox "enable secure boot? (values: yes or no) note: you can break your bios" 0 0 --output-fd 1)
 clear
 
