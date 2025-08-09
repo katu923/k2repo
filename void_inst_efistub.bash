@@ -193,18 +193,26 @@ mkdir /mnt/etc/sysctl.d
 touch /mnt/etc/sysctl.d/10-void-user.conf
 
 
-echo -e "kernel.dmesg_restrict=1
+echo -e "dev.tty.ldisc_autoload=0
+fs.protected_symlinks=1
+fs.protected_hardlinks=1
+fs.protected_fifos=2
+fs.protected_regular=2
+fs.suid_dumpable=0
+kernel.core_pattern=|/bin/false
+kernel.dmesg_restrict=1
 kernel.kexec_load_disabled=1
 kernel.yama.ptrace_scope=2
 kernel.kptr_restrict=2
 kernel.printk=3 3 3 3
 kernel.unprivileged_bpf_disabled=1
-net.core.bpf_jit_harden=2
-dev.tty.ldisc_autoload=0
-vm.unprivileged_userfaultfd=0
 kernel.sysrq=4
 kernel.unprivileged_userns_clone=0
 kernel.perf_event_paranoid=3
+kernel.randomize_va_space=2
+kernel.msgmnb=65535
+kernel.msgmax=65535
+net.core.bpf_jit_harden=2
 net.ipv4.tcp_syncookies=1
 net.ipv4.tcp_rfc1337=1
 net.ipv4.conf.all.rp_filter=1
@@ -229,10 +237,7 @@ net.ipv4.tcp_dsack=0
 net.ipv4.tcp_fack=0
 vm.mmap_rnd_bits=32
 vm.mmap_rnd_compat_bits=16
-fs.protected_symlinks=1
-fs.protected_hardlinks=1
-fs.protected_fifos=2
-fs.protected_regular=2" > /mnt/etc/sysctl.d/10-void-user.conf
+vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 
 #secure boot
 if [[ $secure_boot == "yes" ]]; then
