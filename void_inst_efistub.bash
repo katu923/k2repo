@@ -49,7 +49,7 @@ ARCH="x86_64"
 apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
 " nftables runit-nftables iptables-nft vsv htop btop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
 
-apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion" 
+apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion timeshift" 
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
