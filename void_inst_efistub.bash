@@ -415,11 +415,17 @@ chroot /mnt chmod -c 0400 /etc/cron.daily
 
 #blacklist modules and drivers not needed
 touch /mnt/etc/modprobe.d/blacklist.conf
-echo -e "install dccp /bin/false
+echo -e "blacklist dccp
+install dccp /bin/false
+blacklist sctp
 install sctp /bin/false
+blacklist rds
 install rds /bin/false
+blacklist tipc
 install tipc /bin/false
+blacklist firewire-core
 install firewire-core /bin/false
+blacklist thunderbolt
 install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
 
 
