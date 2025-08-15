@@ -168,7 +168,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr dracut-uefi systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -201,11 +201,19 @@ chroot /mnt/ ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
+ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptroot)
 
+if [[ $fs_type != "btrfs"  ]]; then
 echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
-if [[ ! -z $root_part_size ]]; then
+	if [[ ! -z $root_part_size ]]; then
 
-	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+		echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+	fi
+else
+echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
+tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0" >> /mnt/etc/fstab
 fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
