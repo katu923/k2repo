@@ -99,22 +99,29 @@ echo $luks_pw | cryptsetup -q luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
 vgcreate $hostname /dev/mapper/cryptroot
 
-if [[ -z $root_part_size  ]]; then
+if [[ $fs_type != "btrfs"  ]]; then
+	if [[ -z $root_part_size  ]]; then
 
-	lvcreate --name root -l 100%FREE $hostname
+		lvcreate --name root -l 100%FREE $hostname
+	else
+		lvcreate --name root -L $root_part_size $hostname
+		lvcreate --name home -l 100%FREE $hostname
+	fi
 else
-	lvcreate --name root -L $root_part_size $hostname
-	lvcreate --name home -l 100%FREE $hostname
-fi
 
+
+fi
 
 mkfs.$fs_type -qL root /dev/$hostname/root
 
-if [[ ! -z $root_part_size ]]; then
+if [[ $fs_type != "btrfs"  ]]; then
+	if [[ ! -z $root_part_size ]]; then
 
-	mkfs.$fs_type -qL home /dev/$hostname/home
+		mkfs.$fs_type -qL home /dev/$hostname/home
+	fi
+else
+
 fi
-
 
 mount /dev/$hostname/root /mnt
 
