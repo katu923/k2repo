@@ -124,11 +124,12 @@ if [[ $fs_type != "btrfs"  ]]; then
 		mkfs.$fs_type -qL home /dev/$hostname/home
 	fi
 else
-	BTRFS_OPTS="rw,noatime,ssd,compress=zstd,space_cache,commit=120"
+	BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,discard=async,ssd"
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
+    btrfs subvolume create /mnt/@var_log
  	umount /mnt
 fi
 
@@ -140,12 +141,7 @@ mkdir -p /mnt/home
 mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
 mkdir -p /mnt/.snapshots
 mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-
-mkdir -p /mnt/var/cache
-btrfs subvolume create /mnt/var/cache/xbps
-btrfs subvolume create /mnt/var/tmp
-btrfs subvolume create /mnt/srv
-# btrfs subvolume create /mnt/var/swap
+mount -o $BTRFS_OPTS,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 fi
 
 for dir in dev proc sys run; do
