@@ -25,7 +25,7 @@ root_part_size=$(dialog --inputbox "enter root partition size (for example: 40G)
 
 hostname=$(dialog --inputbox "enter hostname" 0 0 --output-fd 1)
 
-fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4)" 0 0 --output-fd 1) #support ext4 or xfs
+fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4 or btrfs)" 0 0 --output-fd 1) #support ext4 or xfs
 
 libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --output-fd 1) #empty is glibc other value is musl
 
