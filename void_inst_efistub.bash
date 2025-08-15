@@ -97,9 +97,11 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q luksFormat $luks_part
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
-vgcreate $hostname /dev/mapper/cryptroot
 
 if [[ $fs_type != "btrfs"  ]]; then
+vgcreate $hostname /dev/mapper/cryptroot
+
+
 	if [[ -z $root_part_size  ]]; then
 
 		lvcreate --name root -l 100%FREE $hostname
@@ -108,11 +110,13 @@ if [[ $fs_type != "btrfs"  ]]; then
 		lvcreate --name home -l 100%FREE $hostname
 	fi
 else
-
+mkfs.btrfs -L $hostname /dev/mapper/cryptroot
 
 fi
 
+if [[ $fs_type != "btrfs"  ]]; then
 mkfs.$fs_type -qL root /dev/$hostname/root
+fi
 
 if [[ $fs_type != "btrfs"  ]]; then
 	if [[ ! -z $root_part_size ]]; then
@@ -120,10 +124,29 @@ if [[ $fs_type != "btrfs"  ]]; then
 		mkfs.$fs_type -qL home /dev/$hostname/home
 	fi
 else
-
+	BTRFS_OPTS="rw,noatime,ssd,compress=zstd,space_cache,commit=120"
+	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
+	btrfs subvolume create /mnt/@
+	btrfs subvolume create /mnt/@home
+	btrfs subvolume create /mnt/@snapshots
+ 	umount /mnt
 fi
 
-mount /dev/$hostname/root /mnt
+if [[ $fs_type != "btrfs"  ]]; then
+	mount /dev/$hostname/root /mnt
+else
+mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
+mkdir -p /mnt/home
+mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
+mkdir -p /mnt/.snapshots
+mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+
+mkdir -p /mnt/var/cache
+btrfs subvolume create /mnt/var/cache/xbps
+btrfs subvolume create /mnt/var/tmp
+btrfs subvolume create /mnt/srv
+# btrfs subvolume create /mnt/var/swap
+fi
 
 for dir in dev proc sys run; do
 
@@ -132,10 +155,11 @@ for dir in dev proc sys run; do
 	mount --make-rslave /mnt/$dir
 done
 
-
+if [[ $fs_type != "btrfs"  ]]; then
   if [[ ! -z $root_part_size ]]; then
 	mkdir -p /mnt/home
 	mount /dev/$hostname/home /mnt/home
+  fi
 fi
 	mkfs.vfat $efi_part
 	mkdir -p /mnt/efi
