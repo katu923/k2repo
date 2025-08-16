@@ -47,7 +47,7 @@ ARCH="x86_64"
 #dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables runit-nftables iptables-nft vsv htop btop opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance sbsigntool"
+" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance"
 
 apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion timeshift" 
 
@@ -61,7 +61,7 @@ fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font"
 
 
 #for test
-apps_minimal="nano apparmor vsv opendoas iwd terminus-font"
+apps_minimal="nano apparmor vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
@@ -164,7 +164,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi sbsigntool systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -222,7 +222,7 @@ echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf
 if [[ $fs_type != "btrfs"  ]]; then
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 else
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
@@ -433,6 +433,7 @@ alias vsv='doas vsv'
 alias reboot='doas reboot'
 alias poweroff='doas poweroff'
 alias ss='ss -atup'
+alias cat='bat'
 alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
