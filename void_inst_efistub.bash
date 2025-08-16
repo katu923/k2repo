@@ -129,7 +129,7 @@ else
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
-    btrfs subvolume create /mnt/@var_log
+    #btrfs subvolume create /mnt/@var_log
  	umount /mnt
 fi
 
@@ -141,7 +141,7 @@ mkdir -p /mnt/home
 mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
 mkdir -p /mnt/.snapshots
 mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-mount -o $BTRFS_OPTS,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
+#mount -o $BTRFS_OPTS,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 fi
 
 for dir in dev proc sys run; do
