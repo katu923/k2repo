@@ -61,7 +61,7 @@ fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font"
 
 
 #for test
-apps_minimal="nano apparmor vsv opendoas iwd terminus-font bat"
+apps_minimal="nano apparmor vsv opendoas iwd terminus-font bat nftables"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
@@ -124,7 +124,7 @@ if [[ $fs_type != "btrfs"  ]]; then
 		mkfs.$fs_type -qL home /dev/$hostname/home
 	fi
 else
-	BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,discard=async,ssd"
+	BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,discard,ssd"
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
