@@ -378,7 +378,7 @@ chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/aut
 
 for serv1 in ${rm_services[@]}; do
 
-	unlink /mnt/var/service/$serv1
+	chroot /mnt unlink /var/service/$serv1
 done
 
 for serv2 in ${en_services[@]}; do
@@ -482,7 +482,7 @@ for pkg in ${ignore_pkgs[@]}; do
    chroot /mnt xbps-remove -oOR $pkg -y	
 done
 
-#flatpak
+# enable flatpak
 
 chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
