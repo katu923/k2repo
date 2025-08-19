@@ -165,7 +165,7 @@ fi
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
-chroot /mnt xbps-alternatives -s dracut-uefi
+#chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -498,7 +498,7 @@ echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
-
+chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 xbps-reconfigure -far /mnt/ 
 
 
