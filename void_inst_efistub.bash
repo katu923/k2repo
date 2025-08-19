@@ -95,7 +95,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q luksFormat $luks_part
+echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf=pbkdf2
 echo $luks_pw | cryptsetup --type luks2 open $luks_part cryptroot
 
 if [[ $fs_type != "btrfs"  ]]; then
