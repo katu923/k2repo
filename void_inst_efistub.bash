@@ -164,7 +164,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi grub sbsigntool systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
