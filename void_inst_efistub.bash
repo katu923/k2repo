@@ -164,7 +164,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi sbsigntool systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi grub sbsigntool systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -491,9 +491,14 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
   	
-#done
+
+
+echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
 
 xbps-reconfigure -far /mnt/ 
+
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
