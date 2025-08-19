@@ -490,20 +490,20 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
 #for dns in ${dns_list[@]}; do
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
-  	
+  
 
-
-echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/default/grub
-echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-
-
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 xbps-reconfigure -far /mnt/ 
 
 
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
+
+#grub
+echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor cryptdevice=UUID='$ROOT_UUID':root root=/dev/mapper/cryptroot"' >> /mnt/etc/default/grub
+echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
+chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
