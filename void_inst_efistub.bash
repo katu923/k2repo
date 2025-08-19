@@ -499,7 +499,7 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 #grub
-echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor cryptdevice=UUID='$ROOT_UUID':root root=/dev/mapper/cryptroot"' >> /mnt/etc/default/grub
+echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor cryptdevice=UUID='$ROOT_UUID':root"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
