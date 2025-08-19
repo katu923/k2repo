@@ -493,7 +493,7 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
   	
 
 
-echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/default/grub
+echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 
 
