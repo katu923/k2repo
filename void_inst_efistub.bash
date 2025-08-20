@@ -61,7 +61,7 @@ fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font"
 
 
 #for test
-apps_minimal="nano apparmor vsv opendoas iwd terminus-font bat nftables"
+apps_minimal="nano vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
@@ -164,7 +164,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup lvm2 efibootmgr btrfs-progs dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
 #chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -223,8 +223,9 @@ if [[ $fs_type != "btrfs"  ]]; then
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 else
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'compress="zstd"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
-echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+#echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 # harden sysctl 
 
@@ -499,7 +500,7 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 #grub
-echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
