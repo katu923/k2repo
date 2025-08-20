@@ -1,7 +1,7 @@
 #!/bin/bash
 
 dialog --msgbox "Read this script carefully before use it, "\
-"this only works with uefi bios and intel graphics cards, "\
+"this only works with uefi and intel graphics cards, "\
 "for nvidia you must change the script" 0 0
 
 clear
@@ -34,7 +34,7 @@ language="en_US.UTF-8"
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
 #empty it will install only base system and apps_minimal
 
-disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1)
+disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
 secure_boot=$(dialog --yesno "enable secure boot?" 0 0 --output-fd 1)
 clear
