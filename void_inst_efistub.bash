@@ -23,20 +23,20 @@ root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 
 
 # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
-hostname=$(dialog --inputbox "enter hostname" 0 0 xpt099 --output-fd 1)
+hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
-fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4 or btrfs)" 0 0 xfs --output-fd 1) #support ext4 or xfs
+fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) 
 
 libc=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
 
 language="en_US.UTF-8"
 
-graphical=$(dialog --inputbox "enter graphical interface: (supported values are: gnome, kde or empty for minimal installation" 0 0 --output-fd 1)
+graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
 #empty it will install only base system and apps_minimal
 
 disk=$(dialog --inputbox "enter disk for installation (for example: /dev/sda or /dev/vda for virt-manager" 0 0 --output-fd 1)
 
-secure_boot=$(dialog --inputbox "enable secure boot? (values: yes or no) note: you can break your bios" 0 0 --output-fd 1)
+secure_boot=$(dialog --yesno "enable secure boot?" 0 0 --output-fd 1)
 clear
 
 void_repo="https://repo-fastly.voidlinux.org"
@@ -80,7 +80,7 @@ elif [[ $disk == *"nvme"* ]]; then
 fi
 
 
-begin=$(dialog --inputbox "we are about to format the disk, do you want to proceed? (yes or no)" 0 0 --output-fd 1)
+begin=$(dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1)
 clear
 
 if [[ $begin == "yes" ]]; then 
