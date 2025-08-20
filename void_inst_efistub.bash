@@ -27,7 +27,7 @@ hostname=$(dialog --inputbox "enter hostname" 0 0 xpt099 --output-fd 1)
 
 fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4 or btrfs)" 0 0 xfs --output-fd 1) #support ext4 or xfs
 
-libc=$(dialog --inputbox "choose btw glibc or musl install (default: glibc)" 0 0 glibc --output-fd 1) #empty is glibc other value is musl
+libc=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
 
 language="en_US.UTF-8"
 
