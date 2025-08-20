@@ -17,17 +17,17 @@ luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 
 
 user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
-efi_part_size=$(dialog --inputbox "enter efi partition size (for example: 512M" 0 0 --output-fd 1)
+efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
-root_part_size=$(dialog --inputbox "enter root partition size (for example: 40G)" 0 0 --output-fd 1)
+root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
 
 # if it is empty it will create only a root partition. (and doesnt create a home partition with the remaining space)
 
-hostname=$(dialog --inputbox "enter hostname" 0 0 --output-fd 1)
+hostname=$(dialog --inputbox "enter hostname" 0 0 xpt099 --output-fd 1)
 
-fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4 or btrfs)" 0 0 --output-fd 1) #support ext4 or xfs
+fs_type=$(dialog --inputbox "enter partition file system type (supported values are: xfs or ext4 or btrfs)" 0 0 xfs --output-fd 1) #support ext4 or xfs
 
-libc=$(dialog --inputbox "enter musl or leave empty for glibc install" 0 0 --output-fd 1) #empty is glibc other value is musl
+libc=$(dialog --inputbox "choose btw glibc or musl install (default: glibc)" 0 0 glibc --output-fd 1) #empty is glibc other value is musl
 
 language="en_US.UTF-8"
 
