@@ -89,7 +89,7 @@ clear
 
 if [[ $begin == 0 ]]; then
 
-dd if=/dev/urandom of=$disk count=100000 status=progress
+#dd if=/dev/urandom of=$disk count=100000 status=progress
 
 #Wipe disk
 wipefs -aq $disk
