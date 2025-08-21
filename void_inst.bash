@@ -28,7 +28,7 @@ hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) 
 
-libc=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
+ARCH=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'x86_64' 1 on 'x86_64-musl' 2 off --output-fd 1 )
 
 language="en_US.UTF-8"
 
@@ -44,10 +44,8 @@ secure_boot=$?
 
 clear
 
-void_repo="https://repo-fastly.voidlinux.org"
+void_repo="https://repo-fastly.voidlinux.org/current"
 #after install change mirror with xmirror
-
-ARCH="x86_64"
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
@@ -89,10 +87,10 @@ clear
 
 if [[ $begin == 0 ]]; then
 
-#dd if=/dev/urandom of=$disk count=100000 status=progress
+dd if=/dev/urandom of=$disk count=100000 status=progress
 
 #Wipe disk
-wipefs -aq $disk
+wipefs -aqf $disk
 else exit
 fi
 #dd if=/dev/zero of=/dev$disk bs=16M count=500
@@ -175,7 +173,7 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo/current/$libc -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs  dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
