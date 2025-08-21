@@ -82,7 +82,7 @@ fi
 begin=$(dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1)
 clear
 
-if [[ $begin == "yes" ]]; then 
+if [[ $begin == "" ]]; then
 
 dd if=/dev/urandom of=$disk bs=32M count=300000 status=progress
 
@@ -285,7 +285,7 @@ vm.mmap_rnd_compat_bits=16
 vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 
 #secure boot
-if [[ $secure_boot == "yes" ]]; then
+if [[ $secure_boot == "" ]]; then
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -i
