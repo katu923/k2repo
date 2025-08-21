@@ -37,7 +37,11 @@ graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 o
 
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
-secure_boot=$(dialog --yesno "enable secure boot?" 0 0 --output-fd 1)
+
+dialog --yesno "enable secure boot?" 0 0 --output-fd 1
+
+secure_boot=$?
+
 clear
 
 void_repo="https://repo-fastly.voidlinux.org"
@@ -79,12 +83,13 @@ elif [[ $disk == *"nvme"* ]]; then
 fi
 
 
-begin=$(dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1)
+dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1
+begin=$?
 clear
 
-if [[ $begin == "" ]]; then
+if [[ $begin == 0 ]]; then
 
-dd if=/dev/urandom of=$disk bs=32M count=300000 status=progress
+dd if=/dev/urandom of=$disk count=100000 status=progress
 
 #Wipe disk
 wipefs -aq $disk
@@ -285,7 +290,7 @@ vm.mmap_rnd_compat_bits=16
 vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 
 #secure boot
-if [[ $secure_boot == "" ]]; then
+if [[ $secure_boot == 0 ]]; then
 
 chroot /mnt sbctl create-keys
 chroot /mnt sbctl enroll-keys -i
