@@ -38,6 +38,10 @@ language="en_US.UTF-8"
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
 
+if [[ $graphical == "minimal" ]]; then
+	graphical=""
+fi
+
 bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'efistub' 1 on 'grub' 2 off --output-fd 1)
 
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
