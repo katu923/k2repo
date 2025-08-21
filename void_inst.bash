@@ -49,7 +49,7 @@ secure_boot=$?
 
 clear
 
-void_repo="https://repo-de.voidlinux.org/current/'$glib'"
+void_repo="https://repo-de.voidlinux.org/current/"$glib
 #after install change mirror with xmirror
 
 #dns_list=("9.9.9.9" "1.1.1.1")
@@ -304,7 +304,7 @@ vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 if [[ $secure_boot == 0 ]]; then
 
 chroot /mnt sbctl create-keys
-chroot /mnt sbctl enroll-keys -i
+chroot /mnt sbctl enroll-keys -i -m
 echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -468,7 +468,7 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 #ssh / cron hardening permissions
 
 echo -e "PasswordAuthentication no"
-"PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
+"PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
 chroot /mnt chown -c root:root /etc/ssh/sshd_config
 chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
@@ -512,17 +512,20 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
   
-xbps-reconfigure -far /mnt/ 
 
+if [[ $bm == "efistub" ]]; then
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
+else
 #grub
 echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+fi
+
+xbps-reconfigure -far /mnt/
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
