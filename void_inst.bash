@@ -20,9 +20,9 @@ user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
 root_part_size=$(dialog --inputbox "enter root partition size (default: 25G) "\
-"note: the remaining space will be used for the home partition and "\
-"if the value is empty, it will use all disk space to create a root partition "\
-"choose this for btrfs..." 0 0 25G --output-fd 1)
+"note: the remaining space will be used for the /home partition and "\
+"if the size is empty, it will create a root partition with all the disk space, "\
+"choose this for btrfs or to create a system with only a root partition" 0 0 25G --output-fd 1)
 
 hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
@@ -48,7 +48,7 @@ ARCH="x86_64"
 #dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance"
+" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance starship"
 
 apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion"
 
@@ -288,7 +288,7 @@ vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 if [[ $secure_boot == "yes" ]]; then
 
 chroot /mnt sbctl create-keys
-chroot /mnt sbctl enroll-keys -m -i #this use microsoft keys to uefi secure boot / work with Thinkpads
+chroot /mnt sbctl enroll-keys -i
 echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -414,6 +414,7 @@ chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
+eval "$(starship init bash)"
 complete -cf xi xs" >> /mnt/home/$username/.bashrc
 
 echo -e "alias xi='doas xbps-install -S' 
@@ -432,6 +433,8 @@ alias reboot='doas reboot'
 alias poweroff='doas poweroff'
 alias ss='ss -atup'
 alias cat='bat'
+alias gitssh='ssh -T git@github.com'
+alias ls='ls -all'
 alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
@@ -445,7 +448,9 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 
 #ssh / cron hardening permissions
 
-echo "PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
+echo -e "PasswordAuthentication no"
+"PermitRoootLogin no" >> /mnt/etc/ssh/sshd_config
+
 chroot /mnt chown -c root:root /etc/ssh/sshd_config
 chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
 chroot /mnt chown -c root:root /etc/cron.daily
