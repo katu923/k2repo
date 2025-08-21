@@ -28,12 +28,17 @@ hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) 
 
-ARCH=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'x86_64' 1 on 'x86_64-musl' 2 off --output-fd 1 )
+glib=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
+
+if [[ $glib == "glibc" ]]; then
+	glib=""
+fi
 
 language="en_US.UTF-8"
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
-#empty it will install only base system and apps_minimal
+
+bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'efistub' 1 on 'grub' 2 off --output-fd 1)
 
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
@@ -44,7 +49,7 @@ secure_boot=$?
 
 clear
 
-void_repo="https://repo-fastly.voidlinux.org/current"
+void_repo="https://repo-de.voidlinux.org/current/'$glib'"
 #after install change mirror with xmirror
 
 #dns_list=("9.9.9.9" "1.1.1.1")
@@ -134,7 +139,7 @@ else
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
-    btrfs subvolume create /mnt/@var_log
+    #btrfs subvolume create /mnt/@var_log
  	umount /mnt
 fi
 
@@ -173,8 +178,14 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs  dracut-uefi grub-x86_64-efi grub grub-btrfs sbsigntool systemd-boot-efistub sbctl
+
+if [[ $bm == "efistub"  ]]; then
+echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl
 chroot /mnt xbps-alternatives -s dracut-uefi
+else
+echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs  grub-x86_64-efi grub grub-btrfs sbsigntool sbctl
+fi
+
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -193,7 +204,7 @@ EOF
 echo $hostname > /mnt/etc/hostname
 
 
-if [[ -z $libc ]]; then
+if [[ -z $glib ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
     echo -e "pt_PT.UTF-8 UTF-8  
              pt_PT ISO-8859-1  
@@ -226,6 +237,7 @@ fi
 	
 #dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
+if [[ $bm == "efistub"  ]]; then
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $fs_type != "btrfs"  ]]; then
@@ -235,6 +247,7 @@ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.na
 echo 'compress="zstd"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
 
 # harden sysctl 
 
@@ -296,22 +309,23 @@ echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.c
 echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
+if [[ $bm == "efistub" ]]; then
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-
 mkdir -p /mnt/efi/EFI/Linux
+fi
 
-xbps-install -SuyR $void_repo/current/$libc -r /mnt xbps
-xbps-install -SyR $void_repo/current/$libc -r /mnt void-repo-nonfree
+xbps-install -SuyR $void_repo -r /mnt xbps
+xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_kde $apps_intel $apps_optional $fonts
+xbps-install -SyR $void_repo -r /mnt $apps $apps_kde $apps_intel $apps_optional $fonts
 
 elif [[ $graphical == "gnome" ]]; then
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
+xbps-install -SyR $void_repo -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
 
 else
-xbps-install -SyR $void_repo/current/$libc -r /mnt $apps_minimal
+xbps-install -SyR $void_repo -r /mnt $apps_minimal
 
 #iwd
 mkdir -p /mnt/etc/iwd
@@ -394,6 +408,7 @@ for serv2 in ${en_services[@]}; do
 done
 fi
 
+if [[ $bm == "efistub" ]]; then
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -403,6 +418,7 @@ touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
+fi
 
 #rc.conf
 echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
