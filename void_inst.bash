@@ -340,44 +340,33 @@ fi
 touch /mnt/etc/nftables.conf
 
 echo -e 'flush ruleset
-table inet my_table {
-	set LANv4 {
-		type ipv4_addr
-		flags interval
-		elements = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16 }
+
+table inet filter {
+	chain input {
+		type filter hook input priority 0; policy drop;
+		ct state invalid counter drop comment "early drop of invalid packets"
+		ct state {established, related} counter accept comment "accept all connections related to connections made by us"
+		iif lo accept comment "accept loopback"
+		iif != lo ip daddr 127.0.0.1/8 counter drop comment "drop connections to loopback not coming from loopback"
+		iif != lo ip6 daddr ::1/128 counter drop comment "drop connections to loopback not coming from loopback"
+		ip protocol icmp counter accept comment "accept all ICMP types"
+		meta l4proto ipv6-icmp counter accept comment "accept all ICMP types"
+		udp dport mdns ip daddr 224.0.0.251 counter accept comment "IPv4 mDNS"
+		udp dport mdns ip6 daddr ff02::fb counter accept comment "IPv6 mDNS"
+		#tcp dport 22 counter accept comment "accept SSH"
+		counter comment "count dropped packets"
 	}
-	set LANv6 {
-		type ipv6_addr
-		flags interval
-		elements = { fd00::/8, fe80::/10 }
+	chain forward {
+		type filter hook forward priority 0; policy drop;
+		counter comment "count dropped packets"
 	}
-	chain my_input_lan {
-		udp sport 1900 udp dport >= 1024 meta pkttype unicast limit rate 4/second burst 20 packets accept comment "Accept UPnP IGD port mapping reply"
-		udp sport netbios-ns udp dport >= 1024 meta pkttype unicast accept comment "Accept Samba Workgroup browsing replies"
-	}
-	chain my_input {
-		type filter hook input priority filter; policy drop;
-		iif lo accept comment "Accept any localhost traffic"
-		ct state invalid drop comment "Drop invalid connections"
-		fib daddr . iif type != { local, broadcast, multicast } drop comment "Drop packets if the destination IP address is not configured on the incoming interface (strong host model)"
-		ct state { established, related } accept comment "Accept traffic originated from us"
-		meta l4proto { icmp, ipv6-icmp } accept comment "Accept ICMP"
-		ip protocol igmp accept comment "Accept IGMP"
-		udp dport mdns ip6 daddr ff02::fb accept comment "Accept mDNS"
-		udp dport mdns ip daddr 224.0.0.251 accept comment "Accept mDNS"
-		ip6 saddr @LANv6 jump my_input_lan comment "Connections from private IP address ranges"
-		ip saddr @LANv4 jump my_input_lan comment "Connections from private IP address ranges"
-		counter comment "Count any other traffic"
-	}
-	chain my_forward {
-		type filter hook forward priority filter; policy drop;
-		# Drop everything forwarded to us. We do not forward. That is routers job.
-	}
-	chain my_output {
-		type filter hook output priority filter; policy accept;
-		# Accept every outbound connection
+	# If were not counting packets, this chain can be omitted.
+	chain output {
+		type filter hook output priority 0; policy accept;
+		counter comment "count accepted packets"
 	}
 }' > /mnt/etc/nftables.conf
+
 
 if [[ $graphical != "" ]]; then
 
