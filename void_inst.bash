@@ -42,8 +42,6 @@ if [[ $graphical == "minimal" ]]; then
 	graphical=""
 fi
 
-bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'efistub' 1 on 'grub' 2 off --output-fd 1)
-
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
 
@@ -184,12 +182,10 @@ fi
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
-if [[ $bm == "efistub"  ]]; then
-echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl
+
+echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind
 chroot /mnt xbps-alternatives -s dracut-uefi
-else
-echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr btrfs-progs  grub-x86_64-efi grub grub-btrfs sbsigntool sbctl
-fi
+
 
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -237,12 +233,11 @@ else
 	tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0" >> /mnt/etc/fstab
 fi
 
-	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
+	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2
+	efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 
-	
 #dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
-if [[ $bm == "efistub"  ]]; then
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $fs_type != "btrfs"  ]]; then
@@ -252,7 +247,7 @@ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.na
 echo 'compress="zstd"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
+
 
 # harden sysctl 
 
@@ -314,11 +309,10 @@ echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.c
 echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
-if [[ $bm == "efistub" ]]; then
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 mkdir -p /mnt/efi/EFI/Linux
-fi
+
 
 xbps-install -SuyR $void_repo -r /mnt xbps
 xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
@@ -413,7 +407,7 @@ for serv2 in ${en_services[@]}; do
 done
 fi
 
-if [[ $bm == "efistub" ]]; then
+
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -423,7 +417,7 @@ touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
-fi
+
 
 #rc.conf
 echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
@@ -518,16 +512,11 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
   
 
-if [[ $bm == "efistub" ]]; then
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
-else
-#grub
-echo 'GRUB_CMDLINE_LINUX="lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
-echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void Linux"
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+#refind
+chroot /mnt refind-install
 fi
 
 xbps-reconfigure -far /mnt/
