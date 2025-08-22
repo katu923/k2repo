@@ -183,7 +183,7 @@ mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
-echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind
+echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
 
 
@@ -517,7 +517,7 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 #refind
 chroot /mnt refind-install
-fi
+
 
 xbps-reconfigure -far /mnt/
 
