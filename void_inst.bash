@@ -53,11 +53,11 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
-" earlyoom irqbalance starship"
+apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
+" nftables runit-nftables vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
+" earlyoom irqbalance starship ffmpeg bash-completion lm_sensors"
 
-apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion"
+apps_optional="lynis hplip hplip-gui"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
@@ -105,7 +105,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 
-echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2 --type luks2
+echo $luks_pw | cryptsetup -q luksFormat $luks_part --type luks2 #use --pbkdf pbkdf2 for grub work
 echo $luks_pw | cryptsetup open $luks_part cryptroot
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -139,8 +139,7 @@ else
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
 	btrfs subvolume create /mnt/@snapshots
-    #btrfs subvolume create /mnt/@var_log
- 	umount /mnt
+    umount /mnt
 fi
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -151,7 +150,6 @@ else
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
 	mkdir -p /mnt/.snapshots
 	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-	#mount -o $BTRFS_OPTS,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 	mkdir -p /mnt/var/cache
 	btrfs subvolume create /mnt/var/cache/xbps
 	btrfs subvolume create /mnt/var/tmp
@@ -182,8 +180,6 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
-
-
 
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
@@ -504,7 +500,9 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 #refind
 chroot /mnt refind-install
 
-chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
+if [[ $secure_boot == 0 ]]; then
+	chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
+fi
 
 xbps-reconfigure -far /mnt/
 
