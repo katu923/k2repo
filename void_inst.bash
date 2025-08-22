@@ -19,10 +19,7 @@ user_groups="wheel,audio,video,cdrom,optical,kvm,xbuilder"
 
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
-root_part_size=$(dialog --inputbox "enter root partition size (default: 25G) "\
-"note: the remaining space will be used for the /home partition and "\
-"if the size is empty, it will create a root partition with all the disk space, "\
-"choose this for btrfs or to create a system with only a root partition" 0 0 25G --output-fd 1)
+root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
 
 hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
@@ -466,8 +463,8 @@ chroot /mnt chmod -c 0400 /etc/doas.conf
 
 #ssh / cron hardening permissions
 
-echo -e "PasswordAuthentication no"
-"PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
+echo -e "PasswordAuthentication no
+PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
 chroot /mnt chown -c root:root /etc/ssh/sshd_config
 chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
@@ -518,6 +515,7 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 #refind
 chroot /mnt refind-install
 
+chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
 
 xbps-reconfigure -far /mnt/
 
