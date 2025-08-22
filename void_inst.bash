@@ -59,7 +59,8 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 #dns_list=("9.9.9.9" "1.1.1.1")
 
 apps="xorg-minimal nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen earlyoom irqbalance starship"
+" nftables runit-nftables iptables-nft vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
+" earlyoom irqbalance starship"
 
 apps_optional="lynis lm_sensors hplip hplip-gui ffmpeg bash-completion"
 
