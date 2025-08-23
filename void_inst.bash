@@ -50,7 +50,7 @@ secure_boot=$?
 
 clear
 
-ARCH="X86_64"
+ARCH="x86_64"
 
 void_repo="https://repo-de.voidlinux.org/current/"$glib
 #after install change mirror with xmirror
@@ -96,10 +96,10 @@ clear
 
 if [[ $begin == 0 ]]; then
 
-dd if=/dev/urandom of=$disk count=100000 status=progress
+#dd if=/dev/urandom of=$disk count=100000 status=progress
 
 #Wipe disk
-wipefs -aqf $disk
+wipefs -aq $disk
 else exit
 fi
 #dd if=/dev/zero of=/dev$disk bs=16M count=500
@@ -402,7 +402,7 @@ for serv2 in ${en_services[@]}; do
 done
 fi
 
-if [[ $bm == "grub" ]]; then
+if [[ $bm != "grub" ]]; then
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -515,7 +515,7 @@ chroot /mnt refind-install
 		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
-echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+#echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
