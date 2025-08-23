@@ -50,6 +50,8 @@ secure_boot=$?
 
 clear
 
+ARCH="X86_64"
+
 void_repo="https://repo-de.voidlinux.org/current/"$glib
 #after install change mirror with xmirror
 
@@ -181,11 +183,11 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
 if [[ $bm == "grub" ]]; then
-echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
+echo y | XBPS_ARCH=$ARCH-$glib xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
 
 else
 
-echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
+echo y | XBPS_ARCH=$ARCH-$glib xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -513,9 +515,9 @@ chroot /mnt refind-install
 		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
-echo 'GRUB_CMDLINE_LINUX="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/default/grub
+echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-chroot /mnt grub-install $disk
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
 		chroot /mnt sbctl sign -s /efi/EFI/Void/grubx64.efi
