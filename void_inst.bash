@@ -524,7 +524,7 @@ dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
 chroot /mnt echo $luks_pw | cryptsetup luksAddKey $disk'2' /boot/volume.key
 chroot /mnt chmod 000 /boot/volume.key
 chroot /mnt chmod -R g-rwx,o-rwx /boot
-echo "cryptroot UUID='$luks_uuid' /boot/volume.key luks" >> /mnt/etc/crypttab
+echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
