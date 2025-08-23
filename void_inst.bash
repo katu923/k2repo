@@ -33,6 +33,8 @@ fi
 
 language="en_US.UTF-8"
 
+bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
+
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
 
 if [[ $graphical == "minimal" ]]; then
@@ -105,7 +107,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 
-echo $luks_pw | cryptsetup -q luksFormat $luks_part --type luks2 #use --pbkdf pbkdf2 for grub work
+echo $luks_pw | cryptsetup -q luksFormat $luks_part --type luks2 --pbkdf pbkdf2
 echo $luks_pw | cryptsetup open $luks_part cryptroot
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -178,9 +180,14 @@ mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
+if [[ $bm == "grub" ]]; then
+echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
+
+else
+
 echo y | xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
-
+fi
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
 chroot /mnt chown root:root /
@@ -229,15 +236,18 @@ fi
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2
 	efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 
-#dracut
+
+	#dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
+if [[ $bm != "grub" ]]; then
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $fs_type != "btrfs"  ]]; then
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 else
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 echo 'compress="zstd"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
@@ -302,10 +312,11 @@ echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.c
 echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
+if [[ $bm != "grub" ]]; then
 echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
 echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 mkdir -p /mnt/efi/EFI/Linux
-
+fi
 
 xbps-install -SuyR $void_repo -r /mnt xbps
 xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
@@ -389,7 +400,7 @@ for serv2 in ${en_services[@]}; do
 done
 fi
 
-
+if [[ $bm == "grub" ]]; then
 touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
 echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -399,7 +410,7 @@ touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
 echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
 chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
-
+fi
 
 #rc.conf
 echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
@@ -493,15 +504,22 @@ chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/re
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
   
-
+if [[ $bm != "grub" ]]; then
 efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
-
-#refind
+elif [[ $bm == "refind" ]]; then
 chroot /mnt refind-install
-
-if [[ $secure_boot == 0 ]]; then
-	chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
+	if [[ $secure_boot == 0 ]]; then
+		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
+	fi
+else
+echo 'GRUB_CMDLINE_LINUX="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/default/grub
+echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+chroot /mnt grub-install $disk
+chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+	if [[ $secure_boot == 0 ]]; then
+		chroot /mnt sbctl sign -s /efi/EFI/Void/grubx64.efi
+	fi
 fi
 
 xbps-reconfigure -far /mnt/
