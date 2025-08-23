@@ -183,11 +183,11 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
 if [[ $bm == "grub" ]]; then
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs btrfs-progs grub-x86_64-efi snapper
 
 else
 
-echo y | XBPS_ARCH=$ARCH-$glib xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
@@ -243,13 +243,11 @@ fi
 
 	#dracut
 echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $bm != "grub" ]]; then
+echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $fs_type != "btrfs"  ]]; then
 echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-else
-echo 'kernel_cmdline="lsm=capability,landlock,yama,bpf,apparmor root=UUID='$ROOT_UUID' rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -519,14 +517,14 @@ else
 	if [[ $fs_type != "btrfs" ]]; then
 	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 	else
-	echo 'GRUB_CMDLINE_LINUX="cryptdevice=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 	fi
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-chroot /mnt echo $luks_pw | cryptsetup luksAddKey /dev/sda1 /boot/volume.key
+chroot /mnt echo $luks_pw | cryptsetup luksAddKey $disk'2' /boot/volume.key
 chroot /mnt chmod 000 /boot/volume.key
 chroot /mnt chmod -R g-rwx,o-rwx /boot
-echo "cryptroot $disk'2' /boot/volume.key luks" >> /mnt/etc/crypttab
+echo "cryptroot UUID='$luks_uuid' /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
