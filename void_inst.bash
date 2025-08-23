@@ -217,9 +217,11 @@ fi
 
 chroot /mnt/ ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
+
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
+luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
 ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptroot)
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -514,13 +516,17 @@ chroot /mnt refind-install
 		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
-echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	if [[ $fs_type != "btrfs" ]]; then
+	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	else
+	echo 'GRUB_CMDLINE_LINUX="cryptdevice=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	fi
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
 chroot /mnt echo $luks_pw | cryptsetup luksAddKey /dev/sda1 /boot/volume.key
 chroot /mnt chmod 000 /boot/volume.key
 chroot /mnt chmod -R g-rwx,o-rwx /boot
-echo "$hostname /dev/sda1   /boot/volume.key   luks" >> /mnt/etc/crypttab
+echo "cryptroot $disk'2' /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
