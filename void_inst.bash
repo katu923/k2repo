@@ -245,10 +245,9 @@ echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $bm != "grub" ]]; then
 echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $fs_type != "btrfs"  ]]; then
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname 'root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 else
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot root=UUID='$ROOT_UUID 'rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-echo 'compress="zstd"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="lsm=capability,landlock,yama,bpf,apparmor root=UUID='$ROOT_UUID' rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
