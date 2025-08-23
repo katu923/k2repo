@@ -109,7 +109,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 
-echo $luks_pw | cryptsetup -q luksFormat $luks_part --type luks2 --pbkdf pbkdf2
+echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2
 echo $luks_pw | cryptsetup open $luks_part cryptroot
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -183,7 +183,7 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
 if [[ $bm == "grub" ]]; then
-echo y | XBPS_ARCH=$ARCH-$glib xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-x86_64-efi snapper
 
 else
 
@@ -514,8 +514,15 @@ chroot /mnt refind-install
 		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
-#echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
+chroot /mnt echo $luks_pw | cryptsetup luksAddKey /dev/sda1 /boot/volume.key
+chroot /mnt chmod 000 /boot/volume.key
+chroot /mnt chmod -R g-rwx,o-rwx /boot
+echo "$hostname /dev/sda1   /boot/volume.key   luks" >> /mnt/etc/crypttab
+echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
+
 chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
