@@ -75,7 +75,7 @@ apps_minimal="nano vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance" "grub-btrfs")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -142,7 +142,7 @@ else
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
-	btrfs subvolume create /mnt/@snapshots
+	#btrfs subvolume create /mnt/@snapshots
     umount /mnt
 fi
 
@@ -152,12 +152,12 @@ else
 	mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
 	mkdir -p /mnt/home
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
-	mkdir -p /mnt/.snapshots
-	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-	mkdir -p /mnt/var/cache
-	btrfs subvolume create /mnt/var/cache/xbps
-	btrfs subvolume create /mnt/var/tmp
-	btrfs subvolume create /mnt/srv
+	#mkdir -p /mnt/.snapshots
+	#mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+	#mkdir -p /mnt/var/cache
+	#btrfs subvolume create /mnt/var/cache/xbps
+	#btrfs subvolume create /mnt/var/tmp
+	#btrfs subvolume create /mnt/srv
 fi
 
 for dir in dev proc sys run; do
@@ -183,7 +183,7 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
 if [[ $bm == "grub" ]]; then
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs btrfs-progs grub-x86_64-efi snapper
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs btrfs-progs grub-x86_64-efi timeshift inotify-tools
 
 else
 
@@ -232,9 +232,7 @@ echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 	fi
 else
 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
-	tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0" >> /mnt/etc/fstab
+	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2" >> /mnt/etc/fstab
 fi
 
 	echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2
@@ -426,8 +424,8 @@ chroot /mnt chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
-eval "$(starship init bash)"
 complete -cf xi xs" >> /mnt/home/$username/.bashrc
+echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
 echo -e "alias xi='doas xbps-install -S' 
 alias xu='doas xbps-install -Suy'
@@ -518,10 +516,12 @@ else
 	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 	else
 	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	echo "--timeshift-auto" >> /mnt/etc/sv/grub-btrfs/conf
+	echo "GRUB_BTRFS_ENABLE_CRYPTODISK" >> /mnt/etc/default/grub-btrfs
 	fi
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-chroot /mnt echo $luks_pw | cryptsetup luksAddKey $disk'2' /boot/volume.key
+echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
 chroot /mnt chmod 000 /boot/volume.key
 chroot /mnt chmod -R g-rwx,o-rwx /boot
 echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
