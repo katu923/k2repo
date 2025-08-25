@@ -35,7 +35,7 @@ language="en_US.UTF-8"
 
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
 
-graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'minimal' 3 off --output-fd 1)
+graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
 
 if [[ $graphical == "minimal" ]]; then
 	graphical=""
@@ -65,9 +65,18 @@ apps_optional="lynis hplip hplip-gui"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
+if [[ $disk == "/dev/vda" ]]; then #virtual machine
+
+	apps_intel="xf86-video-qxl"
+	apps_optional=""
+	apps="nano dbus socklog-void fastfetch pipewire wireplumber vsv htop bat opendoas starship"
+fi
+
 apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover spectacle flatpack-kcm gparted"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
+
+apps_xfce="xfce4 paper-gtk-theme paper-icon-theme xorg-minimal"
 
 fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font dejavu-fonts-ttf"
 #for test
@@ -75,7 +84,7 @@ apps_minimal="nano vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance" "grub-btrfs")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance" "grub-btrfs" "dhcpcd-eth0")
 
 
 if [[ $disk == *"sd"* ]]; then
@@ -326,6 +335,9 @@ xbps-install -SyR $void_repo -r /mnt $apps $apps_kde $apps_intel $apps_optional 
 elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
 
+elif [[ $graphical == "xfce" ]]; then
+xbps-install -SyR $void_repo -r /mnt $apps $apps_xfce $apps_intel $apps_optional $fonts
+
 else
 xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
 
@@ -527,11 +539,10 @@ chroot /mnt chmod -R g-rwx,o-rwx /boot
 echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void" --disable-shim-lock
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void" --disable-shim-lock --modules="tpm"
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
 		chroot /mnt sbctl sign -s /efi/EFI/Void/grubx64.efi
-		chroot /mnt sbctl sign -s /boot/vmlinuz*
 	fi
 fi
 
