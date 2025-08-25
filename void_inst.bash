@@ -154,10 +154,10 @@ else
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
 	#mkdir -p /mnt/.snapshots
 	#mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-	#mkdir -p /mnt/var/cache
-	#btrfs subvolume create /mnt/var/cache/xbps
-	#btrfs subvolume create /mnt/var/tmp
-	#btrfs subvolume create /mnt/srv
+	mkdir -p /mnt/var/cache
+	btrfs subvolume create /mnt/var/cache/xbps
+	btrfs subvolume create /mnt/var/tmp
+	btrfs subvolume create /mnt/srv
 fi
 
 for dir in dev proc sys run; do
@@ -183,7 +183,7 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 
 if [[ $bm == "grub" ]]; then
-echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs btrfs-progs grub-x86_64-efi timeshift inotify-tools
+echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs btrfs-progs grub-x86_64-efi timeshift
 
 else
 
