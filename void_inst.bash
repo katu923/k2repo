@@ -69,7 +69,7 @@ apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover 
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
-fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font"
+fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font dejavu-fonts-ttf"
 #for test
 apps_minimal="nano vsv opendoas iwd terminus-font bat"
 
@@ -327,7 +327,7 @@ elif [[ $graphical == "gnome" ]]; then
 xbps-install -SyR $void_repo -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
 
 else
-xbps-install -SyR $void_repo -r /mnt $apps_minimal
+xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
 
 #iwd
 mkdir -p /mnt/etc/iwd
@@ -527,10 +527,11 @@ chroot /mnt chmod -R g-rwx,o-rwx /boot
 echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void" --disable-shim-lock
 chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
 		chroot /mnt sbctl sign -s /efi/EFI/Void/grubx64.efi
+		chroot /mnt sbctl sign -s /boot/vmlinuz*
 	fi
 fi
 
