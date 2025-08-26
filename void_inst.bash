@@ -85,7 +85,7 @@ apps_minimal="nano vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "zramen" "earlyoom" "irqbalance" "grub-btrfs" "dhcpcd-eth0")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "nftables"  "sddm" "gdm" "lightdm" "zramen" "earlyoom" "irqbalance" "grub-btrfs" "dhcpcd-eth0")
 
 
 if [[ $disk == *"sd"* ]]; then
