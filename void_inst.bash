@@ -52,6 +52,12 @@ clear
 
 ARCH="x86_64"
 
+if [[ $glib == "musl" ]]; then
+
+	ARCH="x86_64-musl"
+
+fi
+
 void_repo="https://repo-de.voidlinux.org/current/"$glib
 #after install change mirror with xmirror
 
@@ -193,7 +199,6 @@ fi
 
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
-
 
 if [[ $bm == "grub" ]]; then
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool sbctl grub grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi timeshift
