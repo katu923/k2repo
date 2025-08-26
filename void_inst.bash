@@ -1,9 +1,9 @@
 #!/bin/bash
 
 dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage or loss "\
-"of data caused by it. Works with uefi and have packages for intel graphics, for nvidia you must add packages to it. "\
-"The install uses disk encryption with luks by default, for swap i use zramen. This help me to automate my installation "\
-"of Void Linux. There is a lot of customization...and some bugs...read it before use it! " 0 0
+"of data caused by it. Works with uefi and its configured for intel graphics, for nvidia you must add packages to it. "\
+"The install uses disk encryption with luks by default, if you set root partition size empty it will use all disk "\ "space, if you leave it by default (25G) it will use the remaining space for a home partition. This is valid for xfs "\  "and ext4, for btrfs you must set root partition size empty. For swap i use zramen. This help me to automate my "\ "installation of Void Linux. There is a lot of customization...and some bugs...Everyone can use it and change it."\
+"Read it before use it! " 0 0
 
 clear
 
@@ -15,7 +15,7 @@ user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
-user_groups="wheel,audio,video,kvm"
+user_groups="wheel,audio,video,kvm,xbuilder"
 
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
@@ -441,7 +441,7 @@ sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 touch /mnt/home/$username/.bash_aliases
-chown $username:$username /mnt/home/$username/.bash_aliases
+chown $username:users /mnt/home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
@@ -450,9 +450,9 @@ echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc #need file in
 
 mkdir -p /mnt/home/$username/.config
 
-chown $username:$username /mnt/home/$username/.config
+chown $username:users /mnt/home/$username/.config
 touch /mnt/home/$username/.config/starship.toml
-chown $username:$username /mnt/home/$username/.config/starship.toml
+chown $username:users /mnt/home/$username/.config/starship.toml
 
  echo -e "add_newline = true
  [character] # The name of the module we are configuring is 'character'
@@ -560,7 +560,7 @@ chroot /mnt chmod -R g-rwx,o-rwx /boot
 echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void" --disable-shim-lock --modules="tpm"
+chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
 
 #modules
 #"normal test configfile linux efi_gop efi_uga echo search video_bochs video_cirrus all_video efifwsetup "\
