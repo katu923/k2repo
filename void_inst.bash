@@ -440,21 +440,25 @@ echo 'FONT="ter-v22n"' >> /mnt/etc/rc.conf
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
-chroot /mnt touch /home/$username/.bash_aliases
-chroot /mnt chown $username:$username /home/$username/.bash_aliases
+touch /mnt/home/$username/.bash_aliases
+chown $username:$username /mnt/home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
 complete -cf xi xs" >> /mnt/home/$username/.bashrc
 echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc #need file in $home/.config/starship.toml
 
-mkdir -p /mnt/home/$username/.config && touch /mnt/home/$username/.config/starship.toml
+mkdir -p /mnt/home/$username/.config
 
-echo -e "add_newline = true
-[character] # The name of the module we are configuring is 'character'
-success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
-[package]
-disabled = true" > /mnt/home/$username/.config/starship.toml
+chown $username:$username /mnt/home/$username/.config
+touch /mnt/home/$username/.config/starship.toml
+chown $username:$username /mnt/home/$username/.config/starship.toml
+
+ echo -e "add_newline = true
+ [character] # The name of the module we are configuring is 'character'
+ success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
+ [package]
+ disabled = true" > /mnt/home/$username/.config/starship.toml
 
 echo -e "alias xi='doas xbps-install -S' 
 alias xu='doas xbps-install -Suy'
@@ -545,7 +549,7 @@ else
 	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
 	else
 	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
-	echo "--timeshift-auto" >> /mnt/etc/sv/grub-btrfs/conf
+	echo "--timeshift-auto" > /mnt/etc/sv/grub-btrfs/conf
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	fi
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
