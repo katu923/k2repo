@@ -2,7 +2,8 @@
 
 dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage or loss "\
 "of data caused by it. Works with uefi and have packages for intel graphics, for nvidia you must add packages to it. "\
-"The install uses disk encryption with luks by default, for swap i use zramen. This help me to automate my installation of Void "\ "Linux. There is a lot of customization...and some bugs...read it before use it! " 0 0
+"The install uses disk encryption with luks by default, for swap i use zramen. This help me to automate my installation "\
+"of Void Linux. There is a lot of customization...and some bugs...read it before use it! " 0 0
 
 clear
 
@@ -14,7 +15,7 @@ user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
-user_groups="wheel"
+user_groups="wheel,audio,video,kvm"
 
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
@@ -221,7 +222,9 @@ echo $hostname > /mnt/etc/hostname
 
 if [[ -z $glib ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
-    echo "pt_PT.UTF-8 UTF-8" >> /mnt/etc/default/libc-locales
+    echo -e "pt_PT.UTF-8 UTF-8
+             pt_PT ISO-8859-1
+             pt_PT@euro ISO-8859-15" >> /mnt/etc/default/libc-locales
     xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
