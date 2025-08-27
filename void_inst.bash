@@ -1,11 +1,21 @@
 #!/bin/bash
 
 dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage or loss "\
-"of data caused by it. Works with uefi and its configured for intel graphics, for nvidia you must add packages to it. "\
-"The install uses disk encryption with luks by default, if you set root partition size empty it will use all disk "\ "space, if you leave it by default (25G) it will use the remaining space for a home partition. This is valid for xfs "\  "and ext4, for btrfs you must set root partition size empty. For swap i use zramen. This help me to automate my "\ "installation of Void Linux. There is a lot of customization...and some bugs...Everyone can use it and change it."\
-"Read it before use it! " 0 0
+"of data caused by it. Everyone can use it and change it. Works with uefi and its configured for intel graphics, for "\ "nvidia you must add packages to it. The install uses disk encryption with luks2 by default, if you set root partition "\ "size empty it will use all disk space, if you leave it by default (25G) it will use the remaining space for a home "\ "partition. This is valid for xfs and ext4, for btrfs you must set root partition size empty. For swap i use zramen."\
+"For backups i use Timeshift with grub and grub-btrfs."\
+"This help me to automate my custom installation of Void Linux. There is a lot of customization and some bugs..."\
+"Notes: Grub with secure boot (sbctl) doesnt work (for now), grub-btrfs only populate grub menu with snapshots after "\ "grub-update."\
+"Read it before installation, its easy to adapt to other preferences." 0 0 --output-fd 1
 
 clear
+
+dialog --yesno "Proceed to installation?" 0 0 --output-fd 1
+start=$?
+clear
+
+if [[ $start == 1 ]]; then
+	exit
+fi
 
 root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 
@@ -62,6 +72,8 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 #after install change mirror with xmirror
 
 #dns_list=("9.9.9.9" "1.1.1.1")
+
+crm="chroot /mnt"
 
 apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
 " nftables runit-nftables vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
@@ -210,10 +222,10 @@ chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 #luks_uuid=$(blkid -o value -s UUID $luks_part)
 
-chroot /mnt chown root:root /
-chroot /mnt chmod 755 /
+$crm chown root:root /
+$crm chmod 755 /
 
-chroot /mnt useradd -m -g users -G $user_groups $username -s /bin/bash
+$crm useradd -m -G $user_groups $username -s /bin/bash
 
 
 cat << EOF | chroot /mnt
@@ -233,7 +245,7 @@ if [[ -z $glib ]]; then
     xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
-chroot /mnt/ ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
@@ -323,8 +335,8 @@ vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 #secure boot
 if [[ $secure_boot == 0 ]]; then
 
-	chroot /mnt sbctl create-keys
-	chroot /mnt sbctl enroll-keys -i -m
+	crm sbctl create-keys
+	crm sbctl enroll-keys -i -m
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -398,24 +410,24 @@ table inet filter {
 if [[ $graphical != "" ]]; then
 
 	#pipewire
-	chroot /mnt mkdir -p /etc/pipewire/pipewire.conf.d
-	chroot /mnt ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
-	chroot /mnt ln -s /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/
+	$crm mkdir -p /etc/pipewire/pipewire.conf.d
+	$crm ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
+	$crm ln -s /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/
 
 	#start pipewire.desktop for kde gnome etc
-	chroot /mnt ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
+	$crm ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
 
 	#octoxbps-notifier
-	chroot /mnt ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
+	$crm ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 
 for serv1 in ${rm_services[@]}; do
 
-	chroot /mnt unlink /var/service/$serv1
+	$crm unlink /var/service/$serv1
 done
 
 for serv2 in ${en_services[@]}; do
 
-	chroot /mnt ln -s /etc/sv/$serv2 /var/service
+	$crm ln -s /etc/sv/$serv2 /var/service
 	
 done
 fi
@@ -441,7 +453,7 @@ sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 touch /mnt/home/$username/.bash_aliases
-chown $username:users /mnt/home/$username/.bash_aliases
+chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
@@ -449,10 +461,8 @@ complete -cf xi xs" >> /mnt/home/$username/.bashrc
 echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc #need file in $home/.config/starship.toml
 
 mkdir -p /mnt/home/$username/.config
-
-chown $username:users /mnt/home/$username/.config
 touch /mnt/home/$username/.config/starship.toml
-chown $username:users /mnt/home/$username/.config/starship.toml
+chown -R $username:$username /mnt/home/$username/.config
 
  echo -e "add_newline = true
  [character] # The name of the module we are configuring is 'character'
@@ -467,8 +477,8 @@ alias xr='doas xbps-remove -oOR'
 alias xq='xbps-query'
 alias xsi='xbps-query -m'
 alias sudo='doas'
-alias dmesg='doas dmesg'
-alias logs='doas svlogtail'
+alias dmesg='doas dmesg | less'
+alias logs='doas svlogtail | less'
 alias e='nano'
 alias de='doas nano'
 alias vsv='doas vsv'
@@ -477,27 +487,27 @@ alias poweroff='doas poweroff'
 alias ss='ss -atup'
 alias cat='bat'
 alias gitssh='ssh -T git@github.com'
-alias ls='ls -all | less'
+alias ls='ls -all'
 alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
 
 #fonts
-chroot /mnt ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
+$crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
 echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /mnt/etc/doas.conf
-chroot /mnt chown -c root:root /etc/doas.conf
-chroot /mnt chmod -c 0400 /etc/doas.conf
+$crm chown -c root:root /etc/doas.conf
+$crm chmod -c 0400 /etc/doas.conf
 
 #ssh / cron hardening permissions
 
 echo -e "PasswordAuthentication no
 PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
-chroot /mnt chown -c root:root /etc/ssh/sshd_config
-chroot /mnt chmod -c 0400 /etc/ssh/sshd_config
-chroot /mnt chown -c root:root /etc/cron.daily
-chroot /mnt chmod -c 0400 /etc/cron.daily
+$crm chown -c root:root /etc/ssh/sshd_config
+$crm chmod -c 0400 /etc/ssh/sshd_config
+$crm chown -c root:root /etc/cron.daily
+$crm chmod -c 0400 /etc/cron.daily
 
 #blacklist modules and drivers not needed
 touch /mnt/etc/modprobe.d/blacklist.conf
@@ -515,21 +525,21 @@ blacklist thunderbolt
 install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
 
 #time zone
-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
 #ignore packages
-chroot /mnt touch /etc/xbps.d/99-ignorepkgs.conf
+$crm touch /etc/xbps.d/99-ignorepkgs.conf
 
 ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware")
 
 for pkg in ${ignore_pkgs[@]}; do
    echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
-   chroot /mnt xbps-remove -oOR $pkg -y	
+   $crm xbps-remove -oOR $pkg -y
 done
 
 # enable flatpak
 
-chroot /mnt flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+$crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 #dns
 #for dns in ${dns_list[@]}; do
@@ -540,9 +550,9 @@ if [[ $bm != "grub" ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 elif [[ $bm == "refind" ]]; then
-chroot /mnt refind-install
+$crm refind-install
 	if [[ $secure_boot == 0 ]]; then
-		chroot /mnt sbctl sign -s /efi/EFI/refind/refind_x64.efi
+		$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
 	if [[ $fs_type != "btrfs" ]]; then
@@ -555,22 +565,22 @@ else
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
 echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
-chroot /mnt chmod 000 /boot/volume.key
-chroot /mnt chmod -R g-rwx,o-rwx /boot
+$crm chmod 000 /boot/volume.key
+$crm chmod -R g-rwx,o-rwx /boot
 echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
+$crm grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
 
 #modules
 #"normal test configfile linux efi_gop efi_uga echo search video_bochs video_cirrus all_video efifwsetup "\
 #"cryptodisk luks lvm btrfs zstd xfs part_gpt gzio gcry_rijndael gcry_sha256" #on real metal use only tpm module""
 
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+$crm grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
-		chroot /mnt sbctl sign -s /efi/EFI/Void/grubx64.efi
-		kern_ver=$(chroot /mnt uname -r)
-		chroot /mnt sbctl sign -s /boot/vmlinuz-$kern_ver
+		$crm sbctl sign -s /efi/EFI/Void/grubx64.efi
+		kern_ver=$($crm uname -r)
+		$crm sbctl sign -s /boot/vmlinuz-$kern_ver
 	fi
 fi
 
