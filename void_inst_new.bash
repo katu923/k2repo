@@ -73,7 +73,6 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-crm="chroot /mnt"
 
 apps="nano neovim elogind dbus socklog-void apparmor chrony xmirror fastfetch pipewire wireplumber"\
 " nftables runit-nftables vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
@@ -191,12 +190,13 @@ else
 	btrfs subvolume create /mnt/srv
 fi
 
-for dir in dev proc sys run; do
+ for dir in dev proc sys run; do
 
-	mkdir -p /mnt/$dir
-	mount --rbind /$dir /mnt/$dir
-	mount --make-rslave /mnt/$dir
-done
+ 	mkdir -p /mnt/$dir
+ 	mount --rbind /$dir /mnt/$dir
+ 	mount --make-rslave /mnt/$dir
+ done
+
 
 if [[ $fs_type != "btrfs"  ]]; then
   if [[ ! -z $root_part_size ]]; then
@@ -220,62 +220,63 @@ echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system crypts
 chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 
-#inicio de chroot
+#XCHROOT
+xchroot /mnt /bin/bash
 
-$crm chown root:root /
-$crm chmod 755 /
+chown root:root /
+chmod 755 /
 
 useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 
 
-cat << EOF | $crm
+cat << EOF
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
 
 #Set hostname and language/locale
-echo $hostname > /mnt/etc/hostname
+echo $hostname > /etc/hostname
 
 
 if [[ -z $glib ]]; then
-    echo "LANG=$language" > /mnt/etc/locale.conf
+    echo "LANG=$language" > /etc/locale.conf
     echo -e "pt_PT.UTF-8 UTF-8
              pt_PT ISO-8859-1
-             pt_PT@euro ISO-8859-15" >> /mnt/etc/default/libc-locales
-    xbps-reconfigure -fr /mnt/ glibc-locales
+             pt_PT@euro ISO-8859-15" >> /etc/default/libc-locales
+    xbps-reconfigure -fr glibc-locales
 fi
 
-$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
 
-luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
-luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
-luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
+luks_root_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-root)
+luks_home_uuid=$(blkid -o value -s UUID  /dev/mapper/$hostname-home)
+boot_uuid=$(blkid -o value -s UUID  $disk'1')
+luks_uuid=$(blkid -o value -s UUID  $disk'2')
 ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/cryptroot)
 
 if [[ $fs_type != "btrfs"  ]]; then
-	echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
+	echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /etc/fstab
 	if [[ ! -z $root_part_size ]]; then
 
-		echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+		echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /etc/fstab
 	fi
 else
 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2" >> /mnt/etc/fstab
+	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2" >> /etc/fstab
 fi
 
 echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2
-efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
+efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /etc/fstab
 
 
 	#dracut
-echo "hostonly=yes" >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo "hostonly=yes" >> /etc/dracut.conf.d/10-boot.conf
 if [[ $bm != "grub" ]]; then
-	echo 'uefi="yes"' >>  /mnt/etc/dracut.conf.d/10-boot.conf
-	echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'uefi="yes"' >>  /etc/dracut.conf.d/10-boot.conf
+	echo "uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub" >> /etc/dracut.conf.d/10-boot.conf
 	if [[ $fs_type != "btrfs"  ]]; then
-echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,bpf,apparmor rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards"' >> /etc/dracut.conf.d/10-boot.conf
 	fi
 fi
 #echo 'early_microcode="yes"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -283,8 +284,8 @@ fi
 
 # harden sysctl 
 
-mkdir /mnt/etc/sysctl.d
-touch /mnt/etc/sysctl.d/10-void-user.conf
+mkdir /etc/sysctl.d
+touch /etc/sysctl.d/10-void-user.conf
 
 echo -e "dev.tty.ldisc_autoload=0
 fs.protected_symlinks=1
@@ -330,53 +331,53 @@ net.ipv4.tcp_dsack=0
 net.ipv4.tcp_fack=0
 vm.mmap_rnd_bits=32
 vm.mmap_rnd_compat_bits=16
-vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
+vm.unprivileged_userfaultfd=0" > /etc/sysctl.d/99-void-user.conf
 
 #secure boot
 if [[ $secure_boot == 0 ]]; then
 
-	$crm sbctl create-keys
-	$crm sbctl enroll-keys -i -m
-	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	sbctl create-keys
+	sbctl enroll-keys -i -m
+	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /etc/dracut.conf.d/10-boot.conf
+	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /etc/dracut.conf.d/10-boot.conf
 fi
 
 if [[ $bm != "grub" ]]; then
-	echo "CREATE_UEFI_BUNDLES=yes" >> /mnt/etc/default/dracut-uefi-hook
-	echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-	mkdir -p /mnt/efi/EFI/Linux
+	echo "CREATE_UEFI_BUNDLES=yes" >> /etc/default/dracut-uefi-hook
+	echo 'UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /etc/default/dracut-uefi-hook
+	mkdir -p /efi/EFI/Linux
 fi
 
-xbps-install -SuyR $void_repo -r /mnt xbps
-xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
+xbps-install -SuyR $void_repo -r xbps
+xbps-install -SyR $void_repo -r void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
-	xbps-install -SyR $void_repo -r /mnt $apps $apps_kde $apps_intel $apps_optional $fonts
+	xbps-install -SyR $void_repo -r $apps $apps_kde $apps_intel $apps_optional $fonts
 
 elif [[ $graphical == "gnome" ]]; then
-	xbps-install -SyR $void_repo -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
+	xbps-install -SyR $void_repo -r $apps $apps_gnome $apps_intel $apps_optional $fonts
 
 elif [[ $graphical == "xfce" ]]; then
-	xbps-install -SyR $void_repo -r /mnt $apps $apps_xfce $apps_intel $apps_optional $fonts
+	xbps-install -SyR $void_repo -r $apps $apps_xfce $apps_intel $apps_optional $fonts
 
 else
-	xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
+	xbps-install -SyR $void_repo -r $apps_minimal $fonts
 
 	#iwd
-	mkdir -p /mnt/etc/iwd
-	touch /mnt/etc/iwd/main.conf
+	mkdir -p /etc/iwd
+	touch /etc/iwd/main.conf
 
 	echo -e "[General]
 	EnableNetworkConfiguration=true
 	[Network]
 	RoutePriorityOffset=200
 	NameResolvingService=none
-	EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+	EnableIPv6=false" >> /etc/iwd/main.conf
 
 fi
 
 #firewall
-touch /mnt/etc/nftables.conf
+touch /etc/nftables.conf
 
 echo -e 'flush ruleset
 
@@ -404,71 +405,71 @@ table inet filter {
 		type filter hook output priority 0; policy accept;
 		counter comment "count accepted packets"
 	}
-}' > /mnt/etc/nftables.conf
+}' > /etc/nftables.conf
 
 
 if [[ $graphical != "" ]]; then
 
 	#pipewire
-	$crm mkdir -p /etc/pipewire/pipewire.conf.d
-	$crm ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
-	$crm ln -s /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/
+	mkdir -p /etc/pipewire/pipewire.conf.d
+	ln -s /usr/share/examples/wireplumber/10-wireplumber.conf /etc/pipewire/pipewire.conf.d/
+	ln -s /usr/share/examples/pipewire/20-pipewire-pulse.conf /etc/pipewire/pipewire.conf.d/
 
 	#start pipewire.desktop for kde gnome etc
-	$crm ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
+	ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
 
 	#octoxbps-notifier
-	$crm ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
+	ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 
 for serv1 in ${rm_services[@]}; do
 
-	$crm unlink /var/service/$serv1
+	unlink /var/service/$serv1
 done
 
 for serv2 in ${en_services[@]}; do
 
-	$crm ln -s /etc/sv/$serv2 /var/service
+	ln -s /etc/sv/$serv2 /var/service
 	
 done
 fi
 
 if [[ $bm != "grub" ]]; then
-	touch /mnt/etc/kernel.d/post-install/10-uefi-boot
-	echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/10-uefi-boot
-	echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /mnt/etc/kernel.d/post-install/10-uefi-boot
-	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
+	touch /etc/kernel.d/post-install/10-uefi-boot
+	echo "#!/bin/sh" > /etc/kernel.d/post-install/10-uefi-boot
+	echo "mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" >> /etc/kernel.d/post-install/10-uefi-boot
+	chmod +x /etc/kernel.d/post-install/10-uefi-boot
 
-	touch /mnt/etc/kernel.d/post-install/99-uefi-boot
-	echo "#!/bin/sh" > /mnt/etc/kernel.d/post-install/99-uefi-boot
-	echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel.d/post-install/99-uefi-boot
-	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
+	touch /etc/kernel.d/post-install/99-uefi-boot
+	echo "#!/bin/sh" > /etc/kernel.d/post-install/99-uefi-boot
+	echo "cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" >> /etc/kernel.d/post-install/99-uefi-boot
+	chmod +x /etc/kernel.d/post-install/99-uefi-boot
 fi
 
 #rc.conf
-echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
-echo 'FONT="ter-v24n"' >> /mnt/etc/rc.conf
+echo 'KEYMAP="uk"' >> /etc/rc.conf
+echo 'FONT="ter-v24n"' >> /etc/rc.conf
 
 #apparmor
-sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
-sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
+sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /etc/default/apparmor
+sed -i 's/^#*write-cache/write-cache/i' /etc/apparmor/parser.conf
 
-touch /mnt/home/$username/.bash_aliases
-$crm chown $username:$username /home/$username/.bash_aliases
+touch /home/$username/.bash_aliases
+chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
-complete -cf xi xs" >> /mnt/home/$username/.bashrc
-echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc #need file in $home/.config/starship.toml
+complete -cf xi xs" >> /home/$username/.bashrc
+echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc #need file in $home/.config/starship.toml
 
-mkdir -p /mnt/home/$username/.config
-touch /mnt/home/$username/.config/starship.toml
-$crm chown -R $username:$username /home/$username/.config
+mkdir -p /home/$username/.config
+touch /home/$username/.config/starship.toml
+chown -R $username:$username /home/$username/.config
 
  echo -e "add_newline = true
  [character] # The name of the module we are configuring is 'character'
  success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
  [package]
- disabled = true" > /mnt/home/$username/.config/starship.toml
+ disabled = true" > /home/$username/.config/starship.toml
 
 echo -e "alias xi='doas xbps-install -S' 
 alias xu='doas xbps-install -Suy'
@@ -488,29 +489,29 @@ alias ss='ss -atup'
 alias cat='bat'
 alias gitssh='ssh -T git@github.com'
 alias ls='ls -all'
-alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
+alias sensors='watch sensors'" >> /home/$username/.bash_aliases
 
 #fonts
-$crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
+ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
 
 #doas
-echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /mnt/etc/doas.conf
-$crm chown -c root:root /etc/doas.conf
-$crm chmod -c 0400 /etc/doas.conf
+echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /etc/doas.conf
+chown -c root:root /etc/doas.conf
+chmod -c 0400 /etc/doas.conf
 
 #ssh / cron hardening permissions
 
 echo -e "PasswordAuthentication no
-PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
+PermitRootLogin no" >> /etc/ssh/sshd_config
 
-$crm chown -c root:root /etc/ssh/sshd_config
-$crm chmod -c 0400 /etc/ssh/sshd_config
-$crm chown -c root:root /etc/cron.daily
-$crm chmod -c 0400 /etc/cron.daily
+chown -c root:root /etc/ssh/sshd_config
+chmod -c 0400 /etc/ssh/sshd_config
+chown -c root:root /etc/cron.daily
+chmod -c 0400 /etc/cron.daily
 
 #blacklist modules and drivers not needed
-touch /mnt/etc/modprobe.d/blacklist.conf
+touch /etc/modprobe.d/blacklist.conf
 echo -e "blacklist dccp
 install dccp /bin/false
 blacklist sctp
@@ -522,24 +523,24 @@ install tipc /bin/false
 blacklist firewire-core
 install firewire-core /bin/false
 blacklist thunderbolt
-install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
+install thunderbolt /bin/false" > /etc/modprobe.d/blacklist.conf
 
 #time zone
-$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
 
 #ignore packages
-$crm touch /etc/xbps.d/99-ignorepkgs.conf
+touch /etc/xbps.d/99-ignorepkgs.conf
 
 ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware")
 
 for pkg in ${ignore_pkgs[@]}; do
-   echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
-   $crm xbps-remove -oOR $pkg -y
+   echo "ignorepkg="$pkg >> /etc/xbps.d/99-ignorepkgs.conf
+   xbps-remove -oOR $pkg -y
 done
 
 # enable flatpak
 
-$crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 #dns
 #for dns in ${dns_list[@]}; do
@@ -550,41 +551,41 @@ if [[ $bm != "grub" ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 elif [[ $bm == "refind" ]]; then
-$crm refind-install
+    refind-install
 	if [[ $secure_boot == 0 ]]; then
-		$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
+		 sbctl sign -s /efi/EFI/refind/refind_x64.efi
 	fi
 else
 	if [[ $fs_type != "btrfs" ]]; then
-	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
+	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' lsm=capability,landlock,yama,bpf,apparmor"' >> /etc/default/grub
 	else
-	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /mnt/etc/default/grub
-	echo "--timeshift-auto" > /mnt/etc/sv/grub-btrfs/conf
-	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
+	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' lsm=capability,landlock,yama,bpf,apparmor"' >> /etc/default/grub
+	echo "--timeshift-auto" > /etc/sv/grub-btrfs/conf
+	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /etc/default/grub-btrfs/config
 	fi
-echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
-$crm chmod 000 /boot/volume.key
-$crm chmod -R g-rwx,o-rwx /boot
-echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
-echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
+echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+dd bs=1 count=64 if=/dev/urandom of=/boot/volume.key
+echo $luks_pw | cryptsetup luksAddKey $disk'2' /boot/volume.key
+chmod 000 /boot/volume.key
+chmod -R g-rwx,o-rwx /boot
+echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /etc/crypttab
+echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /etc/dracut.conf.d/10-boot.conf
 
-$crm grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
+grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
 
 #modules
 #"normal test configfile linux efi_gop efi_uga echo search video_bochs video_cirrus all_video efifwsetup "\
 #"cryptodisk luks lvm btrfs zstd xfs part_gpt gzio gcry_rijndael gcry_sha256" #on real metal use only tpm module""
 
-$crm grub-mkconfig -o /boot/grub/grub.cfg
+grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
-		$crm sbctl sign -s /efi/EFI/Void/grubx64.efi
-		kern_ver=$($crm uname -r)
-		$crm sbctl sign -s /boot/vmlinuz-$kern_ver
+		sbctl sign -s /efi/EFI/Void/grubx64.efi
+		kern_ver=$(uname -r)
+		sbctl sign -s /boot/vmlinuz-$kern_ver
 	fi
 fi
 
-xbps-reconfigure -far /mnt/
+xbps-reconfigure -far
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
