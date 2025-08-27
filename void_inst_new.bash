@@ -221,12 +221,12 @@ chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 
 #CHROOT
-cat << EOF | chroot /mnt
+cat << EOF | chroot /mnt /bin/bash
 
 chown root:root /
 chmod 755 /
 
-useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
+useradd -m -U -G $user_groups $username -s /bin/bash
 
 
 echo "$root_pw\n$root_pw" | passwd -q root
@@ -336,7 +336,7 @@ vm.unprivileged_userfaultfd=0" > /etc/sysctl.d/99-void-user.conf
 if [[ $secure_boot == 0 ]]; then
 
 	sbctl create-keys
-	sbctl enroll-keys -i -m
+	sbctl enroll-keys
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /etc/dracut.conf.d/10-boot.conf
 fi
@@ -571,10 +571,6 @@ echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /etc/dracut.conf.d/10-boot.conf
 
 grub-install --target=x86_64-efi --efi-directory=/efi  --boot-directory=/boot --bootloader-id="Void" --disable-shim-lock --modules="tpm"
-
-#modules
-#"normal test configfile linux efi_gop efi_uga echo search video_bochs video_cirrus all_video efifwsetup "\
-#"cryptodisk luks lvm btrfs zstd xfs part_gpt gzio gcry_rijndael gcry_sha256" #on real metal use only tpm module""
 
 grub-mkconfig -o /boot/grub/grub.cfg
 	if [[ $secure_boot == 0 ]]; then
