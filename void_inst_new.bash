@@ -220,8 +220,8 @@ echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system crypts
 chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 
-#XCHROOT
-xchroot /mnt /bin/bash << END
+#CHROOT
+cat << EOF | chroot /mnt
 
 chown root:root /
 chmod 755 /
@@ -229,10 +229,9 @@ chmod 755 /
 useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 
 
-cat << EOF
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
-EOF
+
 
 #Set hostname and language/locale
 echo $hostname > /etc/hostname
@@ -587,7 +586,7 @@ fi
 
 xbps-reconfigure -far
 
-END
+EOF
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
