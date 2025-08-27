@@ -95,7 +95,7 @@ apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
 apps_xfce="xfce4 paper-gtk-theme paper-icon-theme xorg-minimal lightdm xfce4-pulseaudio-plugin xfce4-whiskermenu-plugin"\
-" NetworkManager"
+" NetworkManager labwc"
 
 fonts="font-adobe-source-code-pro ttf-ubuntu-font-family terminus-font dejavu-fonts-ttf"
 #for test
@@ -220,15 +220,14 @@ else
 echo y | XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system cryptsetup zstd lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi
 chroot /mnt xbps-alternatives -s dracut-uefi
 fi
-#luks_uuid=$(blkid -o value -s UUID $luks_part)
 
 $crm chown root:root /
 $crm chmod 755 /
 
-$crm useradd -m -G $user_groups $username -s /bin/bash
+useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 
 
-cat << EOF | chroot /mnt
+cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
@@ -446,14 +445,14 @@ fi
 
 #rc.conf
 echo 'KEYMAP="uk"' >> /mnt/etc/rc.conf
-echo 'FONT="ter-v22n"' >> /mnt/etc/rc.conf
+echo 'FONT="ter-v24n"' >> /mnt/etc/rc.conf
 
 #apparmor
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 touch /mnt/home/$username/.bash_aliases
-chown $username:$username /home/$username/.bash_aliases
+$crm chown $username:$username /home/$username/.bash_aliases
 
 echo -e "source /home/$username/.bash_aliases
 fastfetch
@@ -462,7 +461,7 @@ echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc #need file in
 
 mkdir -p /mnt/home/$username/.config
 touch /mnt/home/$username/.config/starship.toml
-chown -R $username:$username /mnt/home/$username/.config
+$crm chown -R $username:$username /home/$username/.config
 
  echo -e "add_newline = true
  [character] # The name of the module we are configuring is 'character'
