@@ -221,7 +221,7 @@ chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 
 #XCHROOT
-xchroot /mnt /bin/bash
+xchroot /mnt /bin/bash << END
 
 chown root:root /
 chmod 755 /
@@ -586,6 +586,8 @@ grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
 xbps-reconfigure -far
+
+END
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
 read tmp
