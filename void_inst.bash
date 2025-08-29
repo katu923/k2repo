@@ -43,7 +43,7 @@ fi
 
 language="en_US.UTF-8"
 
-bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub + (efistub as backup)' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
+bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
 
@@ -550,7 +550,7 @@ efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 
 if [[ $bm == "refind" ]]; then
 	$crm refind-install
-if
+fi
 
 if [[ $bm == "refind" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
