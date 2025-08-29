@@ -17,6 +17,7 @@ if [[ $start == 1 ]]; then
 	exit
 fi
 
+
 root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
@@ -221,7 +222,7 @@ chroot /mnt xbps-alternatives -s dracut-uefi
 fi
 
 #CHROOT
-cat << EOF | chroot /mnt /bin/bash
+cat << EOF | xchroot /mnt /bin/bash
 
 chown root:root /
 chmod 755 /
