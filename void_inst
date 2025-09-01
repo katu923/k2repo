@@ -174,7 +174,7 @@ if [[ $fs_type != "btrfs"  ]]; then
 		mkfs.$fs_type -qL home /dev/$hostname/home
 	fi
 else
-	BTRFS_OPTS="compress=zstd,noatime,space_cache=v2,discard,ssd"
+	BTRFS_OPTS="noatime,compress,space_cache=v2,discard,ssd"
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
@@ -438,7 +438,7 @@ for serv2 in ${en_services[@]}; do
 
 done
 
-if [[ $bm != "grub"  ]]; thenXBPS_ARCH=$ARCH
+if [[ $bm != "grub"  ]]; then
 	touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 	echo -e "#!/bin/sh
 	mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" \
