@@ -22,10 +22,9 @@ if [[ $start == 1 ]]; then
 	exit
 fi
 
-# keyb=$(dialog --radiolist "choose your keyboard"  0 0 4 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off \
-# 'us' 4 off '' --output-fd 1)
+ keyb=$(dialog --radiolist "choose your keyboard"  0 0 4 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  --output-fd 1)
 
-keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
+#keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
 #root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 
@@ -36,7 +35,7 @@ user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-
 
 while [ $user_pw != $user_cpw ]
 do
-	dialog msgbox "passwords dont match!!!" 0 0 --output-fd 1
+	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
 
 	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
 	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
@@ -260,7 +259,9 @@ useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 # echo "$user_pw\n$user_pw" | passwd -q $username
 # EOF
 
-$crm echo "$user_pw\n$user_pw" | passwd -q $username
+cat << EOF | $crm
+echo "$user_pw\n$user_pw" | passwd -q $username
+EOF
 
 #disable root login
 sed -i 's/^#root:x:0:0:root:/root:/bin/bash$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
@@ -481,7 +482,7 @@ fi
 
 #rc.conf
 echo -e'KEYMAP="'$keyb'"
-FONT="ter-v24n"' >> /mnt/etc/rc.conf
+FONT="ter-v22n"' >> /mnt/etc/rc.conf
 
 #apparmor
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
