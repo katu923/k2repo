@@ -1,10 +1,15 @@
 #!/bin/bash
 
-dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage or loss "\
-"of data caused by it. Everyone can use it and change it. Works with uefi and its configured for intel graphics, for "\ "nvidia you must add packages to it. The install uses disk encryption with luks2 by default, if you set root "\
-"partition size empty it will use all disk space, if you leave it by default (25G) or other value it will use the "\ "remaining space for a home partition. This is valid for xfs and ext4, for btrfs you must set root partition size "\ "empty. For swap i use zramen.For backups i use timeshift or snapper with grub and grub-btrfs."\
-"This help me to automate my custom installation of Void Linux. There is a lot of customization and some bugs..."\
-"Notes: Grub with secure boot (sbctl) doesnt work (for now), grub-btrfs only populate grub menu with snapshots after "\ "grub-update."\
+dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage "\
+"caused by it. Everyone can use it. Works with uefi and its configured for intel graphics, for "\
+"nvidia you must add packages to it. The installer uses disk encryption with luks2 by default. if you set file "\
+"system type to btrfs it will use all disk space to create btrfs subvolumes. For xfs or ext4, you can choose "\
+"the size of partitions. Leave the default 25G and it will create a home partition with the remaining space "\
+"or leave it empty and it use all disk space to create a root partition."\
+"For swap i use zramen.For backups i use timeshift or snapper with grub and grub-btrfs."\
+"Root login is disable and i use doas, sudo isnt installed."\
+"There is a lot of customization and some bugs..."\
+"Notes: Grub with secure boot (sbctl) doesnt work (for now)"\
 "Read it before installation, its easy to adapt to other preferences." 0 0 --output-fd 1
 
 clear
@@ -17,26 +22,43 @@ if [[ $start == 1 ]]; then
 	exit
 fi
 
-keyb=$(dialog --radiolist "choose your keyboard" 0 0 4 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off \
-'us' 4 off '' --output-fd 1)
+# keyb=$(dialog --radiolist "choose your keyboard"  0 0 4 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off \
+# 'us' 4 off '' --output-fd 1)
 
-root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
+
+#root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
 
 user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
+user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
+
+while [ $user_pw != $user_cpw ]
+do
+	dialog msgbox "passwords dont match!!!" 0 0 --output-fd 1
+
+	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
+	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
+done
+
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
 user_groups="audio,video,kvm,xbuilder"
 
+fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1)
+
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
-root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
+if [[ $fs_type == "btrfs" ]]; then
+	root_part_size=""
+else
+	root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
+fi
 
 hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
 
-fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) 
 
 glib=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
 
@@ -47,13 +69,11 @@ fi
 language=$(dialog --radiolist "choose your language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
 
+local=$(dialog --title "choose your location" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
-
-if [[ $graphical == "minimal" ]]; then
-	graphical=""
-fi
 
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
@@ -128,7 +148,11 @@ begin=$?
 clear
 
 if [[ $begin == 0 ]]; then
-#dd if=/dev/urandom of=$disk count=100000 status=progress
+
+
+dd if=/dev/urandom of=$disk bs=16M count 10000 status=progress
+
+
 #Wipe disk
 	wipefs -aq $disk
 	else exit
@@ -149,51 +173,50 @@ else
 fi
 
 if [[ $fs_type != "btrfs"  ]]; then
-vgcreate $hostname /dev/mapper/cryptroot
-
-
-	if [[ $root_part_size == "" ]]; then
-
-		lvcreate --name root -l 100%FREE $hostname
-	else
-		lvcreate --name root -L $root_part_size $hostname
-		lvcreate --name home -l 100%FREE $hostname
-	fi
+	vgcreate $hostname /dev/mapper/cryptroot
 else
 	mkfs.btrfs -L $hostname /dev/mapper/cryptroot
-
 fi
+
+if [[ $fs_type != "btrfs" && $root_part_size == "" ]]; then
+
+	lvcreate --name root -l 100%FREE $hostname
+else
+	lvcreate --name root -L $root_part_size $hostname
+	lvcreate --name home -l 100%FREE $hostname
+fi
+
+
 
 if [[ $fs_type != "btrfs"  ]]; then
 	mkfs.$fs_type -qL root /dev/$hostname/root
 fi
 
-if [[ $fs_type != "btrfs"  ]]; then
-	if [[  $root_part_size != "" ]]; then
+if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
+	mkfs.$fs_type -qL home /dev/$hostname/home
+fi
 
-		mkfs.$fs_type -qL home /dev/$hostname/home
-	fi
-else
-	BTRFS_OPTS="noatime,compress,space_cache=v2,discard,ssd"
+if [[ $fs_type == "btrfs" && $root_part_size == "" ]]; then
+
+	BTRFS_OPTS="noatime,compress,space_cache=v2,discard=async,ssd"
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
-	#btrfs subvolume create /mnt/@snapshots
+	btrfs subvolume create /mnt/@snapshots
+    btrfs subvolume create /mnt/@log
+    btrfs subvolume create /mnt/@cache
     umount /mnt
 fi
 
 if [[ $fs_type != "btrfs"  ]]; then
 	mount /dev/$hostname/root /mnt
 else
+	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
 	mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
-	mkdir -p /mnt/home
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
-	#mkdir -p /mnt/.snapshots
-	#mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
-	mkdir -p /mnt/var/cache
-	btrfs subvolume create /mnt/var/cache/xbps
-	btrfs subvolume create /mnt/var/tmp
-	btrfs subvolume create /mnt/srv
+	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+	mount -o $BTRFS_OPTS,subvol=@log /dev/mapper/cryptroot /mnt/var/log
+	mount -o $BTRFS_OPTS,subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 fi
 
 for dir in dev proc sys run; do
@@ -232,10 +255,15 @@ $crm chmod 755 /
 useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 
 
-cat << EOF | $crm
-echo "$root_pw\n$root_pw" | passwd -q root
-echo "$user_pw\n$user_pw" | passwd -q $username
-EOF
+# cat << EOF | $crm
+# echo "$root_pw\n$root_pw" | passwd -q root
+# echo "$user_pw\n$user_pw" | passwd -q $username
+# EOF
+
+$crm echo "$user_pw\n$user_pw" | passwd -q $username
+
+#disable root login
+sed -i 's/^#root:x:0:0:root:/root:/bin/bash$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
@@ -265,7 +293,10 @@ if [[ $root_part_size != "" || $fs_type != "btrfs" ]]; then
 
 else
 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2" >> /mnt/etc/fstab
+	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
+	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
+	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2" >> /mnt/etc/fstab
 fi
 
 echo -e "UUID=$boot_uuid	  /efi	    vfat	umask=0077	0	2
@@ -290,7 +321,6 @@ fi
 # harden sysctl
 
 mkdir /mnt/etc/sysctl.d
-touch /mnt/etc/sysctl.d/10-void-user.conf
 
 echo -e "dev.tty.ldisc_autoload=0
 fs.protected_symlinks=1
@@ -365,24 +395,22 @@ elif [[ $graphical == "gnome" ]]; then
 elif [[ $graphical == "xfce" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps $apps_xfce $apps_intel $apps_optional $fonts
 
-else
+elif [[ $graphical == "minimal" ]]; then
 	XBPS_ARCH=$ARCH  xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
 
 	#iwd
 	mkdir -p /mnt/etc/iwd
-	touch /mnt/etc/iwd/main.conf
 
 	echo -e "[General]
 	EnableNetworkConfiguration=true
 	[Network]
 	RoutePriorityOffset=200
 	NameResolvingService=none
-	EnableIPv6=false" >> /mnt/etc/iwd/main.conf
+	EnableIPv6=false" > /mnt/etc/iwd/main.conf
 
 fi
 
-#firewall
-touch /mnt/etc/nftables.conf
+#firewall nftables example for a workstation
 
 echo -e 'flush ruleset
 
@@ -413,7 +441,7 @@ table inet filter {
 }' > /mnt/etc/nftables.conf
 
 
-if [[ $graphical != "" ]]; then
+if [[ $graphical != "minimal" ]]; then
 
 	#pipewire
 	$crm mkdir -p /etc/pipewire/pipewire.conf.d
@@ -439,40 +467,33 @@ for serv2 in ${en_services[@]}; do
 done
 
 if [[ $bm != "grub"  ]]; then
-	touch /mnt/etc/kernel.d/post-install/10-uefi-boot
 	echo -e "#!/bin/sh
 	mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
-	touch /mnt/etc/kernel.d/post-install/99-uefi-boot
 	echo -e "#!/bin/sh
 	linux_ver=$(uname -r)
-	cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi
-	timeshift --create --comments "kernel update to $linux_ver"" \
+	cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 fi
 
 #rc.conf
-echo 'KEYMAP="'$keyb'"' >> /mnt/etc/rc.conf
-echo 'FONT="ter-v24n"' >> /mnt/etc/rc.conf
+echo -e'KEYMAP="'$keyb'"
+FONT="ter-v24n"' >> /mnt/etc/rc.conf
 
 #apparmor
 sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
-touch /mnt/home/$username/.bash_aliases
-$crm chown $username:$username /home/$username/.bash_aliases
-
-echo -e "source /home/$username/.bash_aliases
+echo -e 'source /home/$username/.bash_aliases
 fastfetch
-complete -cf xi xs" >> /mnt/home/$username/.bashrc
-echo 'eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
+complete -cf xi xs"
+eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
 
 mkdir -p /mnt/home/$username/.config
-touch /mnt/home/$username/.config/starship.toml
 $crm chown -R $username:$username /home/$username/.config
 
 echo -e "add_newline = true
@@ -502,10 +523,12 @@ alias ll='ls -all'
 #timeshift
 #alias ti='doas timeshift --create --comments "xbps"'
 #snapper
-alias xis='doas snapper create -t single -d xbps-install && doas xbps-install -S'
-alias xrs='doas snapper create -t single -d xbps-remove && doas xbps-remove -oOR'
-alias xus='doas snapper create --command "doas xbps-install -Su"'
-alias sensors='watch sensors'" >> /mnt/home/$username/.bash_aliases
+alias xis='doas xbps-install -S && doas snapper create -t timeline -d after-install'
+alias xrs='doas snapper create -t timeline -d before-remove && doas xbps-remove -oOR'
+alias xus='doas snapper create --command "doas xbps-install -Su" -d update'
+alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
+
+$crm chown $username:$username /home/$username/.bash_aliases
 
 #fonts
 $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -527,7 +550,6 @@ $crm chown -c root:root /etc/cron.daily
 $crm chmod -c 0400 /etc/cron.daily
 
 #blacklist modules and drivers not needed
-touch /mnt/etc/modprobe.d/blacklist.conf
 echo -e "blacklist dccp
 install dccp /bin/false
 blacklist sctp
@@ -542,7 +564,7 @@ blacklist thunderbolt
 install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
 
 #time zone
-$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+$crm ln -sf $local /etc/localtime
 
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
