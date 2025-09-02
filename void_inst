@@ -26,7 +26,16 @@ fi
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
-#root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
+
+while [ $root_pw != $root_cpw ]
+do
+	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
+
+	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
+done
 
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
 
@@ -149,7 +158,7 @@ clear
 if [[ $begin == 0 ]]; then
 
 
-dd if=/dev/urandom of=$disk bs=16M count 10000 status=progress
+dd if=/dev/urandom of=$disk bs=16M count=1000 status=progress
 
 
 #Wipe disk
@@ -210,8 +219,8 @@ fi
 if [[ $fs_type != "btrfs"  ]]; then
 	mount /dev/$hostname/root /mnt
 else
-	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
 	mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
+	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
 	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 	mount -o $BTRFS_OPTS,subvol=@log /dev/mapper/cryptroot /mnt/var/log
@@ -254,17 +263,17 @@ $crm chmod 755 /
 useradd -m -R /mnt -U -G $user_groups $username -s /bin/bash
 
 
-# cat << EOF | $crm
-# echo "$root_pw\n$root_pw" | passwd -q root
-# echo "$user_pw\n$user_pw" | passwd -q $username
-# EOF
-
 cat << EOF | $crm
+echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
 
+#cat << EOF | $crm
+#echo "$user_pw\n$user_pw" | passwd -q $username
+#EOF
+
 #disable root login
-sed -i 's/^#root:x:0:0:root:/root:/bin/bash$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
+#sed -i 's/^#root:x:0:0:root:/root:/bin/bash$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
