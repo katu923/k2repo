@@ -326,11 +326,10 @@ else
 fi
 
 	#dracut
+echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
 if [[ $bm != "grub"  ]]; then
-	echo -e 'hostonly=yes
-	hostonly_mode="strict"
-	uefi="yes"
+	echo -e 'uefi="yes"
 	uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
