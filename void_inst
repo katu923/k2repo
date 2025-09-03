@@ -52,8 +52,9 @@ done
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
-user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
-#user_groups="wheel,audio,video,kvm,xbuilder"
+# user_groups=$(dialog --separator ',' --checklist "choose groups" 0 0 5 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
+
+user_groups="audio,video,kvm,xbuilder"
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1)
 
@@ -268,7 +269,7 @@ fi
 $crm chown root:root /
 $crm chmod 755 /
 
-useradd -R /mnt -mUG $user_groups $username -s /bin/bash
+useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
 
 
 cat << EOF | $crm
@@ -281,7 +282,7 @@ EOF
 #EOF
 
 #disable root login
-sed -i 's/^root:x:0:0:root:/root:/bin/sh$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
+sed -i 's/^root:x:0:0:root:/root:/bin-sh$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
