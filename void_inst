@@ -121,7 +121,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 
 	apps_intel="xf86-video-qxl"
 	apps_optional=""
-	apps="nano dbus startship socklog-void fastfetch pipewire wireplumber vsv htop bat opendoas"
+	apps="nano dbus starship socklog-void fastfetch pipewire wireplumber vsv htop bat opendoas"
 fi
 
 apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover spectacle flatpack-kcm gparted"
@@ -342,7 +342,7 @@ fi
 
 #set main repo
 
-echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
+#echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
 
 # harden sysctl
 
