@@ -1,22 +1,22 @@
 #!/bin/bash
 
-dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT."\
-"I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY."\
-""\
-"ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE."\
-""\
-"Works with uefi and its configured for intel graphics, for nvidia you must add packages to it."\
-"The installer uses disk encryption with luks2 by default. If you set file system type to BTRFS "\
-"it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose "\
-"the size of partitions. Leave at the default (25G) and it will create a home partition with the "\
-"remaining space or leave it empty and it use all disk space to create a root partition."\
-"For swap i use zramen."\
-"I use doas, sudo isnt installed."\
-"Firewal nftables and apparmor are installed by default."\
-"There is a lot of customization and some bugs..."\
-""\
-"Its easy to adapt to other preferences!!"\
-""\
+dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n"
+"I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY.\n"
+"\n"
+"ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE.\n"
+"\n"
+"Works with uefi and its configured for intel graphics, for nvidia you must add packages to it.\n"
+"The installer uses disk encryption with luks2 by default. If you set file system type to BTRFS\n"
+"it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose\n"
+"the size of partitions. Leave at the default (25G) and it will create a home partition with the\n"
+"remaining space or leave it empty and it use all disk space to create a root partition.\n"
+"For swap i use zramen.\n"
+"I use doas, sudo isnt installed.\n"
+"Firewal nftables and apparmor are installed by default.\n"
+"There is a lot of customization and some bugs...\n"
+"\n"
+"Its easy to adapt to other preferences!!\n"
+"\n"
 "Notes: Grub with secure boot (sbctl) doesnt work (for now)" 0 0 --output-fd 1
 
 clear
@@ -95,9 +95,7 @@ language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ $local == "" ]
 do
-local=$(dialog --title "Choose your timezone."\
-"Use tab, arrow keys and space to select"\
-"A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+local=$(dialog --title "Choose your timezone.\nUse tab, arrow keys and space to select.\nA valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 done
 
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
@@ -126,7 +124,7 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-crm="chroot /mnt"
+crm="xchroot /mnt"
 
 
 apps="nano neovim elogind dbus socklog-void apparmor runit-void-apparmor chrony xmirror "\
@@ -371,7 +369,7 @@ fi
 
 
 #disable root login
-sed -i 's/^'root:x:0:0:root:/root:/bin/sh'/'root:x:0:0:root:/root:/sbin/nologin'/i' /mnt/etc/passwd
+sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
 
 # harden sysctl
 
@@ -547,7 +545,7 @@ sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 echo -e 'source /home/'$username'/.bash_aliases
 fastfetch
-complete -cf xi xs"
+complete -cf "xi xs"
 eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
 
@@ -593,7 +591,7 @@ $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d
 #doas
 echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :$username" > /mnt/etc/doas.conf
 
-cat << EOF | $crm
+$crm << EOF
 chown -c root:root /etc/doas.conf
 chmod -c 0400 /etc/doas.conf
 EOF
@@ -603,7 +601,7 @@ EOF
 echo -e "PasswordAuthentication no
 PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
-cat << EOF | $crm
+$crm << EOF
 chown -c root:root /etc/ssh/sshd_config
 chmod -c 0400 /etc/ssh/sshd_config
 chown -c root:root /etc/cron.daily
@@ -630,7 +628,7 @@ $crm ln -sf $local /etc/localtime
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
 
-ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware" "iptables")
+ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware")
 
 for pkg in ${ignore_pkgs[@]}; do
    echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
@@ -681,12 +679,12 @@ fi
 if [[ $bm == "grub" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /efi/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
-	sbctl sign -s $vmlinuz
+	$crm sbctl sign -s $vmlinuz
 fi
 
 #config snapper
 if [[ $bm == "grub" ]]; then
-cat << EOF | $crm
+$crm << EOF
 umount /.snapshots
 rm -r /.snapshots
 snapper -c root create-config /
