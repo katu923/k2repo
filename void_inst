@@ -1,16 +1,23 @@
 #!/bin/bash
 
-dialog --msgbox "Disclaimer: Read the script carefully before use it, i am not responsible for any damage "\
-"caused by it. Everyone can use it. Works with uefi and its configured for intel graphics, for "\
-"nvidia you must add packages to it. The installer uses disk encryption with luks2 by default. if you set file "\
-"system type to btrfs it will use all disk space to create btrfs subvolumes. For xfs or ext4, you can choose "\
-"the size of partitions. Leave the default 25G and it will create a home partition with the remaining space "\
-"or leave it empty and it use all disk space to create a root partition."\
-"For swap i use zramen.For backups i use timeshift or snapper with grub and grub-btrfs."\
-"Root login is disable and i use doas, sudo isnt installed."\
+dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT."\
+"I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY."\
+""\
+"ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE."\
+""\
+"Works with uefi and its configured for intel graphics, for nvidia you must add packages to it."\
+"The installer uses disk encryption with luks2 by default. If you set file system type to BTRFS "\
+"it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose "\
+"the size of partitions. Leave at the default (25G) and it will create a home partition with the "\
+"remaining space or leave it empty and it use all disk space to create a root partition."\
+"For swap i use zramen."\
+"I use doas, sudo isnt installed."\
+"Firewal nftables and apparmor are installed by default."\
 "There is a lot of customization and some bugs..."\
-"Notes: Grub with secure boot (sbctl) doesnt work (for now)"\
-"Its easy to adapt to other preferences." 0 0 --output-fd 1
+""\
+"Its easy to adapt to other preferences!!"\
+""\
+"Notes: Grub with secure boot (sbctl) doesnt work (for now)" 0 0 --output-fd 1
 
 clear
 
@@ -26,16 +33,22 @@ fi
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
-# root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
-# root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
-#
-# while [ $root_pw != $root_cpw ]
-# do
-# 	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
-#
-# 	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
-# 	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
-# done
+dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
+adm=$?
+
+if [[ $adm == 0 ]]; then
+
+root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
+
+while [ $root_pw != $root_cpw ]
+do
+	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
+
+	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
+	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
+done
+fi
 
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
 
@@ -52,9 +65,11 @@ done
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
-# user_groups=$(dialog --separator ',' --checklist "choose groups" 0 0 5 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
+user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
 
-user_groups="audio,video,kvm,xbuilder"
+user_groups="${user_groups// /,}"
+
+#user_groups="audio,video,kvm,xbuilder"
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1)
 
@@ -75,10 +90,15 @@ if [[ $glib == "glibc" ]]; then
 	glib=""
 fi
 
-language=$(dialog --radiolist "choose your language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
+language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
 
-local=$(dialog --title "choose your location" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+while [ $local == "/usr/share/zoneinfo/" ] || [ $local == "" ]
+do
+local=$(dialog --title "Choose your timezone."\
+"Use tab, arrow keys and space to select"\
+"A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+done
 
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
 
@@ -109,9 +129,9 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 crm="chroot /mnt"
 
 
-apps="nano neovim elogind dbus socklog-void apparmor runit-void-apparmor chrony xmirror fastfetch pipewire wireplumber"\
-" nftables runit-nftables vsv htop btop bat opendoas topgrade octoxbps flatpak zramen"\
-" ffmpeg bash-completion lm_sensors"
+apps="nano neovim elogind dbus socklog-void apparmor runit-void-apparmor chrony xmirror "\
+"fastfetch pipewire wireplumber nftables runit-nftables vsv htop btop bat opendoas topgrade "\
+"octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
 apps_optional="lynis hplip hplip-gui starship"
 
@@ -156,15 +176,17 @@ dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --
 begin=$?
 clear
 
+#write random data to disk
+if [[ $begin == 0 && $disk != "/dev/vda" ]]; then
+	dd if=/dev/urandom of=$disk bs=64M status=progress
+fi
+
 if [[ $begin == 0 ]]; then
 
-	#dd if=/dev/urandom of=$disk bs=16M status=progress
-
-#Wipe disk
+	#Wipe disk
 	wipefs -aq $disk
 else exit
 fi
-#dd if=/dev/zero of=/dev$disk bs=16M count=500
 
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -q "$disk"
 
@@ -211,9 +233,10 @@ if [[ $fs_type == "btrfs" && $root_part_size == "" ]]; then
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
-	btrfs subvolume create /mnt/@snapshots
+	btrfs subvolume create /mnt/@tmp
     btrfs subvolume create /mnt/@log
     btrfs subvolume create /mnt/@cache
+    btrfs subvolume create /mnt/@snapshots
     umount /mnt
 fi
 
@@ -221,11 +244,12 @@ if [[ $fs_type != "btrfs"  ]]; then
 	mount /dev/$hostname/root /mnt
 else
 	mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
-	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
+	mkdir -p /mnt/{home,.snapshots,var/log,var/cache,var/tmp}
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
-	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+	mount -o $BTRFS_OPTS,subvol=@tmp /dev/mapper/cryptroot /mnt/var/tmp
 	mount -o $BTRFS_OPTS,subvol=@log /dev/mapper/cryptroot /mnt/var/log
 	mount -o $BTRFS_OPTS,subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
+	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
 fi
 
 for dir in dev proc sys run; do
@@ -258,31 +282,31 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 if [[ $bm != "grub"  ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbsigntool systemd-boot-efistub sbctl refind dracut-uefi timeshift
+
 	chroot /mnt xbps-alternatives -s dracut-uefi
 else
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper
 fi
 
-#inicio de chroot
+#chroot
 
 $crm chown root:root /
 $crm chmod 755 /
 
 useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
 
+if [[ $adm == 0 ]]; then
 
 cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
-
-#cat << EOF | $crm
-#echo "$user_pw\n$user_pw" | passwd -q $username
-#EOF
-
-#disable root login
-sed -i 's/^root:x:0:0:root:/root:/bin-sh$/root:x:0:0:root:/root:/sbin/nologin/i' /mnt/etc/passwd
+else
+cat << EOF | $crm
+echo "$user_pw\n$user_pw" | passwd -q $username
+EOF
+fi
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
@@ -290,11 +314,11 @@ echo $hostname > /mnt/etc/hostname
 
 if [[ $glib == "" ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
-    echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
-    xbps-reconfigure -fr /mnt/ glibc-locales
+    #echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
+    #xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
-$crm ln -sf /usr/share/zoneinfo/Europe/Lisbon /etc/localtime
+$crm ln -sf $local /etc/localtime
 
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
@@ -313,20 +337,21 @@ if [[ $root_part_size != "" || $fs_type != "btrfs" ]]; then
 else
 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
 	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
+	UUID=$ROOT_UUID /var/tmp btrfs $BTRFS_OPTS,subvol=@tmp 0 2
 	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
-	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2" >> /mnt/etc/fstab
-fi
+	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
+	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2 " >> /mnt/etc/fstab
+	fi
 
 echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 
 if [[ $bm != "grub"  ]]; then
-	echo "UUID=$boot_uuid	/efi	vfat	umask=0077	0	2" >> /mnt/etc/fstab
+	echo "UUID=$boot_uuid	/efi	vfat	umask=0077	0	1" >> /mnt/etc/fstab
 else
-	echo "UUID=$boot_uuid	/boot/efi	vfat	umask=0077	0	2" >> /mnt/etc/fstab
+	echo "UUID=$boot_uuid	/boot/efi	vfat	umask=0077	0	1" >> /mnt/etc/fstab
 fi
 
-	#dracut
+#dracut
 echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
 if [[ $bm != "grub"  ]]; then
@@ -335,7 +360,7 @@ if [[ $bm != "grub"  ]]; then
 fi
 
 if [[ $bm != "grub" && $fs_type != "btrfs"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmorquiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs"  ]]; then
 	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -344,7 +369,12 @@ fi
 
 #echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
 
+
+#disable root login
+sed -i 's/^'root:x:0:0:root:/root:/bin/sh'/'root:x:0:0:root:/root:/sbin/nologin'/i' /mnt/etc/passwd
+
 # harden sysctl
+
 
 mkdir /mnt/etc/sysctl.d
 
@@ -362,7 +392,6 @@ kernel.kptr_restrict=2
 kernel.printk=3 3 3 3
 kernel.unprivileged_bpf_disabled=1
 kernel.sysrq=4
-kernel.unprivileged_userns_clone=0
 kernel.perf_event_paranoid=3
 kernel.randomize_va_space=2
 kernel.msgmnb=65535
@@ -398,7 +427,7 @@ vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 if [[ $secure_boot == 0 ]]; then
 
 	$crm sbctl create-keys
-	$crm sbctl enroll-keys -i
+	$crm sbctl enroll-keys -i -m
 elif [[ $secure_boot == 0 && $bm != "grub" ]]; then
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -468,6 +497,7 @@ table inet filter {
 }' > /mnt/etc/nftables.conf
 
 
+
 if [[ $graphical != "minimal" ]]; then
 
 	#pipewire
@@ -482,11 +512,13 @@ if [[ $graphical != "minimal" ]]; then
 	$crm ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 fi
 
+#disable services
 for serv1 in ${rm_services[@]}; do
 
-	$crm unlink /var/service/$serv1
+	$crm touch /etc/sv/$serv1/down
 done
 
+#enable services
 for serv2 in ${en_services[@]}; do
 
 	$crm ln -s /etc/sv/$serv2 /var/service
@@ -547,8 +579,8 @@ alias cat='bat'
 alias gitssh='ssh -T git@github.com'
 alias ll='ls -all'
 #snapper
-alias xis='doas xbps-install -S && doas snapper create -t timeline -d after-install'
-alias xrs='doas snapper create -t timeline -d before-remove && doas xbps-remove -oOR'
+alias xis='doas snapper create -d after-install && doas xbps-install -S'
+alias xrs='doas snapper create -d before-remove && doas xbps-remove -oOR'
 alias xus='doas snapper create --command 'doas xbps-install -Su' -d update'
 alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
 
@@ -560,18 +592,23 @@ $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d
 
 #doas
 echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :$username" > /mnt/etc/doas.conf
-$crm chown -c root:root /etc/doas.conf
-$crm chmod -c 0400 /etc/doas.conf
+
+cat << EOF | $crm
+chown -c root:root /etc/doas.conf
+chmod -c 0400 /etc/doas.conf
+EOF
+
 
 #ssh / cron hardening permissions
-
 echo -e "PasswordAuthentication no
 PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
-$crm chown -c root:root /etc/ssh/sshd_config
-$crm chmod -c 0400 /etc/ssh/sshd_config
-$crm chown -c root:root /etc/cron.daily
-$crm chmod -c 0400 /etc/cron.daily
+cat << EOF | $crm
+chown -c root:root /etc/ssh/sshd_config
+chmod -c 0400 /etc/ssh/sshd_config
+chown -c root:root /etc/cron.daily
+chmod -c 0400 /etc/cron.daily
+EOF
 
 #blacklist modules and drivers not needed
 echo -e "blacklist dccp
@@ -593,7 +630,7 @@ $crm ln -sf $local /etc/localtime
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
 
-ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware")
+ignore_pkgs=("sudo" "linux-firmware-amd" "linux-firmware-nvidia" "linux-firmware-broadcom" "ipw2100-firmware" "ipw2200-firmware" "iptables")
 
 for pkg in ${ignore_pkgs[@]}; do
    echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
@@ -643,21 +680,23 @@ fi
 
 if [[ $bm == "grub" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /efi/EFI/Void/grubx64.efi
-	#vmlinuz=$($crm uname -r)
-	# sbctl sign -s vmlinux-$vmlinuz
+	vmlinuz=$(ls /mnt/boot/vm*)
+	sbctl sign -s $vmlinuz
 fi
 
 #config snapper
 if [[ $bm == "grub" ]]; then
-	umount /mnt/.snapshots
-	rm -r /mnt/.snapshots
-	$crm snapper -c root create-config /
-	$crm snapper -c root set-config 'TIMELINE_CREATE=no'
-	$crm snapper -c root set-config 'ALLOW_GROUPS='$username''
-	$crm snapper -c root set-config 'SYNC_ACL=yes'
-	$crm btrfs su del /.snapshots/
-	$crm mkdir /.snapshots
-	$crm mount -av
+cat << EOF | $crm
+umount /.snapshots
+rm -r /.snapshots
+snapper -c root create-config /
+snapper -c root set-config 'TIMELINE_CREATE=no'
+snapper -c root set-config 'ALLOW_GROUPS=$username'
+snapper -c root set-config 'SYNC_ACL=yes'
+btrfs su del /.snapshots/
+mkdir /.snapshots
+mount -av
+EOF
 fi
 
 xbps-reconfigure -far /mnt/
