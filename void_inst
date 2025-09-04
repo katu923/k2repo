@@ -89,7 +89,7 @@ fi
 language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
 
-local=$(dialog --title "Choose your timezone.\nUse tab, arrow keys and space to select.\nA valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+local=$(dialog --title "Choose your timezone.Use tab, arrow keys and space to select.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ $local == "" ]
 do
@@ -122,7 +122,7 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
-crm="xchroot /mnt"
+crm="chroot /mnt"
 
 
 apps="nano neovim elogind dbus socklog-void apparmor runit-void-apparmor chrony xmirror "\
