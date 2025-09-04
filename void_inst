@@ -1,23 +1,19 @@
 #!/bin/bash
 
-dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n"
-"I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY.\n"
-"\n"
-"ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE.\n"
-"\n"
-"Works with uefi and its configured for intel graphics, for nvidia you must add packages to it.\n"
-"The installer uses disk encryption with luks2 by default. If you set file system type to BTRFS\n"
-"it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose\n"
-"the size of partitions. Leave at the default (25G) and it will create a home partition with the\n"
-"remaining space or leave it empty and it use all disk space to create a root partition.\n"
-"For swap i use zramen.\n"
-"I use doas, sudo isnt installed.\n"
-"Firewal nftables and apparmor are installed by default.\n"
-"There is a lot of customization and some bugs...\n"
-"\n"
-"Its easy to adapt to other preferences!!\n"
-"\n"
-"Notes: Grub with secure boot (sbctl) doesnt work (for now)" 0 0 --output-fd 1
+dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n\n
+I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY.\n\n
+ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE.\n\n
+Works with uefi and its configured for intel graphics, for nvidia you must add packages to it.\n
+The installer uses disk encryption with luks2 by default. If you set file system type to BTRFS \n
+it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose \n
+the size of partitions. Leave at the default (25G) and it will create a home partition with the \n
+remaining space or leave it empty and it use all disk space to create a root partition.\n
+For swap i use zramen.\n
+I use doas, sudo isnt installed.\n
+Firewal nftables and apparmor are installed by default.\n
+There is a lot of customization and some bugs...\n
+Its easy to adapt to other preferences!! \n\n
+Notes: Grub with secure boot (sbctl) doesnt work (for now)" 0 0 --output-fd 1
 
 clear
 
@@ -92,6 +88,8 @@ fi
 
 language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
+
+local=$(dialog --title "Choose your timezone.\nUse tab, arrow keys and space to select.\nA valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ $local == "" ]
 do
