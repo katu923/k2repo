@@ -40,29 +40,33 @@ if [[ $adm == 0 ]]; then
 root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
 
-while [ $root_pw != $root_cpw ]
-do
-	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
+while [ $root_pw != $root_cpw ] ||  [ -z $root_pw ] ||  [ -z $root_cpw ]; do
+
+	dialog --msgbox "passwords dont match!!! or are null!!" 0 0 --output-fd 1
 
 	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
 done
 fi
 
+while [ -z $username ]; do
 username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
+done
 
 user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
 user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
 
-while [ $user_pw != $user_cpw ]
-do
-	dialog --msgbox "passwords dont match!!!" 0 0 --output-fd 1
+while [ $user_pw != $user_cpw ] ||  [ -z $user_pw ] ||  [ -z $user_cpw ]; do
+
+	dialog --msgbox "passwords dont match!!! or are null!!" 0 0 --output-fd 1
 
 	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
 	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
 done
 
-luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
+while [ -z $luks_pw ]; do
+	luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
+done
 
 user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
 
@@ -92,12 +96,11 @@ fi
 language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
 
-local=$(dialog --backtitle "Use tab, arrow keys and space to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+while [ -z $local ] || [ $local == "/usr/share/zoneinfo/" ] ; do
 
-while [ $local == "" ]
-do
-local=$(dialog --backtitle "Use tab, arrow keys and space to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 done
+
 
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
 
@@ -132,7 +135,7 @@ apps="nano neovim elogind dbus socklog-void chrony xmirror "\
 "fastfetch pipewire wireplumber nftables runit-nftables vsv htop btop bat topgrade "\
 "octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
-apps_optional="lynis hplip hplip-gui starship"
+apps_optional="lynis hplip hplip-gui starship gparted"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
@@ -143,7 +146,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 	apps="nano starship socklog-void fastfetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover spectacle flatpack-kcm gparted"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpack-kcm"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
@@ -182,6 +185,7 @@ clear
 
 #write random data to disk
 if [[ $begin == 0 && $disk != "/dev/vda" ]]; then
+
 	dd if=/dev/urandom of=$disk bs=64M status=progress
 fi
 
@@ -322,7 +326,7 @@ echo $hostname > /mnt/etc/hostname
 if [[ $glib == "" ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
     echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
-    xbps-reconfigure -fr /mnt/ glibc-locales
+    #xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
 $crm ln -sf $local /etc/localtime
@@ -607,9 +611,9 @@ alias cat='bat'
 alias gitssh='ssh -T git@github.com'
 alias ll='ls -all'
 #snapper
-alias xis='doas snapper create -d after-install && doas xbps-install -S'
-alias xrs='doas snapper create -d before-remove && doas xbps-remove -oOR'
-alias xus='doas snapper create --command 'doas xbps-install -Su' -d update'
+alias xis='doas snapper create -d before-xbps-install && doas xbps-install -S'
+alias xrs='doas snapper create -d before-xbps-remove && doas xbps-remove -oOR'
+alias xus='doas snapper create --command "doas xbps-install -Su" -d xbps-update'
 alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
 
 $crm chown $username:$username /home/$username/.bash_aliases
@@ -617,8 +621,6 @@ $crm chown $username:$username /home/$username/.bash_aliases
 #fonts
 $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
-
-
 
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
@@ -690,7 +692,7 @@ if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 fi
 }
 
-sb()
+secboot()
 {
 #secure boot
 if [[ $secure_boot == 0 ]]; then
@@ -711,19 +713,42 @@ if [[ $bm == "refind" && $secure_boot == 0 ]]; then
 fi
 }
 
+
+configsnapper()
+{
+
+if [[ $fs_type == "btrfs" ]]; then
+umount /mnt/.snapshots
+rm -r /mnt/.snapshots
+/mnt/bin/snapper -c root create-config /mnt/
+/mnt/bin/snapper -c root set-config 'TIMELINE_CREATE=no'
+/mnt/bin/snapper -c root set-config 'ALLOW_GROUPS=$username'
+/mnt/bin/snapper -c root set-config 'SYNC_ACL=yes'
+btrfs su del /mnt/.snapshots/
+mkdir /mnt/.snapshots
+mount -av
+fi
+}
+
 finish()
 {
+
 xbps-reconfigure -far /mnt/
 
-echo -e "\nUnmount Void installation and reboot?(y/n)\n"
-read resp
-if [[ $resp == "y" ]]; then
+dialog --yesno "Unmount Void installation and reboot?" 0 0 --output-fd 1
+end=$?
+clear
+
+if [[ $end == 1 ]]; then
+	exit
+
+else
 	umount -R /mnt
- 	reboot 
-  shutdown -r now
+ 	reboot
+	shutdown -r now
 fi
 
-echo -e "\nFinish\n"
+
 }
 
 main()
@@ -737,20 +762,13 @@ hardening
 firewall
 custom
 bootmanag
-sb
+secboot
+configsnapper
 finish
 }
 
 main
 
 
-#TO DO AFTER INSTALL MANUALLY...
-# umount /.snapshots
-# rm -r /.snapshots
-# snapper -c root create-config /
-# snapper -c root set-config 'TIMELINE_CREATE=no'
-# snapper -c root set-config 'ALLOW_GROUPS=$username'
-# snapper -c root set-config 'SYNC_ACL=yes'
-# btrfs su del /.snapshots/
-# mkdir /.snapshots
-# mount -av
+
+
