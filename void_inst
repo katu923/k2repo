@@ -321,8 +321,8 @@ echo $hostname > /mnt/etc/hostname
 
 if [[ $glib == "" ]]; then
     echo "LANG=$language" > /mnt/etc/locale.conf
-    #echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
-    #xbps-reconfigure -fr /mnt/ glibc-locales
+    echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
+    xbps-reconfigure -fr /mnt/ glibc-locales
 fi
 
 $crm ln -sf $local /etc/localtime
@@ -704,7 +704,7 @@ fi
 if [[ $bm == "grub" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /boot/efi/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
-	$crm sbctl sign -s $vmlinuz
+	/mnt/bin/sbctl sign -s $vmlinuz
 fi
 if [[ $bm == "refind" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
