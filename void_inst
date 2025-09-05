@@ -359,8 +359,9 @@ fi
 hardening()
 {
 #disable root login
+if [[ $adm ==  1 ]]; then
 sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
-
+fi
 # harden sysctl
 
 mkdir /mnt/etc/sysctl.d
@@ -699,10 +700,10 @@ configsnapper()
 if [[ $fs_type == "btrfs" ]]; then
 umount /mnt/.snapshots
 rm -r /mnt/.snapshots
-/mnt/bin/snapper -c root create-config /mnt/
-/mnt/bin/snapper -c root set-config 'TIMELINE_CREATE=no'
-/mnt/bin/snapper -c root set-config 'ALLOW_GROUPS=$username'
-/mnt/bin/snapper -c root set-config 'SYNC_ACL=yes'
+$crm snapper -c root create-config /
+$crm snapper -c root set-config 'TIMELINE_CREATE=no'
+$crm snapper -c root set-config 'ALLOW_GROUPS=$username'
+$crm snapper -c root set-config 'SYNC_ACL=yes'
 btrfs su del /mnt/.snapshots/
 mkdir /mnt/.snapshots
 mount -av
