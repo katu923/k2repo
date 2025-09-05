@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+starting()
+{
 dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n\n
 I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY.\n\n
 ITS BEST TO TEST IT IN A VIRTUAL MACHINE BEFORE DOING IT IN A REAL MACHINE.\n\n
@@ -61,13 +64,13 @@ done
 
 luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
 
-user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
+user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
 
 user_groups="${user_groups// /,}"
 
 #user_groups="audio,video,kvm,xbuilder"
 
-fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1)
+fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --no-tags --output-fd 1)
 
 efi_part_size=$(dialog --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1)
 
@@ -89,11 +92,11 @@ fi
 language=$(dialog --radiolist "choose your system language" 0 0 4 'pt_PT.UTF-8' 1 on 'en_US.UTF-8' 2 off \
 'en_UK.UTF-8' 3 off 'en_IE.UTF-8' 4 off --output-fd 1)
 
-local=$(dialog --title "Choose your timezone.Use tab, arrow keys and space to select.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+local=$(dialog --backtitle "Use tab, arrow keys and space to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 
-while [ $local == "/usr/share/zoneinfo/" ] || [ $local == "" ]
+while [ $local == "" ]
 do
-local=$(dialog --title "Choose your timezone.\nUse tab, arrow keys and space to select.\nA valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+local=$(dialog --backtitle "Use tab, arrow keys and space to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 done
 
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
@@ -125,8 +128,8 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 crm="chroot /mnt"
 
 
-apps="nano neovim elogind dbus socklog-void apparmor runit-void-apparmor chrony xmirror "\
-"fastfetch pipewire wireplumber nftables runit-nftables vsv htop btop bat opendoas topgrade "\
+apps="nano neovim elogind dbus socklog-void chrony xmirror "\
+"fastfetch pipewire wireplumber nftables runit-nftables vsv htop btop bat topgrade "\
 "octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
 apps_optional="lynis hplip hplip-gui starship"
@@ -137,7 +140,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 
 	apps_intel="xf86-video-qxl"
 	apps_optional=""
-	apps="nano dbus starship socklog-void fastfetch pipewire wireplumber vsv htop bat opendoas"
+	apps="nano starship socklog-void fastfetch pipewire wireplumber vsv htop bat"
 fi
 
 apps_kde="kde-plasma kde-baseapps discover ffmpegthumbs NetworkManager discover spectacle flatpack-kcm gparted"
@@ -168,6 +171,11 @@ elif [[ $disk == *"nvme"* ]]; then
 fi
 
 
+}
+
+
+prepdisk()
+{
 dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1
 begin=$?
 clear
@@ -271,18 +279,21 @@ else
 	mount $efi_part /mnt/boot/efi
 fi
 
+}
 
+prepsys()
+{
 mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 if [[ $bm != "grub"  ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
-	sbsigntool systemd-boot-efistub sbctl refind dracut-uefi timeshift
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi timeshift opendoas \
+	apparmor runit-void-apparmor
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 else
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
-	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
+	apparmor runit-void-apparmor
 fi
 
 #chroot
@@ -360,17 +371,14 @@ if [[ $bm != "grub" && $fs_type != "btrfs"  ]]; then
 elif [[ $bm != "grub" && $fs_type == "btrfs"  ]]; then
 	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
+}
 
-#set main repo
-
-#echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
-
-
+hardening()
+{
 #disable root login
 sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
 
 # harden sysctl
-
 
 mkdir /mnt/etc/sysctl.d
 
@@ -419,22 +427,47 @@ vm.mmap_rnd_bits=32
 vm.mmap_rnd_compat_bits=16
 vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
 
-#secure boot
-if [[ $secure_boot == 0 ]]; then
+#doas
+echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :$username" > /mnt/etc/doas.conf
 
-	$crm sbctl create-keys
-	$crm sbctl enroll-keys -i -m
-elif [[ $secure_boot == 0 && $bm != "grub" ]]; then
-	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
+$crm << EOF
+chown -c root:root /etc/doas.conf
+chmod -c 0400 /etc/doas.conf
+EOF
 
-if [[ $bm != "grub"  ]]; then
-	echo -e 'CREATE_UEFI_BUNDLES=yes
-	UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-	mkdir -p /mnt/efi/EFI/Linux
-fi
+#ssh / cron hardening permissions
+echo -e "PasswordAuthentication no
+PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
+$crm << EOF
+chown -c root:root /etc/ssh/sshd_config
+chmod -c 0400 /etc/ssh/sshd_config
+chown -c root:root /etc/cron.daily
+chmod -c 0400 /etc/cron.daily
+EOF
+
+#blacklist modules and drivers not needed
+echo -e "blacklist dccp
+install dccp /bin/false
+blacklist sctp
+install sctp /bin/false
+blacklist rds
+install rds /bin/false
+blacklist tipc
+install tipc /bin/false
+blacklist firewire-core
+install firewire-core /bin/false
+blacklist thunderbolt
+install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
+
+#apparmor
+sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
+sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
+
+}
+
+appsinstall()
+{
 XBPS_ARCH=$ARCH xbps-install -SuyR $void_repo -r /mnt xbps
 XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
 
@@ -461,7 +494,10 @@ elif [[ $graphical == "minimal" ]]; then
 	EnableIPv6=false" > /mnt/etc/iwd/main.conf
 
 fi
+}
 
+firewall()
+{
 #firewall nftables example for a workstation
 
 echo -e 'flush ruleset
@@ -491,8 +527,13 @@ table inet filter {
 		counter comment "count accepted packets"
 	}
 }' > /mnt/etc/nftables.conf
+}
 
+configsys()
+{
+#set main repo
 
+#echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
 
 if [[ $graphical != "minimal" ]]; then
 
@@ -521,26 +562,17 @@ for serv2 in ${en_services[@]}; do
 
 done
 
-if [[ $bm != "grub"  ]]; then
-	echo -e "#!/bin/sh
-	mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" \
-	> /mnt/etc/kernel.d/post-install/10-uefi-boot
-	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
-
-	echo -e "#!/bin/sh
-	cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" \
-	> /mnt/etc/kernel.d/post-install/99-uefi-boot
-	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
-fi
-
 #rc.conf
 echo -e 'KEYMAP="'$keyb'"
 FONT="ter-v22n"' >> /mnt/etc/rc.conf
 
-#apparmor
-sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
-sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
+#time zone
+$crm ln -sf $local /etc/localtime
 
+}
+
+custom()
+{
 echo -e 'source /home/'$username'/.bash_aliases
 fastfetch
 complete -cf "xi xs"
@@ -586,42 +618,7 @@ $crm chown $username:$username /home/$username/.bash_aliases
 $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
 
-#doas
-echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :$username" > /mnt/etc/doas.conf
 
-$crm << EOF
-chown -c root:root /etc/doas.conf
-chmod -c 0400 /etc/doas.conf
-EOF
-
-
-#ssh / cron hardening permissions
-echo -e "PasswordAuthentication no
-PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
-
-$crm << EOF
-chown -c root:root /etc/ssh/sshd_config
-chmod -c 0400 /etc/ssh/sshd_config
-chown -c root:root /etc/cron.daily
-chmod -c 0400 /etc/cron.daily
-EOF
-
-#blacklist modules and drivers not needed
-echo -e "blacklist dccp
-install dccp /bin/false
-blacklist sctp
-install sctp /bin/false
-blacklist rds
-install rds /bin/false
-blacklist tipc
-install tipc /bin/false
-blacklist firewire-core
-install firewire-core /bin/false
-blacklist thunderbolt
-install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
-
-#time zone
-$crm ln -sf $local /etc/localtime
 
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
@@ -637,11 +634,33 @@ done
 
 $crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
+
 #dns
 #for dns in ${dns_list[@]}; do
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
-  
+}
+
+bootmanag()
+{
+if [[ $bm != "grub"  ]]; then
+	echo -e "#!/bin/sh
+	mv /efi/EFI/Linux/linux-* /efi/EFI/Linux/linuxOLD.efi" \
+	> /mnt/etc/kernel.d/post-install/10-uefi-boot
+	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
+
+	echo -e "#!/bin/sh
+	cp /efi/EFI/Linux/linux-* /efi/EFI/Linux/linux.efi" \
+	> /mnt/etc/kernel.d/post-install/99-uefi-boot
+	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
+fi
+
+if [[ $bm != "grub"  ]]; then
+	echo -e 'CREATE_UEFI_BUNDLES=yes
+	UEFI_BUNDLE_DIR="efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
+	mkdir -p /mnt/efi/EFI/Linux
+fi
+
 if [[ $bm != "grub"  ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
@@ -649,10 +668,6 @@ fi
 
 if [[ $bm == "refind" ]]; then
 	$crm refind-install
-fi
-
-if [[ $bm == "refind" && $secure_boot == 0 ]]; then
-	$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
 fi
 
 if [[ $bm == "grub" && $fs_type != "btrfs" ]]; then
@@ -673,28 +688,31 @@ if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void" --disable-shim-lock --modules="tpm"
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
+}
 
+sb()
+{
+#secure boot
+if [[ $secure_boot == 0 ]]; then
+
+	$crm sbctl create-keys
+	$crm sbctl enroll-keys -i -m
+elif [[ $secure_boot == 0 && $bm != "grub" ]]; then
+	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
 if [[ $bm == "grub" && $secure_boot == 0 ]]; then
-	$crm sbctl sign -s /efi/EFI/Void/grubx64.efi
+	$crm sbctl sign -s /boot/efi/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
 	$crm sbctl sign -s $vmlinuz
 fi
-
-#config snapper
-if [[ $bm == "grub" ]]; then
-$crm << EOF
-umount /.snapshots
-rm -r /.snapshots
-snapper -c root create-config /
-snapper -c root set-config 'TIMELINE_CREATE=no'
-snapper -c root set-config 'ALLOW_GROUPS=$username'
-snapper -c root set-config 'SYNC_ACL=yes'
-btrfs su del /.snapshots/
-mkdir /.snapshots
-mount -av
-EOF
+if [[ $bm == "refind" && $secure_boot == 0 ]]; then
+	$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
 fi
+}
 
+finish()
+{
 xbps-reconfigure -far /mnt/
 
 echo -e "\nUnmount Void installation and reboot?(y/n)\n"
@@ -706,3 +724,33 @@ if [[ $resp == "y" ]]; then
 fi
 
 echo -e "\nFinish\n"
+}
+
+main()
+{
+starting
+prepdisk
+prepsys
+appsinstall
+configsys
+hardening
+firewall
+custom
+bootmanag
+sb
+finish
+}
+
+main
+
+
+#TO DO AFTER INSTALL MANUALLY...
+# umount /.snapshots
+# rm -r /.snapshots
+# snapper -c root create-config /
+# snapper -c root set-config 'TIMELINE_CREATE=no'
+# snapper -c root set-config 'ALLOW_GROUPS=$username'
+# snapper -c root set-config 'SYNC_ACL=yes'
+# btrfs su del /.snapshots/
+# mkdir /.snapshots
+# mount -av
