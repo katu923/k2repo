@@ -11,7 +11,7 @@ The installer uses disk encryption with luks2 by default. If you set file system
 it will use all disk space to create btrfs subvolumes. For XFS or EXT4, you can choose \n
 the size of partitions. Leave at the default (25G) and it will create a home partition with the \n
 remaining space or leave it empty and it use all disk space to create a root partition.\n
-For swap i use zramen.\n
+For swap, if needed, use zramen.\n
 I use doas, sudo isnt installed.\n
 Firewal nftables and apparmor are installed by default.\n
 To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode. \n
@@ -29,20 +29,20 @@ if [[ $start == 1 ]]; then
 	exit
 fi
 
- keyb=$(dialog --radiolist "choose your keyboard"  0 0 4 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  --output-fd 1)
+ keyb=$(dialog --radiolist "choose your keyboard"  0 0 7 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1)
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
-dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
-adm=$?
-
-if [[ $adm == 0 ]]; then
+# dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
+# adm=$?
+#
+# if [[ $adm == 0 ]]; then
 
 while [ $root_pw != $root_cpw ] ||  [ -z $root_pw ] ||  [ -z $root_cpw ]; do
 	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
 done
-fi
+# fi
 
 while [ -z $username ]; do
 	username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
@@ -115,7 +115,7 @@ crm="chroot /mnt"
 
 
 apps="nano neovim elogind dbus socklog-void chrony xmirror "\
-"fastfetch pipewire wireplumber nftables runit-nftables vsv htop btop bat topgrade "\
+"ufetch pipewire wireplumber nftables runit-nftables vsv htop btop bat "\
 "octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
 apps_optional="lynis hplip hplip-gui starship gparted"
@@ -124,16 +124,16 @@ apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
 if [[ $disk == "/dev/vda" ]]; then #virtual machine
 
-	apps_intel="xf86-video-qxl"
+	apps_intel="mesa-dri"
 	apps_optional=""
-	apps="nano starship socklog-void fastfetch pipewire wireplumber vsv htop bat"
+	apps="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
 fi
 
 apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpack-kcm"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
-apps_xfce="xfce4 paper-gtk-theme paper-icon-theme xorg-minimal lightdm xfce4-pulseaudio-plugin "\
+apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin "\
 "xfce4-whiskermenu-plugin NetworkManager labwc"
 
 fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-firacode"
@@ -221,8 +221,7 @@ if [[ $fs_type == "btrfs" && $root_part_size == "" ]]; then
 	mount -o $BTRFS_OPTS /dev/mapper/cryptroot /mnt
 	btrfs subvolume create /mnt/@
 	btrfs subvolume create /mnt/@home
-	btrfs subvolume create /mnt/@tmp
-    btrfs subvolume create /mnt/@log
+	btrfs subvolume create /mnt/@log
     btrfs subvolume create /mnt/@cache
     btrfs subvolume create /mnt/@snapshots
     umount /mnt
@@ -232,9 +231,8 @@ if [[ $fs_type != "btrfs"  ]]; then
 	mount /dev/$hostname/root /mnt
 else
 	mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/cryptroot /mnt
-	mkdir -p /mnt/{home,.snapshots,var/log,var/cache,var/tmp}
+	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
 	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/cryptroot /mnt/home
-	mount -o $BTRFS_OPTS,subvol=@tmp /dev/mapper/cryptroot /mnt/var/tmp
 	mount -o $BTRFS_OPTS,subvol=@log /dev/mapper/cryptroot /mnt/var/log
 	mount -o $BTRFS_OPTS,subvol=@cache /dev/mapper/cryptroot /mnt/var/cache
 	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
@@ -270,7 +268,7 @@ mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 if [[ $bm != "grub"  ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi timeshift opendoas \
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi opendoas \
 	apparmor runit-void-apparmor
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
@@ -286,17 +284,17 @@ $crm chmod 755 /
 
 useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
 
-if [[ $adm == 0 ]]; then
+# if [[ $adm == 0 ]]; then
 
 cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
-else
-cat << EOF | $crm
-echo "$user_pw\n$user_pw" | passwd -q $username
-EOF
-fi
+# else
+# cat << EOF | $crm
+# echo "$user_pw\n$user_pw" | passwd -q $username
+# EOF
+# fi
 
 #Set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
@@ -327,7 +325,6 @@ if [[ $root_part_size != "" || $fs_type != "btrfs" ]]; then
 else
 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
 	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-	UUID=$ROOT_UUID /var/tmp btrfs $BTRFS_OPTS,subvol=@tmp 0 2
 	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
 	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
 	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2 " >> /mnt/etc/fstab
@@ -359,9 +356,10 @@ fi
 hardening()
 {
 #disable root login
-if [[ $adm ==  1 ]]; then
-sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
-fi
+# if [[ $adm ==  1 ]]; then
+# sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
+# fi
+
 # harden sysctl
 
 mkdir /mnt/etc/sysctl.d
@@ -558,7 +556,7 @@ $crm ln -sf $local /etc/localtime
 custom()
 {
 echo -e 'source /home/'$username'/.bash_aliases
-fastfetch
+ufetch
 complete -cf "xi xs"
 eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
@@ -658,7 +656,6 @@ fi
 
 if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
-	#echo "--timeshift-auto" > /mnt/etc/sv/grub-btrfs/conf
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
@@ -667,7 +664,7 @@ if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 	$crm chmod -R g-rwx,o-rwx /boot
 	echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
-	$crm grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void" --disable-shim-lock --modules="tpm"
+	$crm grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void --disable-shim-lock #--uefi-secure-boot #grub-efi-amd64-signed package must be installed
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 }
@@ -686,7 +683,8 @@ fi
 if [[ $bm == "grub" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /boot/efi/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
-	/mnt/bin/sbctl sign -s $vmlinuz
+	vmlinuz="${vmlinuz/'/mnt'}"
+	$crm sbctl sign -s $vmlinuz
 fi
 if [[ $bm == "refind" && $secure_boot == 0 ]]; then
 	$crm sbctl sign -s /efi/EFI/refind/refind_x64.efi
@@ -698,15 +696,41 @@ configsnapper()
 {
 
 if [[ $fs_type == "btrfs" ]]; then
-umount /mnt/.snapshots
-rm -r /mnt/.snapshots
-$crm snapper -c root create-config /
-$crm snapper -c root set-config 'TIMELINE_CREATE=no'
-$crm snapper -c root set-config 'ALLOW_GROUPS=$username'
-$crm snapper -c root set-config 'SYNC_ACL=yes'
-btrfs su del /mnt/.snapshots/
-mkdir /mnt/.snapshots
-mount -av
+$crm umount /.snapshots
+$crm rm -r /.snapshots
+cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/root
+cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/home
+
+sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/config/root
+sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/config/root
+sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/config/root
+sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/config/root
+sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/config/root
+sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/config/root
+sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/config/root
+
+sed -i 's,^SUBVOLUME="/",SUBVOLUME="/home",i' /mnt/etc/snapper/config/home
+sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/config/home
+sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/config/home
+sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/config/home
+sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/config/home
+sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/config/home
+sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/config/home
+sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/config/home
+
+#$crm snapper -c root create-config /
+#$crm snapper -c home create-config /home
+
+# $crm snapper -c root set-config 'TIMELINE_CREATE=no'
+# $crm snapper -c root set-config 'ALLOW_GROUPS=$username'
+# $crm snapper -c root set-config 'SYNC_ACL=yes'
+# $crm snapper -c home set-config 'TIMELINE_CREATE=no'
+# $crm snapper -c home set-config 'ALLOW_GROUPS=$username'
+# $crm snapper -c home set-config 'SYNC_ACL=yes'
+
+$crm btrfs su del /.snapshots/
+$crm mkdir /.snapshots
+$crm mount -av
 fi
 }
 
@@ -748,3 +772,6 @@ finish
 }
 
 main
+
+#for snapper rollback / boot with the snapshot from grub / do snapper --ambit classic rollback x/
+#boot with the writable snapshot created and do grub-install ... and grub-mkconfig  .../ reboot and its done!
