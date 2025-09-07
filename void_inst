@@ -88,7 +88,7 @@ fi
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
-    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folder.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 	lslocal=$(ls $local)
 done
 
@@ -183,7 +183,7 @@ if [[ $enc_start == 0 ]]; then
 	diskmap="/dev/mapper/cryptroot"
 else
 	encryption="no"
-    diskmap=$(echo $luks_part)
+    diskmap=$luks_part
 fi
 
 while [ -z $luks_pw ] && [ $encryption == "yes" ]; do
@@ -191,7 +191,7 @@ while [ -z $luks_pw ] && [ $encryption == "yes" ]; do
 done
 
 
-dialog --yesno "we are about to format the disk, do you want to proceed?" 0 0 --output-fd 1
+dialog --yesno "you are about to erase and format the disk, do you want to proceed?" 0 0 --output-fd 1
 begin=$?
 clear
 
@@ -384,8 +384,8 @@ echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 if [[ $bm != "grub" && $uefi == "true" ]]; then
 	echo -e 'uefi="yes"
 	uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub'  >> /mnt/etc/dracut.conf.d/10-boot.conf
-
-elif [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
+fi
+if [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
 	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs" && $uefi == "true" ]]; then
 	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -680,17 +680,17 @@ if [[ $bm != "grub" && $uefi == "true"  ]]; then
 
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
-
-elif [[ $bm == "refind" && $uefi == "true" ]]; then
+fi
+if [[ $bm == "refind" && $uefi == "true" ]]; then
 	$crm refind-install
-
-elif [[ $bm == "grub" && $fs_type != "btrfs" ]]; then
+fi
+if [[ $bm == "grub" && $fs_type != "btrfs" ]]; then
 	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
-
-elif [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
+fi
+if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
-
-elif [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
+fi
+if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
@@ -699,12 +699,13 @@ elif [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	$crm chmod -R g-rwx,o-rwx /boot
 	echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
 
-elif [[ $bm == "grub" && $uefi != "true" ]]; then
+if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-install $disk
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
-
-elif [[ $bm == "grub" && $uefi == "true" ]]; then
+fi
+if [[ $bm == "grub" && $uefi == "true" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void --disable-shim-lock --modules="tpm"
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
@@ -716,65 +717,22 @@ secboot()
 if [[ $secure_boot == 0 && $uefi == "true" ]]; then
 
 	$crm sbctl create-keys
-	$crm sbctl enroll-keys -i -m
-elif [[ $secure_boot == 0 && $bm != "grub" && $uefi == "true" ]]; then
+fi	$crm sbctl enroll-keys -i -m
+if [[ $secure_boot == 0 && $bm != "grub" && $uefi == "true" ]]; then
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-
-elif [[ $bm == "grub" && $secure_boot == 0 && $uefi == "true" ]]; then
+fi
+if [[ $bm == "grub" && $secure_boot == 0 && $uefi == "true" ]]; then
 	$crm sbctl sign -s $boot_part_name/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
 	vmlinuz="${vmlinuz/'/mnt'}"
 	$crm sbctl sign -s $vmlinuz
-
-elif [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
+fi
+if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
 	$crm sbctl sign -s $boot_part_name/EFI/refind/refind_x64.efi
 fi
 }
 
-
-configsnapper()
-{
-
-if [[ $fs_type == "btrfs" ]]; then
-# 	umount /mnt/.snapshots
-# 	rm -r /mnt/.snapshots
-
-	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/configs/root
-	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/configs/home
-
-	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/configs/root
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/configs/root
-
-	sed -i 's,^SUBVOLUME="/",SUBVOLUME="/home",i' /mnt/etc/snapper/configs/home
-	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/configs/home
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/configs/home
-
-	#$crm snapper -c root create-config /
-	#$crm snapper -c home create-config /home
-
-	# $crm snapper -c root set-config 'TIMELINE_CREATE=no'
-	# $crm snapper -c root set-config 'ALLOW_GROUPS=$username'
-	# $crm snapper -c root set-config 'SYNC_ACL=yes'
-	# $crm snapper -c home set-config 'TIMELINE_CREATE=no'
-	# $crm snapper -c home set-config 'ALLOW_GROUPS=$username'
-	# $crm snapper -c home set-config 'SYNC_ACL=yes'
-
-# 	btrfs su del /mnt/.snapshots/
-# 	mkdir /mnt/.snapshots
-# 	mount -av
-fi
-}
 
 finish()
 {
@@ -809,7 +767,6 @@ firewall
 custom
 bootmanag
 secboot
-configsnapper
 finish
 }
 
