@@ -29,10 +29,13 @@ fi
 
 
 #uefi check
-uefi=$(ls /sys/firmware/efi/efivars)
+uefi=$(ls /sys/firmware/efi/efivars/)
 
 if [[ ! -z $uefi ]]; then
 	uefi="true"
+	echo "UEFI FILE SYSTEM FOUND!!"
+	pause 2
+
 fi
 
 keyb=$(dialog --radiolist "choose your keyboard"  0 0 7 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1)
@@ -281,7 +284,7 @@ if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
 fi
 
 
-if [[ uefi == "yes" ]]; then
+if [[ $uefi == "yes" ]]; then
 	boot_part_name="/boot/efi"
 else
 	boot_part_name="/boot"
