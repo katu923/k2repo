@@ -305,19 +305,19 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 if [[ $bm != "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi opendoas \
-	runit-void-apparmor runit-nftables
+	runit-void-apparmor runit-nftables apparmor
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub grub-x86_64-efi snapper opendoas \
-	runit-void-apparmor runit-nftables
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
+	runit-void-apparmor runit-nftables apparmor
 
 elif [[ $bm = "grub" && $uefi != "true" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
 	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub snapper opendoas \
-	runit-void-apparmor runit-nftables
+	runit-void-apparmor runit-nftables apparmor
 fi
 
 #chroot
@@ -703,6 +703,7 @@ elif [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 elif [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-install $disk
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
+
 elif [[ $bm == "grub" && $uefi == "true" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void --disable-shim-lock --modules="tpm"
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
@@ -736,28 +737,28 @@ configsnapper()
 {
 
 if [[ $fs_type == "btrfs" ]]; then
-	umount /mnt/.snapshots
-	rm -r /mnt/.snapshots
+# 	umount /mnt/.snapshots
+# 	rm -r /mnt/.snapshots
 
-	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/root
-	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/home
+	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/configs/root
+	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/configs/home
 
-	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/config/root
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/config/root
+	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/configs/root
+	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/configs/root
 
-	sed -i 's,^SUBVOLUME="/",SUBVOLUME="/home",i' /mnt/etc/snapper/config/home
-	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/config/home
-	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/config/home
+	sed -i 's,^SUBVOLUME="/",SUBVOLUME="/home",i' /mnt/etc/snapper/configs/home
+	sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^ALLOW_GROUPS=""/ALLOW_GROUPS="'$username'"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^SYNC_ACL="no"/SYNC_ACL="yes"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="5"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^TIMELINE_LIMIT_MONTHLY="10"/TIMELINE_LIMIT_MONTHLY="5"/i' /mnt/etc/snapper/configs/home
+	sed -i 's/^TIMELINE_LIMIT_YEARLY="10"/TIMELINE_LIMIT_YEARLY="5"/i' /mnt/etc/snapper/configs/home
 
 	#$crm snapper -c root create-config /
 	#$crm snapper -c home create-config /home
@@ -769,9 +770,9 @@ if [[ $fs_type == "btrfs" ]]; then
 	# $crm snapper -c home set-config 'ALLOW_GROUPS=$username'
 	# $crm snapper -c home set-config 'SYNC_ACL=yes'
 
-	btrfs su del /mnt/.snapshots/
-	mkdir /mnt/.snapshots
-	mount -av
+# 	btrfs su del /mnt/.snapshots/
+# 	mkdir /mnt/.snapshots
+# 	mount -av
 fi
 }
 
