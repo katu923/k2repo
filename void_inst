@@ -8,8 +8,8 @@ I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABIL
 Guidelines: \n
 For BTRFS it will use all disk space to create btrfs subvolumes. \n
 For XFS or EXT4, you can choose the size of partitions. Leave at the default (25G) and it will \n
-create a home partition with the remaining space, or leave the field EMPTY, and it will use all disk space to \n
-create a root partition.\n
+create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
+use all disk space to create a root partition.\n
 For swap, if needed, use zramen.\n
 I use doas, sudo isnt installed.\n
 Firewal nftables and apparmor are installed by default.\n
@@ -180,7 +180,7 @@ if [[ $enc_start == 0 ]]; then
 	diskmap="/dev/mapper/cryptroot"
 else
 	encryption="no"
-    diskmap=$luks_part
+    diskmap=$(echo $luks_part)
 fi
 
 while [ -z $luks_pw ] && [ $encryption == "yes" ]; do
@@ -201,20 +201,20 @@ fi
 if [[ $begin == 0 ]]; then
 
 	#Wipe disk
-	wipefs -aq $disk
+	wipefs -aqf $disk
 else exit
 fi
 
-printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -q "$disk"
+printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 
 
-if [[ $bm == "grub" && $encryption="yes" ]]; then
+if [[ $bm == "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2
 	echo $luks_pw | cryptsetup open $luks_part cryptroot
-elif [[ $bm != "grub" && $encryption="yes" ]]; then
+elif [[ $bm != "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part
 	echo $luks_pw | cryptsetup open $luks_part cryptroot
 fi
@@ -226,9 +226,6 @@ if [[ $fs_type != "btrfs" ]]; then
 else
 	mkfs.btrfs -L $hostname $diskmap
 fi
-
-
-
 
 if [[ $fs_type != "btrfs" && $root_part_size == "" ]]; then
 
