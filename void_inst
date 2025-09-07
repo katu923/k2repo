@@ -33,8 +33,8 @@ uefi=$(ls /sys/firmware/efi/efivars/)
 
 if [[ ! -z $uefi ]]; then
 	uefi="true"
-	echo "UEFI FILE SYSTEM FOUND!!"
-	pause 2
+	#echo "UEFI FILE SYSTEM FOUND!!"
+	#pause 2
 
 fi
 
@@ -284,7 +284,7 @@ if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
 fi
 
 
-if [[ $uefi == "yes" ]]; then
+if [[ $uefi == "true" ]]; then
 	boot_part_name="/boot/efi"
 else
 	boot_part_name="/boot"
@@ -689,6 +689,8 @@ elif [[ $bm == "grub" && $fs_type != "btrfs" ]]; then
 
 elif [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
 	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
+
+elif [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
@@ -736,6 +738,7 @@ configsnapper()
 if [[ $fs_type == "btrfs" ]]; then
 	umount /mnt/.snapshots
 	rm -r /mnt/.snapshots
+
 	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/root
 	cp /mnt/usr/share/snapper/config-templates/default /mnt/etc/snapper/config/home
 
