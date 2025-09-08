@@ -4,17 +4,17 @@
 starting()
 {
 dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n\n
-I AM NOT RESPONSIBLE FOR ANY DAMAGE CAUSED BY IT, USE IT AT YOUR OWN RESPONSABILITY.\n\n
+USE IT AT YOUR OWN RESPONSABILITY.\n\n
 Guidelines: \n
 For BTRFS it will use all disk space to create btrfs subvolumes. \n
 For XFS or EXT4, you can choose the size of partitions. Leave at the default (25G) and it will \n
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
 use all disk space to create a root partition.\n
 For swap, if needed, use zramen.\n
-I use doas, sudo isnt installed.\n
+For superuser i use doas, sudo isnt installed.\n
 Firewal nftables and apparmor are installed by default.\n
 To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode (and reset keys). \n
-There is a lot of customization and some bugs...\n
+There is a lot of customization and some bugs...its currently in development.\n
 Its easy to adapt to other preferences!! " 0 0 --output-fd 1
 
 clear
@@ -33,25 +33,26 @@ uefi=$(ls /sys/firmware/efi/efivars/)
 
 if [[ ! -z $uefi ]]; then
 	uefi="true"
-	#echo "UEFI FILE SYSTEM FOUND!!"
-	#pause 2
-
+	dialog --msgbox "UEFI FILE SYSTEM FOUND!!" 0 0 --output-fd 1
+else
+	dialog --msgbox "UEFI NOT FOUND! OLD COMPUTER..." 0 0 --output-fd 1
 fi
 
-keyb=$(dialog --radiolist "choose your keyboard"  0 0 7 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1)
+
+keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1)
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
-# dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
-# adm=$?
-#
-# if [[ $adm == 0 ]]; then
+ dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
+ adm=$?
+
+ if [[ $adm == 0 ]]; then
 
 while [ $root_pw != $root_cpw ] ||  [ -z $root_pw ] ||  [ -z $root_cpw ]; do
 	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
 	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
 done
-# fi
+ fi
 
 while [ -z $username ]; do
 	username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
@@ -66,16 +67,19 @@ user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 o
 
 user_groups="${user_groups// /,}"
 
+disksize=$(lsblk -l -o SIZE,TYPE | grep "disk")
+disksize="${disksize// disk/}"
+
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --no-tags --output-fd 1)
 
 while [ -z $boot_part_size ]; do
-boot_part_size=$(dialog --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1)
+boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1)
 done
 
 if [[ $fs_type == "btrfs" ]]; then
 	root_part_size=""
 else
-	root_part_size=$(dialog --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
+	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
 fi
 
 hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
@@ -98,7 +102,7 @@ else
 bm="grub"
 fi
 
-graphical=$(dialog --radiolist "choose your graphical interface" 0 0 3 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
+graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
 
 disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
@@ -195,10 +199,11 @@ dialog --yesno "you are about to erase and format the disk, do you want to proce
 begin=$?
 clear
 
-#write random data to disk
-if [[ $begin == 0 && $disk != "/dev/vda" ]]; then
+dialog --yesno "write urandom data to disk?" 0 0 --output-fd 1
+urd=$?
 
-	dd if=/dev/urandom of=$disk bs=64M status=progress
+if [[ $begin == 0 && $urd == 0 && $disk != "/dev/vda" ]]; then
+	pv -S -s $disksize /dev/urandom | dd of=$disk bs=4M
 fi
 
 if [[ $begin == 0 ]]; then
@@ -243,7 +248,7 @@ fi
 if [[ $fs_type != "btrfs"  ]]; then
 	mkfs.$fs_type -qL root /dev/$hostname/root
 fi
-
+write random data to disk
 if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
@@ -272,7 +277,7 @@ else
 fi
 
 for dir in dev proc sys run; do
-
+user_groups="${user_groups// /,}"
 	mkdir -p /mnt/$dir
 	mount --rbind /$dir /mnt/$dir
 	mount --make-rslave /mnt/$dir
@@ -395,9 +400,9 @@ fi
 hardening()
 {
 #disable root login
-# if [[ $adm ==  1 ]]; then
-# sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
-# fi
+if [[ $adm ==  1 ]]; then
+sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
+fi
 
 # harden sysctl
 
@@ -585,7 +590,7 @@ done
 
 #rc.conf
 echo -e 'KEYMAP="'$keyb'"
-FONT="ter-v22n"' >> /mnt/etc/rc.conf
+FONT="ter-v22b"' >> /mnt/etc/rc.conf
 
 #time zone
 $crm ln -sf $local /etc/localtime
@@ -627,10 +632,11 @@ alias ss='ss -atup'
 alias cat='bat'
 alias gitssh='ssh -T git@github.com'
 alias ll='ls -all'
+alias rollup='doas grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void --disable-shim-lock --modules="tpm" && doas grub-mkconfig -o /boot/grub/grub.cfg && doas sbctl sign-all'
 #snapper
 alias xis='doas snapper create -d before-xbps-install && doas xbps-install -S'
 alias xrs='doas snapper create -d before-xbps-remove && doas xbps-remove -oOR'
-alias xus='doas snapper create --command "doas xbps-install -Su" -d xbps-update'
+alias xus='doas snapper create --command "xbps-install -Su" -d xbps-update'
 alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
 
 $crm chown $username:$username /home/$username/.bash_aliases
@@ -717,7 +723,8 @@ secboot()
 if [[ $secure_boot == 0 && $uefi == "true" ]]; then
 
 	$crm sbctl create-keys
-fi	$crm sbctl enroll-keys -i -m
+	$crm sbctl enroll-keys -i -m
+fi
 if [[ $secure_boot == 0 && $bm != "grub" && $uefi == "true" ]]; then
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
@@ -772,5 +779,3 @@ finish
 
 main
 
-#for snapper rollback / boot with the snapshot from grub / do snapper --ambit classic rollback x/
-#boot with the writable snapshot created and do grub-install... and grub-mkconfig .../ reboot and its done!
