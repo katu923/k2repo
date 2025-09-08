@@ -184,7 +184,7 @@ clear
 if [[ $enc_start == 0 ]]; then
 
 	encryption="yes"
-	diskmap="/dev/mapper/cryptroot"
+	diskmap="/dev/mapper/crypt_"${luks_part/'/dev/'}""
 else
 	encryption="no"
     diskmap=$luks_part
@@ -221,10 +221,10 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 
 if [[ $bm == "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2
-	echo $luks_pw | cryptsetup open $luks_part cryptroot
+	echo $luks_pw | cryptsetup open $luks_part crypt_"${luks_part/'/dev/'}"
 elif [[ $bm != "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part
-	echo $luks_pw | cryptsetup open $luks_part cryptroot
+	echo $luks_pw | cryptsetup open $luks_part crypt_"${luks_part/'/dev/'}"
 fi
 
 
@@ -391,7 +391,7 @@ if [[ $bm != "grub" && $uefi == "true" ]]; then
 	uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=cryptroot rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=crypt_'"${luks_part/'/dev/'}"' rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs" && $uefi == "true" ]]; then
 	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -703,7 +703,7 @@ if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
 	$crm chmod 000 /boot/volume.key
 	$crm chmod -R g-rwx,o-rwx /boot
-	echo "cryptroot UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
+	echo "crypt_"${luks_part/'/dev/'}" UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
@@ -740,13 +740,12 @@ if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
 fi
 }
 
-
 finish()
 {
 
 xbps-reconfigure -far /mnt/
 
-dialog --yesno "Unmount Void installation and reboot?" 0 0 --output-fd 1
+dialog --yesno "All done! reboot?" 0 0 --output-fd 1
 end=$?
 clear
 
