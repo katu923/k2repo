@@ -4,17 +4,19 @@
 starting()
 {
 dialog --msgbox "Disclaimer: READ THE SCRIPT CAREFULLY BEFORE USE IT.\n\n
+ITS CURRENTLY IN DEVELOPMENT AND NOT FULLY TESTED.\n\n
 USE IT AT YOUR OWN RESPONSABILITY.\n\n
 Guidelines: \n
+The disk will be erased. If needed, first make a backup in a external disk!\n
 For BTRFS it will use all disk space to create btrfs subvolumes. \n
 For XFS or EXT4, you can choose the size of partitions. Leave at the default (25G) and it will \n
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
 use all disk space to create a root partition.\n
 For swap, if needed, use zramen.\n
-For superuser i use doas, sudo isnt installed.\n
+For superuser, i use doas, sudo isnt installed. There is an option to disable root login.\n
 Firewal nftables and apparmor are installed by default.\n
 To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode (and reset keys). \n
-There is a lot of customization and some bugs...its currently in development.\n
+There is a lot of customization and some bugs...\n
 Its easy to adapt to other preferences!! " 0 0 --output-fd 1
 
 clear
@@ -64,11 +66,14 @@ while [ $user_pw != $user_cpw ] ||  [ -z $user_pw ] ||  [ -z $user_cpw ]; do
 done
 
 user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
-
 user_groups="${user_groups// /,}"
 
-disksize=$(lsblk -l -o SIZE,TYPE | grep "disk")
+diskname=$(lsblk -l -o NAME,TYPE | grep "disk" | tr -d ' \n')
+diskname="${diskname//'disk'/ }"
+disksize=$(lsblk $disk -l -o SIZE,TYPE | grep "disk")
 disksize="${disksize// disk/}"
+
+disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --no-tags --output-fd 1)
 
@@ -104,7 +109,7 @@ fi
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
 
-disk=$(dialog --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
+#
 
 if [[ $uefi == "true" ]]; then
 	dialog --yesno "enable secure boot?" 0 0 --output-fd 1
@@ -132,11 +137,11 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 crm="chroot /mnt"
 
 
-apps="nano neovim elogind dbus socklog-void chrony xmirror "\
-"ufetch pipewire wireplumber vsv htop btop bat "\
+apps="nano elogind dbus socklog-void chrony xmirror "\
+"ufetch starship pipewire wireplumber vsv htop btop bat "\
 "octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
-apps_optional="lynis hplip hplip-gui starship gparted"
+apps_optional="lynis hplip hplip-gui gparted bogofilter"
 
 apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
 
@@ -147,7 +152,8 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 	apps="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpack-kcm"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle "\
+"flatpack-kcm kmail kwalletmanager"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
@@ -203,7 +209,7 @@ dialog --yesno "write urandom data to disk?" 0 0 --output-fd 1
 urd=$?
 
 if [[ $begin == 0 && $urd == 0 && $disk != "/dev/vda" ]]; then
-	pv -S -s $disksize /dev/urandom | dd of=$disk bs=4M
+	dd if=/dev/urandom of=$disk bs=4M
 fi
 
 if [[ $begin == 0 ]]; then
@@ -235,11 +241,11 @@ else
 	mkfs.btrfs -L $hostname $diskmap
 fi
 
-if [[ $fs_type != "btrfs" && $root_part_size == "" ]]; then
+if [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
 
 	lvcreate --name root -l 100%FREE $hostname
 
-elif [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
+elif [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
 
 	lvcreate --name root -L $root_part_size $hostname
 	lvcreate --name home -l 100%FREE $hostname
@@ -249,11 +255,11 @@ if [[ $fs_type != "btrfs"  ]]; then
 	mkfs.$fs_type -qL root /dev/$hostname/root
 fi
 write random data to disk
-if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
+if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
 
-if [[ $fs_type == "btrfs" && $root_part_size == "" ]]; then
+if [[ $fs_type == "btrfs" && -z $root_part_size ]]; then
 
 	BTRFS_OPTS="noatime,compress,space_cache=v2,discard=async,ssd"
 	mount -o $BTRFS_OPTS $diskmap /mnt
@@ -283,7 +289,7 @@ user_groups="${user_groups// /,}"
 	mount --make-rslave /mnt/$dir
 done
 
-if [[ $fs_type != "btrfs" && $root_part_size != "" ]]; then
+if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
    	mkdir -p /mnt/home
 	mount /dev/$hostname/home /mnt/home
 fi
@@ -367,7 +373,7 @@ if [[ $fs_type != "btrfs"  ]]; then
 	echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
 fi
 
-if [[ $root_part_size != "" || $fs_type != "btrfs" ]]; then
+if [[ ! -z $root_part_size || $fs_type != "btrfs" ]]; then
 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
 
 else
