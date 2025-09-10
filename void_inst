@@ -109,7 +109,6 @@ fi
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
 
-#
 
 if [[ $uefi == "true" ]]; then
 	dialog --yesno "enable secure boot?" 0 0 --output-fd 1
@@ -136,7 +135,6 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 crm="chroot /mnt"
 
-
 apps="nano elogind dbus socklog-void chrony xmirror "\
 "ufetch starship pipewire wireplumber vsv htop btop bat "\
 "octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
@@ -152,8 +150,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 	apps="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle "\
-"flatpack-kcm kmail kwalletmanager"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpack-kcm kmail kwalletmanager"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
@@ -207,9 +204,9 @@ clear
 
 dialog --yesno "write urandom data to disk?" 0 0 --output-fd 1
 urd=$?
-
+clear
 if [[ $begin == 0 && $urd == 0 && $disk != "/dev/vda" ]]; then
-	dd if=/dev/urandom of=$disk bs=4M
+	dd if=/dev/urandom of=$disk bs=64M
 fi
 
 if [[ $begin == 0 ]]; then
