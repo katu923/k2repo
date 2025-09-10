@@ -150,7 +150,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 	apps="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpack-kcm kmail kwalletmanager"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpak-kcm kmail kwalletmanager"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
