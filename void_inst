@@ -312,13 +312,15 @@ mkdir -p /mnt/var/db/xbps/keys
 cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 if [[ $bm != "grub" && $uefi == "true" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbsigntool systemd-boot-efistub sbctl refind dracut-uefi opendoas \
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
+	sbsigntool systemd-boot-efistub sbctl refind dracut-uefi opendoas \
 	runit-void-apparmor runit-nftables apparmor
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
+	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
 	runit-void-apparmor runit-nftables apparmor
 
 elif [[ $bm = "grub" && $uefi != "true" ]]; then
