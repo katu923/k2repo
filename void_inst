@@ -251,7 +251,7 @@ fi
 if [[ $fs_type != "btrfs"  ]]; then
 	mkfs.$fs_type -qL root /dev/$hostname/root
 fi
-write random data to disk
+
 if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
 	mkfs.$fs_type -qL home /dev/$hostname/home
 fi
