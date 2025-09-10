@@ -135,9 +135,9 @@ void_repo="https://repo-de.voidlinux.org/current/"$glib
 
 crm="chroot /mnt"
 
-apps="nano elogind dbus socklog-void chrony xmirror "\
-"ufetch starship pipewire wireplumber vsv htop btop bat "\
-"octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
+apps="nano elogind dbus socklog-void chrony xmirror \
+ufetch starship pipewire wireplumber vsv htop btop bat \
+octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
 
 apps_optional="lynis hplip hplip-gui gparted bogofilter"
 
