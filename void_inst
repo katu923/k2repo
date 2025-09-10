@@ -97,7 +97,7 @@ fi
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
-    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders.A valid string shoud be for example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 	lslocal=$(ls $local)
 done
 
@@ -154,8 +154,8 @@ apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
-apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin "\
-"xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
+apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin \
+xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
 
 fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-firacode"
 #for test
@@ -163,7 +163,8 @@ apps_minimal="nano starship socklog-void vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty3" "agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" "iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd-eth0" "snapperd")
+en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" \
+"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd-eth0" "snapperd")
 }
 
 prepdisk()
