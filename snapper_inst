@@ -3,15 +3,15 @@
 umount /.snapshots
 rm -r /.snapshots
 
-#username="k2"
+username="k2"
 
 snapper -c root create-config /
 snapper -c home create-config /home
 snapper -c root set-config 'TIMELINE_CREATE=no'
-snapper -c root set-config 'ALLOW_GROUPS=k2'
+snapper -c root set-config 'ALLOW_GROUPS='$username''
 snapper -c root set-config 'SYNC_ACL=yes'
 snapper -c home set-config 'TIMELINE_CREATE=no'
-snapper -c home set-config 'ALLOW_GROUPS=k2'
+snapper -c home set-config 'ALLOW_GROUPS='$username''
 snapper -c home set-config 'SYNC_ACL=yes'
 sed -i 's/^TIMELINE_LIMIT_HOURLY="10"/TIMELINE_LIMIT_HOURLY="5"/i' /etc/snapper/configs/root
 sed -i 's/^TIMELINE_LIMIT_DAILY="10"/TIMELINE_LIMIT_DAILY="7"/i' /etc/snapper/configs/root
