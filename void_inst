@@ -100,6 +100,9 @@ while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
     local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
 	lslocal=$(ls $local)
 done
+language=$(dialog --radiolist "choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
+'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1)
+
 
 if [[ $uefi == "true" ]]; then
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
@@ -354,9 +357,10 @@ echo $hostname > /mnt/etc/hostname
 
 
 if [[ $glib == "" ]]; then
-    echo "LANG=$language" > /mnt/etc/locale.conf
     echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
     #xbps-reconfigure -fr /mnt/ glibc-locales
+else
+	echo "LANG=$language" > /mnt/etc/locale.conf
 fi
 
 $crm ln -sf $local /etc/localtime
