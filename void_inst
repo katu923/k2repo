@@ -357,7 +357,8 @@ echo $hostname > /mnt/etc/hostname
 
 
 if [[ $glib == "" ]]; then
-    echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
+    echo "LANG=$language" > /mnt/etc/locale.conf
+	echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
     #xbps-reconfigure -fr /mnt/ glibc-locales
 else
 	echo "LANG=$language" > /mnt/etc/locale.conf
