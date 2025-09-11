@@ -388,8 +388,9 @@ else
 	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2 " >> /mnt/etc/fstab
 fi
 
-#echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
-
+if [[ $uefi == "true" ]]; then
+echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
+fi
 
 echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
 
