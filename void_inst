@@ -1,5 +1,13 @@
 #!/bin/bash
 
+abort() {
+    echo >&2 "$0 ERROR: $@"
+    exit 1
+}
+
+usercancel()
+{ abort "user cancel."
+}
 
 starting()
 {
@@ -14,7 +22,7 @@ create a home partition with the remaining disk space, or leave the field EMPTY,
 use all disk space to create a root partition.\n
 For swap, if needed, use zramen.\n
 For superuser, i use doas, sudo isnt installed. There is an option to disable root login.\n
-Firewal nftables and apparmor are installed by default.\n
+Firewal nftables and apparmor are installed by default. \n
 To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode (and reset keys). \n
 There is a lot of customization and some bugs...\n
 Its easy to adapt to other preferences!! " 0 0 --output-fd 1
@@ -30,6 +38,7 @@ if [[ $start == 1 ]]; then
 fi
 
 
+
 #uefi check
 uefi=$(ls /sys/firmware/efi/efivars/)
 
@@ -41,7 +50,8 @@ else
 fi
 
 
-keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1)
+
+keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1) || usercancel
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
@@ -51,21 +61,21 @@ keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 of
  if [[ $adm == 0 ]]; then
 
 while [ $root_pw != $root_cpw ] ||  [ -z $root_pw ] ||  [ -z $root_cpw ]; do
-	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1)
-	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1)
+	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1) || usercancel
+	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1) || usercancel
 done
  fi
 
 while [ -z $username ]; do
-	username=$(dialog --inputbox "enter username" 0 0 --output-fd 1)
+	username=$(dialog --inputbox "enter username" 0 0 --output-fd 1) || usercancel
 done
 
 while [ $user_pw != $user_cpw ] ||  [ -z $user_pw ] ||  [ -z $user_cpw ]; do
-	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1)
-	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1)
+	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1) || usercancel
+	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1) || usercancel
 done
 
-user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1)
+user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1) || usercancel
 user_groups="${user_groups// /,}"
 
 diskname=$(lsblk -l -o NAME,TYPE | grep "disk" | tr -d ' \n')
@@ -73,23 +83,23 @@ diskname="${diskname//'disk'/ }"
 disksize=$(lsblk $disk -l -o SIZE,TYPE | grep "disk")
 disksize="${disksize// disk/}"
 
-disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1)
+disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "enter disk for installation" 0 0 3 '/dev/sda' 1 on '/dev/vda' 2 off '/dev/nvme0n1' 3 off --output-fd 1) || usercancel
 
-fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --no-tags --output-fd 1)
+fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) || usercancel
 
 while [ -z $boot_part_size ]; do
-boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1)
+boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
 done
 
 if [[ $fs_type == "btrfs" ]]; then
 	root_part_size=""
 else
-	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1)
+	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter root partition size (default: 25G)" 0 0 25G --output-fd 1) || usercancel
 fi
 
-hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1)
+hostname=$(dialog --inputbox "enter your hostname" 0 0 xpt099 --output-fd 1) || usercancel
 
-	glib=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 )
+	glib=$(dialog --radiolist "choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 ) || usercancel
 
 if [[ $glib == "glibc" ]]; then
 	glib=""
@@ -97,20 +107,20 @@ fi
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
-    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1)
+    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
 	lslocal=$(ls $local)
 done
 language=$(dialog --radiolist "choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
-'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1)
+'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
 
 
 if [[ $uefi == "true" ]]; then
-bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1)
+bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
 else
 bm="grub"
 fi
 
-graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1)
+graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1) || usercancel
 
 
 if [[ $uefi == "true" ]]; then
@@ -125,43 +135,53 @@ clear
 
 ARCH="x86_64"
 
+void_repo="https://repo-fastly.voidlinux.org/current"
+
 if [[ $glib == "musl" ]]; then
 
 	ARCH="x86_64-musl"
-
+	void_repo="https://repo-fastly.voidlinux.org/current/musl"
 fi
 
-void_repo="https://repo-de.voidlinux.org/current/"$glib
+
 #after install change mirror with xmirror
 
 #dns_list=("9.9.9.9" "1.1.1.1")
 
 crm="chroot /mnt"
 
-apps="nano elogind dbus socklog-void chrony xmirror \
+apps_base="nano elogind dbus socklog-void chrony xmirror \
 ufetch starship pipewire wireplumber vsv htop btop bat \
-octoxbps flatpak zramen ffmpeg bash-completion lm_sensors"
+octoxbps flatpak zramen bash-completion iwd lm_sensors"
 
 apps_optional="lynis hplip hplip-gui gparted bogofilter"
 
-apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel"
+apps_intel="mesa-dri intel-ucode intel-gpu-tools intel-video-accel libva-utils"
 
 if [[ $disk == "/dev/vda" ]]; then #virtual machine
 
 	apps_intel="mesa-dri"
 	apps_optional=""
-	apps="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
+	apps_base="nano starship socklog-void ufetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle flatpak-kcm kmail kwalletmanager"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle \
+flatpak-kcm kmail kwalletmanager kcalc okular gwenview ark kdeconnect"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
 
 apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin \
 xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
 
-fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-firacode"
-#for test
+fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-firacode \
+nerd-fonts-symbols-ttf"
+
+apps_office="libreoffice-writer libreoffice-calc"
+
+apps_multimedia="vlc openh264 obs ffmpeg"
+
+apps_browser="chromium chromium-widevine"
+
 apps_minimal="nano starship socklog-void vsv opendoas iwd terminus-font bat"
 
 rm_services=("agetty-tty4" "agetty-tty5" "agetty-tty6")
@@ -191,14 +211,15 @@ clear
 if [[ $enc_start == 0 ]]; then
 
 	encryption="yes"
-	diskmap="/dev/mapper/crypt_"${luks_part/'/dev/'}""
+	diskmap="/dev/mapper/"${luks_part/'/dev/'}"_crypt"
 else
 	encryption="no"
     diskmap=$luks_part
 fi
 
-while [ -z $luks_pw ] && [ $encryption == "yes" ]; do
-	luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1)
+while [ -z $luks_pw ] || [ $luks_pw != $luks_cpw ] && [ $encryption == "yes" ]; do
+	luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1) || usercancel
+	luks_cpw=$(dialog --insecure --passwordbox "confirm luks password" 0 0 --output-fd 1) || usercancel
 done
 
 
@@ -206,11 +227,13 @@ dialog --yesno "you are about to erase and format the disk, do you want to proce
 begin=$?
 clear
 
-dialog --yesno "write urandom data to disk?" 0 0 --output-fd 1
-urd=$?
-clear
-if [[ $begin == 0 && $urd == 0 && $disk != "/dev/vda" ]]; then
-	dd if=/dev/urandom of=$disk bs=64M
+if [[ $begin == 0 && $disk != "/dev/vda" ]]; then
+
+	dialog --yesno "write urandom data to disk?" 0 0 --output-fd 1
+	urd=$?
+	if [[ $usr == 0 ]]; then
+		dd if=/dev/urandom of=$disk bs=64M status=progress
+	fi
 fi
 
 if [[ $begin == 0 ]]; then
@@ -228,10 +251,10 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 
 if [[ $bm == "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2
-	echo $luks_pw | cryptsetup open $luks_part crypt_"${luks_part/'/dev/'}"
+	echo $luks_pw | cryptsetup open $luks_part "${luks_part/'/dev/'}"_crypt
 elif [[ $bm != "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part
-	echo $luks_pw | cryptsetup open $luks_part crypt_"${luks_part/'/dev/'}"
+	echo $luks_pw | cryptsetup open $luks_part "${luks_part/'/dev/'}"_crypt
 fi
 
 
@@ -402,7 +425,7 @@ if [[ $bm != "grub" && $uefi == "true" ]]; then
 	uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=crypt_'"${luks_part/'/dev/'}"' rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'='"${luks_part/'/dev/'}"'_crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs" && $uefi == "true" ]]; then
 	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
@@ -509,26 +532,17 @@ XBPS_ARCH=$ARCH xbps-install -SuyR $void_repo -r /mnt xbps
 XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt void-repo-nonfree
 
 if [[ $graphical == "kde" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps $apps_kde $apps_intel $apps_optional $fonts
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps_base $apps_kde $apps_intel $apps_optional $fonts \
+	$apps_office $apps_multimedia $apps_browser
 
 elif [[ $graphical == "gnome" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps $apps_gnome $apps_intel $apps_optional $fonts
-
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps_base $apps_gnome $apps_intel $apps_optional $fonts \
+	$apps_office $apps_multimedia $apps_browser
 elif [[ $graphical == "xfce" ]]; then
-	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps $apps_xfce $apps_intel $apps_optional $fonts
+	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt $apps_base $apps_xfce $apps_intel $apps_optional $fonts
 
 elif [[ $graphical == "minimal" ]]; then
 	XBPS_ARCH=$ARCH  xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
-
-	#iwd
-	mkdir -p /mnt/etc/iwd
-
-	echo -e "[General]
-	EnableNetworkConfiguration=true
-	[Network]
-	RoutePriorityOffset=200
-	NameResolvingService=none
-	EnableIPv6=false" > /mnt/etc/iwd/main.conf
 
 fi
 }
@@ -552,6 +566,8 @@ table inet filter {
 		udp dport mdns ip daddr 224.0.0.251 counter accept comment "IPv4 mDNS"
 		udp dport mdns ip6 daddr ff02::fb counter accept comment "IPv6 mDNS"
 		#tcp dport 22 counter accept comment "accept SSH"
+		#tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
+  17   │#qudp dport 1714-1764 accept comment "accept KDE Connect functionality"
 		counter comment "count dropped packets"
 	}
 	chain forward {
@@ -568,9 +584,11 @@ table inet filter {
 
 configsys()
 {
-#set main repo
+#set main and nonfree repo
 
-#echo "repository=$void_repo" > /mnt/usr/share/xbps.d/00-repository-main.conf
+echo "repository=$void_repo" > /mnt/etc/xbps.d/00-repository-main.conf
+
+echo "repository=$void_repo/nonfree" > /mnt/etc/xbps.d/10-repository-main.conf
 
 if [[ $graphical != "minimal" ]]; then
 
@@ -606,13 +624,22 @@ FONT="ter-v22b"' >> /mnt/etc/rc.conf
 #time zone
 $crm ln -sf $local /etc/localtime
 
+#iwd
+	mkdir -p /mnt/etc/iwd
+
+	echo -e "[General]
+	EnableNetworkConfiguration=true
+	[Network]
+	RoutePriorityOffset=200
+	NameResolvingService=none
+	EnableIPv6=false" > /mnt/etc/iwd/main.conf
+
 }
 
 custom()
 {
 echo -e 'source /home/'$username'/.bash_aliases
 ufetch
-complete -cf "xi xs"
 eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
 
@@ -640,14 +667,12 @@ alias vsv='doas vsv'
 alias reboot='doas reboot'
 alias poweroff='doas poweroff'
 alias ss='ss -atup'
-alias cat='bat'
-alias gitssh='ssh -T git@github.com'
 alias ll='ls -all'
-alias rollup='doas grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void --disable-shim-lock --modules="tpm" && doas grub-mkconfig -o /boot/grub/grub.cfg && doas sbctl sign-all'
+alias rollup='doas grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void --disable-shim-lock --modules='tpm' && doas grub-mkconfig -o /boot/grub/grub.cfg && doas sbctl sign-all'
 #snapper
 alias xis='doas snapper create -d before-xbps-install && doas xbps-install -S'
 alias xrs='doas snapper create -d before-xbps-remove && doas xbps-remove -oOR'
-alias xus='doas snapper create --command "xbps-install -Su" -d xbps-update'
+alias xus='doas snapper create --command 'xbps-install -Su' -d xbps-update'
 alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
 
 $crm chown $username:$username /home/$username/.bash_aliases
@@ -675,6 +700,7 @@ $crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flat
 #for dns in ${dns_list[@]}; do
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
+  #done
 }
 
 bootmanag()
@@ -714,7 +740,7 @@ if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
 	$crm chmod 000 /boot/volume.key
 	$crm chmod -R g-rwx,o-rwx /boot
-	echo "crypt_"${luks_part/'/dev/'}" UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
+	echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
 	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
@@ -723,7 +749,8 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
-	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void --disable-shim-lock --modules="tpm"
+	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void \
+	--disable-shim-lock --modules="tpm"
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 }
@@ -748,6 +775,7 @@ if [[ $bm == "grub" && $secure_boot == 0 && $uefi == "true" ]]; then
 fi
 if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
 	$crm sbctl sign -s $boot_part_name/EFI/refind/refind_x64.efi
+	$crm sbctl sign -s $boot_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
 fi
 }
 
@@ -769,7 +797,6 @@ else
 	shutdown -r now
 fi
 
-
 }
 
 main()
@@ -777,8 +804,8 @@ main()
 starting
 prepdisk
 prepsys
-appsinstall
 configsys
+appsinstall
 hardening
 firewall
 custom
