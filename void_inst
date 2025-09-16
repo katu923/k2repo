@@ -84,7 +84,8 @@ done
 passwcheck "user"
 user_pw=$pw
 
-user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1) || usercancel
+user_groups=$(dialog --checklist "choose groups" 0 0 7 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off \
+'libvirt' 5 off 'network' 6 off 'xbuilder' 7 off --output-fd 1) || usercancel
 user_groups="${user_groups// /,}"
 
 diskname=$(lsblk -l -o NAME,TYPE | grep "disk" | tr -d ' \n')
@@ -572,7 +573,7 @@ table inet filter {
 		udp dport mdns ip6 daddr ff02::fb counter accept comment "IPv6 mDNS"
 		#tcp dport 22 counter accept comment "accept SSH"
 		#tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
-  17   │#qudp dport 1714-1764 accept comment "accept KDE Connect functionality"
+  17    #udp dport 1714-1764 accept comment "accept KDE Connect functionality"
 		counter comment "count dropped packets"
 	}
 	chain forward {
