@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 abort() {
     echo >&2 "$0 ERROR: $@"
     exit 1
@@ -7,6 +8,18 @@ abort() {
 
 usercancel()
 { abort "user cancel."
+}
+
+passwcheck()
+{
+pw=''
+cpw=''
+type=$1
+
+while [ $pw != $cpw ] ||  [ -z $pw ] ||  [ -z $cpw ]; do
+	pw=$(dialog --insecure --passwordbox "enter $type password" 0 0 --output-fd 1) || usercancel
+	cpw=$(dialog --insecure --passwordbox "confirm $type password" 0 0 --output-fd 1) || usercancel
+done
 }
 
 starting()
@@ -19,9 +32,9 @@ The disk will be erased. If needed, first make a backup in a external disk!\n
 For BTRFS it will use all disk space to create btrfs subvolumes. \n
 For XFS or EXT4, you can choose the size of partitions. Leave at the default (25G) and it will \n
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
-use all disk space to create a root partition.\n
+use all disk space to create  only a root partition.\n
 For swap, if needed, use zramen.\n
-For superuser, i use doas, sudo isnt installed. There is an option to disable root login.\n
+For superuser, i use doas, sudo isnt installed, also there is an option to disable root login.\n
 Firewal nftables and apparmor are installed by default. \n
 To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode (and reset keys). \n
 There is a lot of customization and some bugs...\n
@@ -58,22 +71,18 @@ keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 of
  dialog --yesno "Config root user? (yes) or use only doas? (no)" 0 0 --output-fd 1
  adm=$?
 
- if [[ $adm == 0 ]]; then
+if [[ $adm == 0 ]]; then
 
-while [ $root_pw != $root_cpw ] ||  [ -z $root_pw ] ||  [ -z $root_cpw ]; do
-	root_pw=$(dialog --insecure --passwordbox "enter root password" 0 0 --output-fd 1) || usercancel
-	root_cpw=$(dialog --insecure --passwordbox "confirm root password" 0 0 --output-fd 1) || usercancel
-done
- fi
+	passwcheck "root"
+	root_pw=$pw
+fi
 
 while [ -z $username ]; do
 	username=$(dialog --inputbox "enter username" 0 0 --output-fd 1) || usercancel
 done
 
-while [ $user_pw != $user_cpw ] ||  [ -z $user_pw ] ||  [ -z $user_cpw ]; do
-	user_pw=$(dialog --insecure --passwordbox "enter user password" 0 0 --output-fd 1) || usercancel
-	user_cpw=$(dialog --insecure --passwordbox "confirm user password" 0 0 --output-fd 1) || usercancel
-done
+passwcheck "user"
+user_pw=$pw
 
 user_groups=$(dialog --checklist "choose groups" 0 0 5 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off 'xbuilder' 5 off --output-fd 1) || usercancel
 user_groups="${user_groups// /,}"
@@ -166,15 +175,13 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 fi
 
 apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle \
-flatpak-kcm kmail kwalletmanager kcalc okular gwenview ark kdeconnect"
+flatpak-kcm kmail kwalletmanager kcalc okular gwenview ark kdeconnect xorg-minimal"
 
-apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector gnome-text-editor NetworkManager"
+apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector \
+gnome-text-editor NetworkManager xorg-minimal"
 
 apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin \
 xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
-
-fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-firacode \
-nerd-fonts-symbols-ttf"
 
 apps_office="libreoffice-writer libreoffice-calc"
 
@@ -183,6 +190,9 @@ apps_multimedia="vlc openh264 obs ffmpeg"
 apps_browser="chromium chromium-widevine"
 
 apps_minimal="nano starship socklog-void vsv opendoas iwd terminus-font bat"
+
+fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf font-fira-ttf \
+nerd-fonts-symbols-ttf"
 
 rm_services=("agetty-tty4" "agetty-tty5" "agetty-tty6")
 
@@ -209,19 +219,15 @@ enc_start=$?
 clear
 
 if [[ $enc_start == 0 ]]; then
-
 	encryption="yes"
 	diskmap="/dev/mapper/"${luks_part/'/dev/'}"_crypt"
-else
+	passwcheck "luks"
+	luks_pw=$pw
+#	echo $root_pw $user_pw $luks_pw >> teste.txt
+	else
 	encryption="no"
     diskmap=$luks_part
 fi
-
-while [ -z $luks_pw ] || [ $luks_pw != $luks_cpw ] && [ $encryption == "yes" ]; do
-	luks_pw=$(dialog --insecure --passwordbox "enter luks password" 0 0 --output-fd 1) || usercancel
-	luks_cpw=$(dialog --insecure --passwordbox "confirm luks password" 0 0 --output-fd 1) || usercancel
-done
-
 
 dialog --yesno "you are about to erase and format the disk, do you want to proceed?" 0 0 --output-fd 1
 begin=$?
@@ -328,7 +334,6 @@ fi
 mkfs.vfat $boot_part
 mkdir -p /mnt$boot_part_name
 mount $boot_part /mnt$boot_part_name
-
 
 }
 
@@ -700,19 +705,19 @@ $crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flat
 #for dns in ${dns_list[@]}; do
 
   #echo "nameserver="$dns >> /mnt/etc/resolv.conf
-  #done
+#done
 }
 
 bootmanag()
 {
 if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	echo -e "#!/bin/sh
-	mv /boot/efi/EFI/Linux/linux-* /boot/efi/EFI/Linux/linuxOLD.efi" \
+	mv /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp /boot/efi/EFI/Linux/linux-* /boot/efi/EFI/Linux/linux.efi" \
+	cp /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
