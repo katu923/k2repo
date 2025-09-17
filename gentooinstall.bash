@@ -4,11 +4,11 @@
 
 username="k2"
 
-luks_pw="1" #password for disk encryption
+luks_pw="123" #password for disk encryption
 
-root_pw="1" #root password
+root_pw="123" #root password
 
-user_pw="1" #user password
+user_pw="123" #user password
 
 efi_part_size="512M"
 
