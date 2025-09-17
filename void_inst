@@ -257,7 +257,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 
 
 if [[ $bm == "grub"  &&  $encryption == "yes" ]]; then
-	echo $luks_pw | cryptsetup -q luksFormat $luks_part --pbkdf pbkdf2
+	echo $luks_pw | cryptsetup -q luksFormat --type luks1 $luks_part
 	echo $luks_pw | cryptsetup open $luks_part "${luks_part/'/dev/'}"_crypt
 elif [[ $bm != "grub"  &&  $encryption == "yes" ]]; then
 	echo $luks_pw | cryptsetup -q luksFormat $luks_part

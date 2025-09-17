@@ -2,13 +2,13 @@
 #read this script carefully before use it!!
 
 
-username="k2"
+#username="k2"
 
 luks_pw="123" #password for disk encryption
 
-root_pw="123" #root password
+#root_pw="123" #root password
 
-user_pw="123" #user password
+#user_pw="123" #user password
 
 efi_part_size="512M"
 
@@ -16,9 +16,9 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="xfs" #xfs or ext4
+fs_type="btrfs" #xfs or ext4
 
-disk="/dev/vda" #or /dev/vda for virt-manager
+disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="" # better to leave this empty
 
@@ -47,30 +47,59 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 echo $luks_pw | cryptsetup -q luksFormat --type luks1 $luks_part
 echo $luks_pw | cryptsetup open $luks_part crypt
 
-vgcreate $hostname /dev/mapper/crypt
+# vgcreate $hostname /dev/mapper/crypt
+#
+# if [[ -z $root_part_size  ]]; then
+#
+# 	lvcreate --name root -l 100%FREE $hostname
+# else
+# 	lvcreate --name root -L $root_part_size $hostname
+# 	lvcreate --name home -l 100%FREE $hostname
+# fi
+#
+# mkfs.$fs_type -qL root /dev/$hostname/root
+#
+# if [[ ! -z $root_part_size ]]; then
+#
+# 	mkfs.$fs_type -qL home /dev/$hostname/home
+# fi
+#
+#
+# mount /dev/$hostname/root /mnt/gentoo
+#
+# if [[ ! -z $root_part_size ]]; then
+# 	mkdir -p /mnt/gentoo/homeecho -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
+# if [[ ! -z $root_part_size ]]; then
+#
+# echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
+# fi
+#
+# echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+# 	mount /dev/$hostname/home /mnt/gentoo/home
+# fi
 
-if [[ -z $root_part_size  ]]; then
-
-	lvcreate --name root -l 100%FREE $hostname
-else
-	lvcreate --name root -L $root_part_size $hostname
-	lvcreate --name home -l 100%FREE $hostname
-fi
-
-mkfs.$fs_type -qL root /dev/$hostname/root
-
-if [[ ! -z $root_part_size ]]; then
-
-	mkfs.$fs_type -qL home /dev/$hostname/home
-fi
+mkfs.btrfs -L $hostname /dev/mapper/crypt
 
 
-mount /dev/$hostname/root /mnt/gentoo
+# if [[ $fs_type == "btrfs" && -z $root_part_size ]]; then
 
-if [[ ! -z $root_part_size ]]; then
-	mkdir -p /mnt/gentoo/home
-	mount /dev/$hostname/home /mnt/gentoo/home
-fi
+	BTRFS_OPTS="noatime,compress,space_cache=v2,discard=async,ssd"
+	mount -o $BTRFS_OPTS $diskmap /mnt/gentoo
+	btrfs subvolume create /mnt/gentoo/@
+	btrfs subvolume create /mnt/gentoo/@home
+	btrfs subvolume create /mnt/gentoo/@log
+    btrfs subvolume create /mnt/gentoo/@cache
+    btrfs subvolume create /mnt/gentoo/@snapshots
+    umount /mnt/gentoo
+
+    mount -o $BTRFS_OPTS,subvol=@ /dev/mapper/crypt /mnt/gentoo
+	mkdir -p /mnt/gentoo/{home,.snapshots,var/log,var/cache}
+	mount -o $BTRFS_OPTS,subvol=@home /dev/mapper/crypt /mnt/gentoo/home
+	mount -o $BTRFS_OPTS,subvol=@log /dev/mapper/crypt /mnt/gentoo/var/log
+	mount -o $BTRFS_OPTS,subvol=@cache /dev/mapper/crypt /mnt/gentoo/var/cache
+	mount -o $BTRFS_OPTS,subvol=@snapshots /dev/mapper/crypt /mnt/gentoo/.snapshots
+#  fi
+
 
 	mkfs.vfat -F 32 $efi_part
 	mkdir -p /mnt/gentoo/efi/EFI
@@ -131,7 +160,7 @@ chroot /mnt/gentoo/ locale-gen
  
  #KERNEL CONFIG
 
- chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware # sys-firmware/intel-microcode
+ chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
   #openrc
  #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/gentoo/etc/portage/package.use/system
  #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/gentoo/etc/portage/package.use/system
@@ -145,8 +174,11 @@ chroot /mnt/gentoo/ locale-gen
  
  #chroot /mnt/gentoo emerge -avgq installkernel
 
+#xfs or ext4
+#  echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
+#btrfs
+ echo "root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet" > /mnt/gentoo/etc/cmdline
 
- echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
 
 #systemd
 #  chroot /mnt/gentoo systemd-machine-id-setup
@@ -155,18 +187,28 @@ chroot /mnt/gentoo/ locale-gen
 #  chroot /mnt/gentoo systemctl preset-all
 #  chroot /mnt/gentoo bootctl install
 
+
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
 luks_uuid=$(blkid -o value -s UUID $disk'2')
 boot_uuid=$(blkid -o value -s UUID $disk'1')
+ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/crypt)
 
-echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
-if [[ ! -z $root_part_size ]]; then
+echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
+UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
+UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2
+UUID=$boot_uuid	/efi vfat umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
-echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
-fi
 
-echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+# echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
+# if [[ ! -z $root_part_size ]]; then
+#
+# echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
+# fi
+#
+# echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
  
  #mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
@@ -184,18 +226,18 @@ echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-chroot /mnt/gentoo/ emerge -avgq dhcpcd sudo lvm2 cryptsetup efibootmgr # systemd-utils apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq sudo lvm2 cryptsetup efibootmgr iwd # systemd-utils apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd dhcpcd
 #systemd
 #chroot /mnt/gentoo emerge -avgq sudo # iwd apparmor apparmor-profiles apparmor-utils
 
-# mkdir -p /mnt/gentoo/etc/iwd
-#
-# echo -e "[General]
-# EnableNetworkConfiguration=true
-# [Network]
-# RoutePriorityOffset=200
-# NameResolvingService=none
-# EnableIPv6=false" > /mnt/gentoo/etc/iwd/main.conf
+mkdir -p /mnt/gentoo/etc/iwd
+
+echo -e "[General]
+EnableNetworkConfiguration=true
+[Network]
+RoutePriorityOffset=200
+NameResolvingService=none
+EnableIPv6=false" > /mnt/gentoo/etc/iwd/main.conf
 
 #resolv.conf --quad9
 echo -e "nameserver 9.9.9.11
@@ -215,8 +257,9 @@ chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 #add services
 chroot /mnt/gentoo rc-update add dmcrypt boot
 chroot /mnt/gentoo rc-update add lvm boot
-chroot /mnt/gentoo rc-update add dhcpcd default
-#chroot /mnt/gentoo/gentoo/ rc-update add apparmor boot
+#chroot /mnt/gentoo rc-update add dhcpcd default
+chroot /mnt/gentoo rc-update add iwd default
+#chroot /mnt/gentoo rc-update add apparmor boot
 #chroot /mnt/gentoo/gentoo rc-update add firewalld boot
 #chroot /mnt/gentoo/gentoo rc-update add cronie default
 #chroot /mnt/gentoo/gentoo rc-update add sysklogd default
@@ -247,21 +290,20 @@ chroot /mnt/gentoo rc-update add dhcpcd default
 # fi
 #chroot /mnt/gentoo emerge -avgq grub
 echo GRUB_ENABLE_CRYPTODISK=y >> /mnt/gentoo/etc/default/grub
-dd bs=1 count=64 if=/dev/urandom of=/mnt/gentoo/efi/volume.key
-echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/gentoo/efi/volume.key
-chroot /mnt/gentoo chmod 000 /efi/volume.key
-chroot /mnt/gentoo chmod -R g-rwx,o-rwx /efi
-echo "crypt UUID=$luks_uuid /efi/volume.key luks" >> /mnt/gentoo/etc/crypttab
-echo 'install_items+=" /efi/volume.key /etc/crypttab "' >> /mnt/gentoo/etc/dracut.conf.d/10-boot.conf
-chroot /mnt/gentoo grub-install --efi-directory=/efi
-chroot /mnt/gentoo  grub-mkconfig -o /efi/grub/grub.cfg
+dd bs=1 count=64 if=/dev/urandom of=/mnt/gentoo/boot/volume.key
+echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/gentoo/boot/volume.key
+chroot /mnt/gentoo chmod 000 /boot/volume.key
+chroot /mnt/gentoo chmod -R g-rwx,o-rwx /boot
+echo "crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/gentoo/etc/crypttab
+echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/gentoo/etc/dracut.conf.d/10-boot.conf
+chroot /mnt/gentoo grub-install --efi-directory=/efi --disable-shim-lock --modules="linux tpm"
 #chroot /mnt/gentoo/gentoo passwd root
 #chroot /mnt/gentoo/gentoo passwd $username
 
-cat << EOF | chroot /mnt/gentoo
-echo "$root_pw\n$root_pw" | passwd -q root
-echo "$user_pw\n$user_pw" | passwd -q $username
-EOF
+# cat << EOF | chroot /mnt/gentoo
+# echo "$root_pw\n$root_pw" | passwd -q root
+# echo "$user_pw\n$user_pw" | passwd -q $username
+# EOF
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
