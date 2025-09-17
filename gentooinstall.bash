@@ -44,7 +44,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
-echo $luks_pw | cryptsetup -q luksFormat $luks_part
+echo $luks_pw | cryptsetup -q luksFormat --type luks1 $luks_part
 echo $luks_pw | cryptsetup open $luks_part crypt
 
 vgcreate $hostname /dev/mapper/crypt
@@ -73,9 +73,9 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 	mkfs.vfat -F 32 $efi_part
-	mkdir -p /mnt/gentoo/efi
+	mkdir -p /mnt/gentoo/efi/EFI
 	mount $efi_part /mnt/gentoo/efi
- 
+
 
  
 #STAGE FILE
@@ -119,11 +119,11 @@ echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
 echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
-#echo "Europe/Lisbon" > /mnt/gentoo/gentoo/etc/timezone
-#chroot /mnt/gentoo/gentoo/ emerge --config sys-libs/timezone-data
+echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
+chroot /mnt/gentoo emerge --config sys-libs/timezone-data
 #systemd
-ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
-
+#ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
+echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
 echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
 chroot /mnt/gentoo/ locale-gen
@@ -131,26 +131,29 @@ chroot /mnt/gentoo/ locale-gen
  
  #KERNEL CONFIG
 
- chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+ chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware # sys-firmware/intel-microcode
   #openrc
  #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/gentoo/etc/portage/package.use/system
  #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/gentoo/etc/portage/package.use/system
  #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/gentoo/etc/portage/package.use/system
+ # echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-kernel/installkernel grub" > /mnt/gentoo/etc/portage/package.use/system
  #systemd
- #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/gentoo/etc/portage/package.use/system
- echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
  
- chroot /mnt/gentoo emerge -avgq installkernel systemd
- 
+ #chroot /mnt/gentoo emerge -avgq installkernel
+
+
  echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
- 
- chroot /mnt/gentoo systemd-machine-id-setup
- chroot /mnt/gentoo systemd-firstboot --prompt
- chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
- chroot /mnt/gentoo systemctl preset-all
- chroot /mnt/gentoo bootctl install
+
+#systemd
+#  chroot /mnt/gentoo systemd-machine-id-setup
+#  chroot /mnt/gentoo systemd-firstboot --prompt
+#  chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
+#  chroot /mnt/gentoo systemctl preset-all
+#  chroot /mnt/gentoo bootctl install
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
@@ -178,21 +181,21 @@ echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
 #CONFIG SYSTEM
  
-#echo $hostname > /mnt/gentoo/gentoo/etc/hostname
+echo $hostname > /mnt/gentoo/etc/hostname
 
 #openrc
-#chroot /mnt/gentoo/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+chroot /mnt/gentoo/ emerge -avgq dhcpcd sudo lvm2 cryptsetup efibootmgr # systemd-utils apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 #systemd
-chroot /mnt/gentoo emerge -avgq iwd sudo apparmor apparmor-profiles apparmor-utils
+#chroot /mnt/gentoo emerge -avgq sudo # iwd apparmor apparmor-profiles apparmor-utils
 
-mkdir -p /mnt/gentoo/etc/iwd
-
-echo -e "[General]
-EnableNetworkConfiguration=true
-[Network]
-RoutePriorityOffset=200
-NameResolvingService=none
-EnableIPv6=false" > /mnt/gentoo/etc/iwd/main.conf
+# mkdir -p /mnt/gentoo/etc/iwd
+#
+# echo -e "[General]
+# EnableNetworkConfiguration=true
+# [Network]
+# RoutePriorityOffset=200
+# NameResolvingService=none
+# EnableIPv6=false" > /mnt/gentoo/etc/iwd/main.conf
 
 #resolv.conf --quad9
 echo -e "nameserver 9.9.9.11
@@ -210,8 +213,9 @@ chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 
 
 #add services
-#chroot /mnt/gentoo/gentoo/ rc-update add dmcrypt boot
-#chroot /mnt/gentoo/gentoo/ rc-update add lvm boot
+chroot /mnt/gentoo rc-update add dmcrypt boot
+chroot /mnt/gentoo rc-update add lvm boot
+chroot /mnt/gentoo rc-update add dhcpcd default
 #chroot /mnt/gentoo/gentoo/ rc-update add apparmor boot
 #chroot /mnt/gentoo/gentoo rc-update add firewalld boot
 #chroot /mnt/gentoo/gentoo rc-update add cronie default
@@ -219,9 +223,9 @@ chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 #chroot /mnt/gentoo/gentoo rc-update add auditd default
 
 #systemd
-chroot /mnt/gentoo systemctl enable lvm2-monitor.service
-
-chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
+# chroot /mnt/gentoo systemctl enable lvm2-monitor.service
+#
+# chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 #doas
 #echo "permit keepenv :wheel" > /mnt/gentoo/gentoo/etc/doas.conf
@@ -241,8 +245,16 @@ chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 # chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
 # echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 # fi
-
-
+#chroot /mnt/gentoo emerge -avgq grub
+echo GRUB_ENABLE_CRYPTODISK=y >> /mnt/gentoo/etc/default/grub
+dd bs=1 count=64 if=/dev/urandom of=/mnt/gentoo/efi/volume.key
+echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/gentoo/efi/volume.key
+chroot /mnt/gentoo chmod 000 /efi/volume.key
+chroot /mnt/gentoo chmod -R g-rwx,o-rwx /efi
+echo "crypt UUID=$luks_uuid /efi/volume.key luks" >> /mnt/gentoo/etc/crypttab
+echo 'install_items+=" /efi/volume.key /etc/crypttab "' >> /mnt/gentoo/etc/dracut.conf.d/10-boot.conf
+chroot /mnt/gentoo grub-install --efi-directory=/efi
+chroot /mnt/gentoo  grub-mkconfig -o /efi/grub/grub.cfg
 #chroot /mnt/gentoo/gentoo passwd root
 #chroot /mnt/gentoo/gentoo passwd $username
 
