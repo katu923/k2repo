@@ -6,9 +6,9 @@ username="k2"
 
 luks_pw="1" #password for disk encryption
 
-#root_pw="123" #root password
+root_pw="1" #root password
 
-#user_pw="123" #user password
+user_pw="1" #user password
 
 efi_part_size="512M"
 
@@ -18,7 +18,7 @@ hostname="xpto"
 
 fs_type="xfs" #xfs or ext4
 
-disk="/dev/sda" #or /dev/vda for virt-manager
+disk="/dev/vda" #or /dev/vda for virt-manager
 
 secure_boot="" # better to leave this empty
 
@@ -45,9 +45,9 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q luksFormat $luks_part
-echo $luks_pw | cryptsetup $luks_part crypt_"${luks_part/'/dev/'}"
+echo $luks_pw | cryptsetup $luks_part "${luks_part/'/dev/'}"_crypt
 
-vgcreate $hostname /dev/mapper/crypt_"${luks_part/'/dev/'}"
+vgcreate $hostname /dev/mapper/"${luks_part/'/dev/'}"_crypt
 
 if [[ -z $root_part_size  ]]; then
 
@@ -246,7 +246,10 @@ chroot /mnt useradd -m -G wheel -s /bin/bash $username
 #chroot /mnt/gentoo passwd root
 #chroot /mnt/gentoo passwd $username
 
-
+cat << EOF | chroot /mnt
+echo "$root_pw\n$root_pw" | passwd -q root
+echo "$user_pw\n$user_pw" | passwd -q $username
+EOF
 
 echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
 read tmp
