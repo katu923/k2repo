@@ -45,9 +45,9 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q luksFormat $luks_part
-echo $luks_pw | cryptsetup $luks_part "${luks_part/'/dev/'}"_crypt
+echo $luks_pw | cryptsetup $luks_part crypt
 
-vgcreate $hostname /dev/mapper/"${luks_part/'/dev/'}"_crypt
+vgcreate $hostname /dev/mapper/crypt
 
 if [[ -z $root_part_size  ]]; then
 
@@ -65,22 +65,22 @@ if [[ ! -z $root_part_size ]]; then
 fi
 
 
-mount /dev/$hostname/root /mnt
+mount /dev/$hostname/root /mnt/gentoo
 
 if [[ ! -z $root_part_size ]]; then
-	mkdir -p /mnt/home
-	mount /dev/$hostname/home /mnt/home
+	mkdir -p /mnt/gentoo/home
+	mount /dev/$hostname/home /mnt/gentoo/home
 fi
 
-	mkfs.vfat $efi_part
-	mkdir -p /mnt/efi
-	mount $efi_part /mnt/efi
+	mkfs.vfat -F 32 $efi_part
+	mkdir -p /mnt/gentoo/efi
+	mount $efi_part /mnt/gentoo/efi
  
 
  
 #STAGE FILE
 
-cd /mnt
+cd /mnt/gentoo
 links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
 #wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250223T170333Z/stage3-amd64-desktop-systemd-20250223T170333Z.tar.xz
 #wget https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds/20250225T170409Z/stage3-amd64-desktop-openrc-20240225T170409Z.tar.xz
@@ -88,165 +88,165 @@ tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
 
-mount --types proc /proc /mnt/proc
-mount --rbind /sys /mnt/sys
-mount --make-rslave /mnt/sys
-mount --rbind /dev /mnt/dev
-mount --make-rslave /mnt/dev
-mount --bind /run /mnt/run
-mount --make-slave /mnt/run
+mount --types proc /proc /mnt/gentoo/proc
+mount --rbind /sys /mnt/gentoo/sys
+mount --make-rslave /mnt/gentoo/sys
+mount --rbind /dev /mnt/gentoo/dev
+mount --make-rslave /mnt/gentoo/dev
+mount --bind /run /mnt/gentoo/run
+mount --make-slave /mnt/gentoo/run
 
-#chroot /mnt/gentoo source /etc/profile
+#chroot /mnt/gentoo/gentoo source /etc/profile
 
-cp --dereference /etc/resolv.conf /mnt/etc/
+cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
-mkdir --parents /mnt/etc/portage/repos.conf
-cp /usr/share/portage/config/repos.conf /mnt/etc/portage/repos.conf/gentoo.conf
-chroot /mnt/ emerge-webrsync && getuto
+mkdir --parents /mnt/gentoo/etc/portage/repos.conf
+cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
+chroot /mnt/gentoo/ emerge-webrsync && getuto
 
-echo "[gentoobinhost]" > /mnt/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "priority = 9999" >> /mnt/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
-# sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/etc/portage/make.conf
-#echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/etc/portage/make.conf
+# sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/gentoo/etc/portage/make.conf
+#echo 'MAKEOPTS="-j4 -l4"' >> /mnt/gentoo/gentoo/etc/portage/make.conf
 
-echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/etc/portage/make.conf
-echo 'BINPKG_FORMAT="gpkg"' >> /mnt/etc/portage/make.conf
+echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /mnt/gentoo/etc/portage/make.conf
+echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
- echo 'ACCEPT_LICENSE="*"' >> /mnt/etc/portage/make.conf
-#echo 'VIDEO_CARDS="qxl"' >> /mnt/etc/portage/make.conf >> /mnt/etc/portage/make.conf
-echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/etc/portage/make.conf
+ echo 'ACCEPT_LICENSE="*"' >> /mnt/gentoo/etc/portage/make.conf
+#echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
+echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
-#echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
-#chroot /mnt/gentoo/ emerge --config sys-libs/timezone-data
+#echo "Europe/Lisbon" > /mnt/gentoo/gentoo/etc/timezone
+#chroot /mnt/gentoo/gentoo/ emerge --config sys-libs/timezone-data
 #systemd
-ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/etc/localtime
+ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
 
-echo "en_US ISO-8859-1" >> /mnt/etc/locale.gen
-echo "en_US.UTF-8 UTF-8" >> /mnt/etc/locale.gen
-chroot /mnt/ locale-gen
+echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
+chroot /mnt/gentoo/ locale-gen
 
  
  #KERNEL CONFIG
 
- chroot /mnt emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+ chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
   #openrc
- #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
- #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
+ #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/gentoo/etc/portage/package.use/system
+ #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/gentoo/etc/portage/package.use/system
+ #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/gentoo/etc/portage/package.use/system
  #systemd
- #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
- echo "sys-kernel/installkernel systemd-boot" > /mnt/etc/portage/package.use/system
- echo "sys-fs/lvm2 lvm" >> /mnt/etc/portage/package.use/system
- echo "sys-apps/systemd boot cryptsetup" >> /mnt/etc/portage/package.use/system
+ #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/gentoo/etc/portage/package.use/system
+ echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
  
- chroot /mnt emerge -avgq installkernel systemd
+ chroot /mnt/gentoo emerge -avgq installkernel systemd
  
- echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/etc/cmdline
+ echo "quiet rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards" > /mnt/gentoo/etc/cmdline
  
- chroot /mnt systemd-machine-id-setup
- chroot /mnt systemd-firstboot --prompt
- chroot /mnt systemctl preset-all --preset-mode=enable-only
- chroot /mnt systemctl preset-all
- chroot /mnt bootctl install
+ chroot /mnt/gentoo systemd-machine-id-setup
+ chroot /mnt/gentoo systemd-firstboot --prompt
+ chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
+ chroot /mnt/gentoo systemctl preset-all
+ chroot /mnt/gentoo bootctl install
 
 home_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-home)
 root_uuid=$(blkid -o value -s UUID /dev/mapper/$hostname-root)
 luks_uuid=$(blkid -o value -s UUID $disk'2')
 boot_uuid=$(blkid -o value -s UUID $disk'1')
 
-echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
+echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
 if [[ ! -z $root_part_size ]]; then
 
-echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
 fi
 
-echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/etc/fstab
+echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
  
- #mkdir -p /mnt/gentoo/etc/dracut.conf.d
- #touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'hostonly="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'add_dracutmodules+=" lvm crypt dm rootfs-block systemd "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
- #mkdir -p /mnt/gentoo/efi/EFI/Linux
+ #mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
+ #touch /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'hostonly="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'add_dracutmodules+=" lvm crypt dm rootfs-block systemd "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'uefi="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'compress="gzip"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'early_microcode="yes"'  >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #mkdir -p /mnt/gentoo/gentoo/efi/EFI/Linux
 
 #CONFIG SYSTEM
  
-#echo $hostname > /mnt/gentoo/etc/hostname
+#echo $hostname > /mnt/gentoo/gentoo/etc/hostname
 
 #openrc
-#chroot /mnt/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
+#chroot /mnt/gentoo/gentoo/ emerge -avgq lvm2 systemd-utils cryptsetup efibootmgr apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd
 #systemd
-chroot /mnt emerge -avgq iwd sudo apparmor apparmor-profiles apparmor-utils
+chroot /mnt/gentoo emerge -avgq iwd sudo apparmor apparmor-profiles apparmor-utils
 
-mkdir -p /mnt/etc/iwd
+mkdir -p /mnt/gentoo/etc/iwd
 
 echo -e "[General]
 EnableNetworkConfiguration=true
 [Network]
 RoutePriorityOffset=200
 NameResolvingService=none
-EnableIPv6=false" > /mnt/etc/iwd/main.conf
+EnableIPv6=false" > /mnt/gentoo/etc/iwd/main.conf
 
 #resolv.conf --quad9
 echo -e "nameserver 9.9.9.11
-nameserver 149.112.112.11" > /mnt/etc/resolv.conf
+nameserver 149.112.112.11" > /mnt/gentoo/etc/resolv.conf
 
 
-#chroot /mnt/gentoo/ emerge -aunDN @world
-chroot /mnt emerge -avgq sys-kernel/gentoo-kernel-bin
+#chroot /mnt/gentoo/gentoo/ emerge -aunDN @world
+chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 #CONFIG BOOTLOADER - uefi
 
- #cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
+ #cp /mnt/gentoo/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/gentoo/efi/EFI/Linux/linux.efi
  
  #create uefi boot entry
- #chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+ #chroot /mnt/gentoo/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
 
 
 #add services
-#chroot /mnt/gentoo/ rc-update add dmcrypt boot
-#chroot /mnt/gentoo/ rc-update add lvm boot
-#chroot /mnt/gentoo/ rc-update add apparmor boot
-#chroot /mnt/gentoo rc-update add firewalld boot
-#chroot /mnt/gentoo rc-update add cronie default
-#chroot /mnt/gentoo rc-update add sysklogd default
-#chroot /mnt/gentoo rc-update add auditd default
+#chroot /mnt/gentoo/gentoo/ rc-update add dmcrypt boot
+#chroot /mnt/gentoo/gentoo/ rc-update add lvm boot
+#chroot /mnt/gentoo/gentoo/ rc-update add apparmor boot
+#chroot /mnt/gentoo/gentoo rc-update add firewalld boot
+#chroot /mnt/gentoo/gentoo rc-update add cronie default
+#chroot /mnt/gentoo/gentoo rc-update add sysklogd default
+#chroot /mnt/gentoo/gentoo rc-update add auditd default
 
 #systemd
-chroot /mnt systemctl enable lvm2-monitor.service
+chroot /mnt/gentoo systemctl enable lvm2-monitor.service
 
-chroot /mnt useradd -m -G wheel -s /bin/bash $username
+chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 #doas
-#echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
-#chroot /mnt/gentoo chown -c root:root /etc/doas.conf
-#chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
+#echo "permit keepenv :wheel" > /mnt/gentoo/gentoo/etc/doas.conf
+#chroot /mnt/gentoo/gentoo chown -c root:root /etc/doas.conf
+#chroot /mnt/gentoo/gentoo chmod -c 0400 /etc/doas.conf
 
-#touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#touch /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#chmod +x /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#echo "#!/bin/sh" > /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 
 #secure boot
 # if [[ ! -z $secure_boot ]]; then
-# chroot /mnt emerge -avgq sbctl
-# chroot /mnt sbctl create-keys
-# chroot /mnt sbctl enroll-keys -m -i
-# chroot /mnt sbctl sign -s /mnt/efi/EFI/Linux/linux.efi
-# echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/etc/kernel/postinst.d/95-uefi-boot.install
+# chroot /mnt/gentoo emerge -avgq sbctl
+# chroot /mnt/gentoo sbctl create-keys
+# chroot /mnt/gentoo sbctl enroll-keys -m -i
+# chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
+# echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 # fi
 
 
-#chroot /mnt/gentoo passwd root
-#chroot /mnt/gentoo passwd $username
+#chroot /mnt/gentoo/gentoo passwd root
+#chroot /mnt/gentoo/gentoo passwd $username
 
-cat << EOF | chroot /mnt
+cat << EOF | chroot /mnt/gentoo
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
@@ -256,8 +256,8 @@ read tmp
 if [[ $tmp == "y" ]]; then
 	exit
         
-	 	umount -l /mnt/dev{/shm,/pts,}
- 	umount -R /mnt
+	 	umount -l /mnt/gentoo/dev{/shm,/pts,}
+ 	umount -R /mnt/gentoo
 # 	reboot 
   shutdown -r now
 fi
