@@ -45,7 +45,7 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
 echo $luks_pw | cryptsetup -q luksFormat $luks_part
-echo $luks_pw | cryptsetup $luks_part crypt
+echo $luks_pw | cryptsetup open $luks_part crypt
 
 vgcreate $hostname /dev/mapper/crypt
 
