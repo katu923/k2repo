@@ -97,8 +97,12 @@ disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "enter dis
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) || usercancel
 
+while [ -z $efi_part_size ]; do
+efi_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
+done
+
 while [ -z $boot_part_size ]; do
-boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
+boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 1G)" 0 0 1G --output-fd 1) || usercancel
 done
 
 if [[ $fs_type == "btrfs" ]]; then
@@ -118,7 +122,7 @@ fi
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
     local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
-	lslocal=$(ls $local)
+	lslocal=$(ls $local)efi_part=$(echo $disk'p1')
 done
 language=$(dialog --radiolist "choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
@@ -205,14 +209,17 @@ prepdisk()
 {
 
 if [[ $disk == *"sd"* ]]; then
-	boot_part=$(echo $disk'1')
-	luks_part=$(echo $disk'2')
+	efi_part=$(echo $disk'1')
+	boot_part=$(echo $disk'2')
+	luks_part=$(echo $disk'3')
 elif [[ $disk == *"vd"* ]]; then
-	boot_part=$(echo $disk'1')
-	luks_part=$(echo $disk'2')
+	efi_part=$(echo $disk'1')
+	boot_part=$(echo $disk'2')
+	luks_part=$(echo $disk'3')
 elif [[ $disk == *"nvme"* ]]; then
-	boot_part=$(echo $disk'p1')
-	luks_part=$(echo $disk'p2')
+	efi_part=$(echo $disk'p1')
+	boot_part=$(echo $disk'p2')
+	luks_part=$(echo $disk'p3')
 fi
 
 dialog --yesno "enable disk encryption?" 0 0 --output-fd 1
@@ -250,7 +257,9 @@ if [[ $begin == 0 ]]; then
 else exit
 fi
 
-printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
+#printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
+
+echo -e "label: gpt\n,$efi_part_size\n,$boot_part_size\n," | sfdisk -qf "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
@@ -325,17 +334,20 @@ if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
 fi
 
 
-if [[ $uefi == "true" ]]; then
-	boot_part_name="/boot/efi"
-else
-	boot_part_name="/boot"
-fi
+# if [[ $uefi == "true" ]]; then
+efi_part_name="/boot/efi"
+# else
+# 	efi_part_name="/boot"
+# fi
+boot_part_name="/boot"
 
-#create boot partition
-mkfs.vfat $boot_part
-mkdir -p /mnt$boot_part_name
+#create efi and boot partition
+mkfs.vfat $efi_part
+mkfs.ext4 $boot_part
+mkdir -p /mnt$efi_part_name
+mount $efi_part /mnt$efi_part_name
+mkdir /mnt/boot
 mount $boot_part /mnt$boot_part_name
-
 }
 
 prepsys()
@@ -398,8 +410,10 @@ $crm ln -sf $local /etc/localtime
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
-luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
+efi_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
+boot_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
+luks_uuid=$(blkid -o value -s UUID  /mnt$disk'3')
+
 ROOT_UUID=$(blkid -s UUID -o value $diskmap)
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -420,8 +434,8 @@ fi
 if [[ $uefi == "true" ]]; then
 echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 fi
-
-echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
+echo "UUID=$boot_uuid	$boot_part_name	ext4	defaults,noatime 0	1" >> /mnt/etc/fstab
+echo "UUID=$efi_uuid	$efi_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
 
 #dracut
 echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
@@ -573,7 +587,7 @@ table inet filter {
 		udp dport mdns ip6 daddr ff02::fb counter accept comment "IPv6 mDNS"
 		#tcp dport 22 counter accept comment "accept SSH"
 		#tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
-  17    #udp dport 1714-1764 accept comment "accept KDE Connect functionality"
+        #udp dport 1714-1764 accept comment "accept KDE Connect functionality"
 		counter comment "count dropped packets"
 	}
 	chain forward {
@@ -699,7 +713,7 @@ done
 
 # enable flatpak
 
-$crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+#$crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 
 #dns
@@ -743,7 +757,7 @@ if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-	echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
+	echo $luks_pw | cryptsetup luksAddKey $disk'3' /mnt/boot/volume.key
 	$crm chmod 000 /boot/volume.key
 	$crm chmod -R g-rwx,o-rwx /boot
 	echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
@@ -755,7 +769,7 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
-	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void \
+	$crm grub-install --target=x86_64-efi --efi-directory=$efi_part_name --bootloader-id=Void \
 	--disable-shim-lock --modules="tpm"
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
@@ -774,14 +788,14 @@ if [[ $secure_boot == 0 && $bm != "grub" && $uefi == "true" ]]; then
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm == "grub" && $secure_boot == 0 && $uefi == "true" ]]; then
-	$crm sbctl sign -s $boot_part_name/EFI/Void/grubx64.efi
+	$crm sbctl sign -s $efi_part_name/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
 	vmlinuz="${vmlinuz/'/mnt'}"
 	$crm sbctl sign -s $vmlinuz
 fi
 if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
-	$crm sbctl sign -s $boot_part_name/EFI/refind/refind_x64.efi
-	$crm sbctl sign -s $boot_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
+	$crm sbctl sign -s $efi_part_name/EFI/refind/refind_x64.efi
+	$crm sbctl sign -s $efi_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
 fi
 }
 
