@@ -346,7 +346,7 @@ mkfs.vfat $efi_part
 mkfs.ext4 $boot_part
 mkdir -p /mnt$efi_part_name
 mount $efi_part /mnt$efi_part_name
-mkdir /mnt/boot
+#mkdir /mnt/boot
 mount $boot_part /mnt$boot_part_name
 }
 
