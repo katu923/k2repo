@@ -60,6 +60,7 @@ if [[ ! -z $uefi ]]; then
 	dialog --msgbox "UEFI FILE SYSTEM FOUND!!" 0 0 --output-fd 1
 else
 	dialog --msgbox "UEFI NOT FOUND! OLD COMPUTER..." 0 0 --output-fd 1
+	exit
 fi
 
 
