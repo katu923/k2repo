@@ -85,7 +85,7 @@ passwcheck "user"
 user_pw=$pw
 
 user_groups=$(dialog --checklist "choose groups" 0 0 7 'wheel' 1 off 'audio' 2 on 'video' 3 on 'kvm' 4 off \
-'libvirt' 5 off 'network' 6 off 'xbuilder' 7 off --output-fd 1) || usercancel
+'storage' 5 off 'network' 6 off 'xbuilder' 7 off --output-fd 1) || usercancel
 user_groups="${user_groups// /,}"
 
 diskname=$(lsblk -l -o NAME,TYPE | grep "disk" | tr -d ' \n')
@@ -97,12 +97,8 @@ disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "enter dis
 
 fs_type=$(dialog --radiolist "choose your file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) || usercancel
 
-while [ -z $efi_part_size ]; do
-efi_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter efi partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
-done
-
 while [ -z $boot_part_size ]; do
-boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 1G)" 0 0 1G --output-fd 1) || usercancel
+boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "enter boot partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
 done
 
 if [[ $fs_type == "btrfs" ]]; then
@@ -122,7 +118,7 @@ fi
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
     local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
-	lslocal=$(ls $local)efi_part=$(echo $disk'p1')
+	lslocal=$(ls $local)boot_part=$(echo $disk'p1')
 done
 language=$(dialog --radiolist "choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
@@ -192,7 +188,7 @@ apps_office="libreoffice-writer libreoffice-calc"
 
 apps_multimedia="vlc openh264 obs ffmpeg"
 
-apps_browser="chromium chromium-widevine"
+apps_browser="firefox"
 
 apps_minimal="nano starship socklog-void vsv opendoas iwd terminus-font bat"
 
@@ -209,17 +205,14 @@ prepdisk()
 {
 
 if [[ $disk == *"sd"* ]]; then
-	efi_part=$(echo $disk'1')
-	boot_part=$(echo $disk'2')
-	luks_part=$(echo $disk'3')
+	boot_part=$(echo $disk'1')
+	luks_part=$(echo $disk'2')
 elif [[ $disk == *"vd"* ]]; then
-	efi_part=$(echo $disk'1')
-	boot_part=$(echo $disk'2')
-	luks_part=$(echo $disk'3')
+	boot_part=$(echo $disk'1')
+	luks_part=$(echo $disk'2')
 elif [[ $disk == *"nvme"* ]]; then
-	efi_part=$(echo $disk'p1')
-	boot_part=$(echo $disk'p2')
-	luks_part=$(echo $disk'p3')
+	boot_part=$(echo $disk'p1')
+	luks_part=$(echo $disk'p2')
 fi
 
 dialog --yesno "enable disk encryption?" 0 0 --output-fd 1
@@ -257,9 +250,8 @@ if [[ $begin == 0 ]]; then
 else exit
 fi
 
-#printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
+printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 
-echo -e "label: gpt\n,$efi_part_size\n,$boot_part_size\n," | sfdisk -qf "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
@@ -334,19 +326,16 @@ if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
 fi
 
 
-# if [[ $uefi == "true" ]]; then
-efi_part_name="/boot/efi"
-# else
-# 	efi_part_name="/boot"
-# fi
-boot_part_name="/boot"
+ if [[ $uefi == "true" ]]; then
+	boot_part_name="/efi"
+ else
+ 	boot_part_name="/boot"
+ fi
+
 
 #create efi and boot partition
-mkfs.vfat $efi_part
-mkfs.ext4 $boot_part
-mkdir -p /mnt$efi_part_name
-mount $efi_part /mnt$efi_part_name
-#mkdir /mnt/boot
+mkfs.vfat -F 32 $boot_part
+mkdir /mnt$boot_part_name
 mount $boot_part /mnt$boot_part_name
 }
 
@@ -365,7 +354,7 @@ if [[ $bm != "grub" && $uefi == "true" ]]; then
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
-	runit-void-apparmor runit-nftables apparmor
+	runit-void-apparmor runit-nftables apparmor systemd-boot-efistub ukify
 
 elif [[ $bm = "grub" && $uefi != "true" ]]; then
 
@@ -381,19 +370,13 @@ $crm chmod 755 /
 
 useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
 
-# if [[ $adm == 0 ]]; then
 
 cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
-# else
-# cat << EOF | $crm
-# echo "$user_pw\n$user_pw" | passwd -q $username
-# EOF
-# fi
 
-#Set hostname and language/locale
+set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
 
 
@@ -410,10 +393,8 @@ $crm ln -sf $local /etc/localtime
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
-efi_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
-boot_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
-luks_uuid=$(blkid -o value -s UUID  /mnt$disk'3')
-
+boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
+luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
 ROOT_UUID=$(blkid -s UUID -o value $diskmap)
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -434,20 +415,18 @@ fi
 if [[ $uefi == "true" ]]; then
 echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 fi
-echo "UUID=$boot_uuid	$boot_part_name	ext4	defaults,noatime 0	1" >> /mnt/etc/fstab
-echo "UUID=$efi_uuid	$efi_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
+echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
 
 #dracut
 echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
 if [[ $bm != "grub" && $uefi == "true" ]]; then
-	echo -e 'uefi="yes"
-	uefi_stub=/lib/systemd/boot/efi/linuxx64.efi.stub'  >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'='"${luks_part/'/dev/'}"'_crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'='"${luks_part/'/dev/'}"'_crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs" && $uefi == "true" ]]; then
-	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 }
 
@@ -654,6 +633,88 @@ $crm ln -sf $local /etc/localtime
 	NameResolvingService=none
 	EnableIPv6=false" > /mnt/etc/iwd/main.conf
 
+if [[ $bm == "grub" && $uefi == "true" ]] ; then
+	cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"
+	mkdir -p /mnt/etc/kernel
+	echo $cmdline > /mnt/etc/kernel/cmdline
+
+#kernel hook for ukify
+echo -e '#!/bin/sh
+
+# This script is a kernel post-install hook for Void Linux.
+# It automatically updates the Unified Kernel Image (UKI)
+# after a new kernel is installed.
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# Assign arguments to variables
+PKGNAME="$1"
+VERSION="$2"
+
+
+BOOT_DIR="/efi/EFI/Void"  # Modify this path if your ESP is different
+
+# Define the UKI output path
+UKI_OUTPUT_PATH="${BOOT_DIR}/void-signed-uki.efi"
+
+# Define the kernel and initrd paths
+KERNEL_PATH="/boot/vmlinuz-${VERSION}"
+INITRD_PATH="/boot/initramfs-${VERSION}.img"
+
+# Check for required files
+if [ ! -f "${KERNEL_PATH}" ]; then
+    echo "Kernel file not found: ${KERNEL_PATH}"
+    exit 1
+fi
+if [ ! -f "${INITRD_PATH}" ]; then
+    echo "Initramfs file not found: ${INITRD_PATH}"
+    exit 1
+fi
+if [ ! -d "${BOOT_DIR}" ]; then
+    echo "Boot directory not found: ${BOOT_DIR}"
+    exit 1
+fi
+
+echo "Regenerating UKI for kernel ${VERSION}..."
+
+# Use ukify to build the new UKI
+# NOTE: You may need to adjust the --cmdline and other options
+#       to match your system configuration.
+ukify build \
+    --linux="${KERNEL_PATH}" \
+    --initrd="${INITRD_PATH}" \
+    --cmdline="@/etc/kernel/cmdline" \
+    --output="${UKI_OUTPUT_PATH}" \
+    --stub="/usr/lib/systemd/boot/efi/linuxx64.efi.stub" \
+    --uname="${VERSION}"
+
+#echo "UKI updated successfully: ${UKI_OUTPUT_PATH}"
+
+# After the UKI is successfully built, sign it with sbctl
+echo "Signing UKI with sbctl..."
+sbctl sign -s "${UKI_OUTPUT_PATH}"
+
+echo "UKI successfully created and signed."
+
+
+exit 0 ' > /mnt/etc/kernel.d/post-install/30-ukify-update
+
+$crm chmod +x /etc/kernel.d/post-install/30-ukify-update
+
+#grub menu for uki
+echo -e "menuentry 'Void Linux with UKI (Secure Boot)' --class void --class gnu-linux --class gnu --class os {
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root $boot_uuid
+    chainloader /EFI/Void/void-signed-uki.efi
+}" >> /mnt/etc/grub.d/40_custom
+
+
+sed -i 's/^GRUB_DEFAULT=0/GRUB_DEFAULT="Void Linux with UKI (Secure Boot)"/' /mnt/etc/default/grub
+
+fi
+
 }
 
 custom()
@@ -688,7 +749,7 @@ alias reboot='doas reboot'
 alias poweroff='doas poweroff'
 alias ss='ss -atup'
 alias ll='ls -all'
-alias rollup='doas grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Void --disable-shim-lock --modules='tpm' && doas grub-mkconfig -o /boot/grub/grub.cfg && doas sbctl sign-all'
+alias rollup='doas grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Void --disable-shim-lock --modules='tpm' && doas grub-mkconfig -o /boot/grub/grub.cfg && doas sbctl sign-all'
 #snapper
 alias xis='doas snapper create -d before-xbps-install && doas xbps-install -S'
 alias xrs='doas snapper create -d before-xbps-remove && doas xbps-remove -oOR'
@@ -711,35 +772,25 @@ for pkg in ${ignore_pkgs[@]}; do
    $crm xbps-remove -oOR $pkg -y
 done
 
-# enable flatpak
-
-#$crm flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-
-#dns
-#for dns in ${dns_list[@]}; do
-
-  #echo "nameserver="$dns >> /mnt/etc/resolv.conf
-#done
 }
 
 bootmanag()
 {
 if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	echo -e "#!/bin/sh
-	mv /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linuxOLD.efi" \
+	mv /efi/EFI/Linux/linux-*.efi /efi/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linux.efi" \
+	cp /efi/EFI/Linux/linux-*.efi /efi/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 
 	echo -e 'CREATE_UEFI_BUNDLES=yes
 	UEFI_BUNDLE_DIR="boot/efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-	mkdir -p /mnt/boot/efi/EFI/Linux
+	mkdir -p /mnt/efi/EFI/Linux
 
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
@@ -747,21 +798,20 @@ fi
 if [[ $bm == "refind" && $uefi == "true" ]]; then
 	$crm refind-install
 fi
-if [[ $bm == "grub" && $fs_type != "btrfs" ]]; then
-	echo 'GRUB_CMDLINE_LINUX="rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
+if [[ $bm == "grub" ]]; then
+	sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"/' /mnt/etc/default/grub
+
 fi
-if [[ $bm == "grub" && $fs_type == "btrfs" ]]; then
-	echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
-fi
+
 if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-	echo $luks_pw | cryptsetup luksAddKey $disk'3' /mnt/boot/volume.key
-	$crm chmod 000 /boot/volume.key
-	$crm chmod -R g-rwx,o-rwx /boot
-	echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
-	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	#dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
+	#echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
+	#$crm chmod 000 /boot/volume.key
+	#$crm chmod -R g-rwx,o-rwx /boot
+	#echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
+	#echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
 if [[ $bm == "grub" && $uefi != "true" ]]; then
@@ -769,9 +819,9 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
-	$crm grub-install --target=x86_64-efi --efi-directory=$efi_part_name --bootloader-id=Void \
-	--disable-shim-lock --modules="tpm"
-	$crm grub-mkconfig -o /boot/grub/grub.cfg
+	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
+	#$crm grub-mkconfig -o /boot/grub/grub.cfg
+
 fi
 }
 
@@ -788,14 +838,14 @@ if [[ $secure_boot == 0 && $bm != "grub" && $uefi == "true" ]]; then
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm == "grub" && $secure_boot == 0 && $uefi == "true" ]]; then
-	$crm sbctl sign -s $efi_part_name/EFI/Void/grubx64.efi
+	$crm sbctl sign -s $boot_part_name/EFI/Void/grubx64.efi
 	vmlinuz=$(ls /mnt/boot/vm*)
 	vmlinuz="${vmlinuz/'/mnt'}"
 	$crm sbctl sign -s $vmlinuz
 fi
 if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
-	$crm sbctl sign -s $efi_part_name/EFI/refind/refind_x64.efi
-	$crm sbctl sign -s $efi_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
+	$crm sbctl sign -s $boot_part_name/EFI/refind/refind_x64.efi
+	$crm sbctl sign -s $boot_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
 fi
 }
 
@@ -824,8 +874,8 @@ main()
 starting
 prepdisk
 prepsys
-configsys
 appsinstall
+configsys
 hardening
 firewall
 custom
