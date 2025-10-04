@@ -325,13 +325,7 @@ if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
 	mount /dev/$hostname/home /mnt/home
 fi
 
-
- if [[ $uefi == "true" ]]; then
-	boot_part_name="/efi"
- else
- 	boot_part_name="/boot"
- fi
-
+boot_part_name="/boot"
 
 #create efi and boot partition
 mkfs.vfat -F 32 $boot_part
@@ -653,7 +647,7 @@ PKGNAME="$1"
 VERSION="$2"
 
 
-BOOT_DIR="/efi/EFI/Void"  # Modify this path if your ESP is different
+BOOT_DIR="/boot/EFI/Void"  # Modify this path if your ESP is different
 
 # Define the UKI output path
 UKI_OUTPUT_PATH="${BOOT_DIR}/void-signed-uki.efi"
@@ -778,19 +772,19 @@ bootmanag()
 {
 if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	echo -e "#!/bin/sh
-	mv /efi/EFI/Linux/linux-*.efi /efi/EFI/Linux/linuxOLD.efi" \
+	mv /boot/EFI/Linux/linux-*.efi /boot/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp /efi/EFI/Linux/linux-*.efi /efi/EFI/Linux/linux.efi" \
+	cp /boot/EFI/Linux/linux-*.efi /boot/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 
 	echo -e 'CREATE_UEFI_BUNDLES=yes
-	UEFI_BUNDLE_DIR="boot/efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-	mkdir -p /mnt/efi/EFI/Linux
+	UEFI_BUNDLE_DIR="boot/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
+	mkdir -p /mnt/boot/EFI/Linux
 
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
