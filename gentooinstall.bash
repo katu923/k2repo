@@ -22,6 +22,8 @@ disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="" # better to leave this empty
 
+bl="" #grub or uki
+
 #PREPARE DISKS
 
 if [[ $disk == *"sd"* ]]; then
@@ -44,7 +46,11 @@ printf 'label: gpt\n, %s, U, *\n, , L\n' "$efi_part_size" | sfdisk -qf "$disk"
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
+if [[ $bl != "uki" ]]; then
 echo $luks_pw | cryptsetup -q luksFormat --type luks1 $luks_part
+else
+echo $luks_pw | cryptsetup -q luksFormat  $luks_part
+fi
 echo $luks_pw | cryptsetup open $luks_part crypt
 
 if [[ $fs_type != "btrfs" ]]; then
@@ -157,6 +163,7 @@ echo 'GENTOO_MIRRORS="https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distf
 #chroot /mnt/gentoo emerge --config sys-libs/timezone-data
 #systemd
 ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
+
 echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'USE="pulseaudio"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'USE="pulseaudio secureboot"' >> /mnt/gentoo/etc/portage/make.conf
