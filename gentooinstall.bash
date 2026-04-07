@@ -140,7 +140,7 @@ chroot /mnt/gentoo/ emerge-webrsync && getuto
 
 echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 echo "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "sync-uri = https://mirrors.ptisp.pt/gentoo/releases/amd64/binpackages/23.0/x86-64/" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
+echo "sync-uri = https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/releases/amd64/binpackages/23.0/x86-64" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
 # sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/gentoo/etc/portage/make.conf
@@ -151,12 +151,12 @@ echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="*"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
-echo 'GENTOO_MIRRORS="https://mirrors.ptisp.pt/gentoo/"' >> /mnt/gentoo/etc/portage/make.conf
+echo 'GENTOO_MIRRORS="https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/"' >> /mnt/gentoo/etc/portage/make.conf
 #openrc
-echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
+#echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
 #chroot /mnt/gentoo emerge --config sys-libs/timezone-data
 #systemd
-#ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
+ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
 echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'USE="pulseaudio"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'USE="pulseaudio secureboot"' >> /mnt/gentoo/etc/portage/make.conf
@@ -203,11 +203,12 @@ fi
 #  chroot /mnt/gentoo systemctl preset-all
 #  chroot /mnt/gentoo bootctl install
 # echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
- 
+
+ #openrc
  #mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
  #touch /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
  #echo 'hostonly="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'add_dracutmodules+=" lvm crypt dm rootfs-block systemd "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ #echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
  #echo 'uefi="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
  #echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
  #echo 'compress="gzip"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
@@ -313,7 +314,7 @@ echo "crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/gentoo/etc/crypttab
 echo 'install_items+=" /boot/volume.key /etc/crypttab "' > /mnt/gentoo/etc/dracut.conf.d/chave
 chroot /mnt/gentoo grub-install --efi-directory=/efi
 chroot /mnt/gentoo grub-mkconfig -o /efi/EFI/gentoo/grub.cfg
-chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
+chroot /mnt/gentoo useradd -m -G users,pipewire,wheel -s /bin/bash $username
 #chroot /mnt/gentoo/gentoo passwd root
 #chroot /mnt/gentoo/gentoo passwd $username
 
