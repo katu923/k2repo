@@ -22,7 +22,8 @@ disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="" # better to leave this empty
 
-bl="" #grub or uki
+bl="" #grub (openrc), uki (openrc) or system-boot (systemd)
+
 
 #PREPARE DISKS
 
