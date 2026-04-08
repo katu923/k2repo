@@ -167,12 +167,13 @@ ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
 
 echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'USE="pulseaudio"' >> /mnt/gentoo/etc/portage/make.conf
-echo 'USE="pulseaudio secureboot"' >> /mnt/gentoo/etc/portage/make.conf
+if [[ $bl == "grub" ]]; then
+echo 'USE="secureboot"' >> /mnt/gentoo/etc/portage/make.conf
 
 # Secure Boot signing keys
 echo 'SECUREBOOT_SIGN_KEY="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
 echo 'SECUREBOOT_SIGN_CERT="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
-
+fi
 
 echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
@@ -182,19 +183,26 @@ chroot /mnt/gentoo/ locale-gen
  #KERNEL CONFIG
 
  chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
+  if [[ $bl == "uki" ]]; then
   #openrc
  #uki
- #echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
- #echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
+ fi
+
+ if [[ $bl == "grub" ]]; then
  #grub
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-kernel/installkernel grub dracut" >> /mnt/gentoo/etc/portage/package.use/system
  echo "sys-apps/dbus X" >> /mnt/gentoo/etc/portage/package.use/system
+ fi
+ if [[ $bl == "systemd" ]]; then
  #systemd systemd-boot
- #echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
- #echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- #echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
- 
+ echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
+ fi
 
 #xfs or ext4
 if [[ fs_type != "btrfs" ]]; then
@@ -203,26 +211,30 @@ else
 #btrfs
  echo "root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet" > /mnt/gentoo/etc/cmdline
 fi
+if [[ $bl == "systemd" ]]; then
 
 #systemd
-#  chroot /mnt/gentoo systemd-machine-id-setup
-#  chroot /mnt/gentoo systemd-firstboot --prompt
-#  chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
-#  chroot /mnt/gentoo systemctl preset-all
-#  chroot /mnt/gentoo bootctl install
+  chroot /mnt/gentoo systemd-machine-id-setup
+  chroot /mnt/gentoo systemd-firstboot --prompt
+  chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
+  chroot /mnt/gentoo systemctl preset-all
+  chroot /mnt/gentoo bootctl install
 # echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
+if [[ $bl == "uki" ]]; then
  #openrc
- #mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
- #touch /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'hostonly="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'uefi="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'compress="gzip"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #echo 'early_microcode="yes"'  >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- #mkdir -p /mnt/gentoo/gentoo/efi/EFI/Linux
+ mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
+ touch /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'hostonly="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'uefi="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'compress="gzip"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'early_microcode="yes"'  >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
+ mkdir -p /mnt/gentoo/gentoo/efi/EFI/Linux
+fi
 
+if [[ $bl == "grub" ]]; then
 #CONFIG SYSTEM
 #secureboot shim
 chroot /mnt emerge -avgq sys-boot/shim sys-boot/mokutil
@@ -235,8 +247,10 @@ chroot /mnt/gentoo openssl req -new -nodes -utf8 -sha256 -x509 -outform PEM \
 
 
 chroot /mnt/gentoo openssl x509 -inform pem -in /root/secureboot/MOK.pem -outform der -out /boot/sbcert.der
+fi
 
 echo $hostname > /mnt/gentoo/etc/hostname
+
 
 #openrc
 chroot /mnt/gentoo emerge -avgq sudo lvm2 cryptsetup efibootmgr iwd # systemd-utils apparmor apparmor-profiles apparmor-utils iwd doas cronie sysklogd dhcpcd
