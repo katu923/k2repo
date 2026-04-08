@@ -124,7 +124,7 @@ fi
 #STAGE FILE
 
 cd /mnt/gentoo
-links https://mirrors.ptisp.pt/gentoo/releases/amd64/autobuilds
+links https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/releases/amd64/autobuilds
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
 #INSTALL BASE SYSTEM
