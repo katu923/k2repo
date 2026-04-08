@@ -315,6 +315,7 @@ chroot /mnt/gentoo rc-update add iwd default
 #chmod +x /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 #echo "#!/bin/sh" > /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 #echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+#echo "mv /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.last" >> /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 
 #secure boot
 # if [[ ! -z $secure_boot ]]; then
