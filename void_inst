@@ -206,7 +206,7 @@ en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "na
 }
 
 prepdisk()
-
+{
 if [[ $uefi == "true" ]]; then
 	if [[ $disk == *"sd"* ]]; then
 	boot_part=$(echo $disk'1')
@@ -409,12 +409,14 @@ $crm ln -sf $local /etc/localtime
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
+
 if [[ $uefi == "true"  ]]; then
 boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
 else
 luks_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 fi
+
 ROOT_UUID=$(blkid -s UUID -o value $diskmap)
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -424,9 +426,10 @@ fi
 
 if [[ ! -z $root_part_size && $fs_type != "btrfs" ]]; then
 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+fi
 
-else
-	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+if [[ $fs_type = "btrfs" ]]
+    echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
 	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
 	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
 	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
