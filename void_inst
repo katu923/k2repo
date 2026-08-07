@@ -32,17 +32,17 @@ The disk will be erased. If needed, first make a backup in a external disk!\n
 For BTRFS it will use all disk space to create btrfs subvolumes. \n
 For XFS or EXT4, you can choose the size of partitions. Leave at the default (25G) and it will \n
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
-use all disk space to create  only a root partition.\n
+use all disk space to create the root partition.\n
 For swap, if needed, use zramen.\n
 For superuser, i use doas, sudo isnt installed, also there is an option to disable root login.\n
 Firewal nftables and apparmor are installed by default. \n
-To enable secure boot with sbctl, you must set secure boot in uefi bios to setup mode (and reset keys). \n
+To enable secure boot with sbctl, you must set secure boot in uefi to setup mode.  \n
 There is a lot of customization and some bugs...\n
 Its easy to adapt to other preferences!! " 0 0 --output-fd 1
 
 clear
 
-dialog --yesno "Proceed to installation?" 0 0 --output-fd 1
+dialog --yesno "Proceed to Void installation?" 0 0 --output-fd 1
 start=$?
 clear
 
@@ -60,12 +60,13 @@ if [[ ! -z $uefi ]]; then
 	dialog --msgbox "UEFI FILE SYSTEM FOUND!!" 0 0 --output-fd 1
 else
 	dialog --msgbox "UEFI NOT FOUND! OLD COMPUTER..." 0 0 --output-fd 1
-	exit
+	uefi="false"
+	#	exit
 fi
 
 
 
-keyb=$(dialog --radiolist "choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1) || usercancel
+keyb=$(dialog --radiolist "Choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1) || usercancel
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
@@ -119,30 +120,30 @@ fi
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
     local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
-	lslocal=$(ls $local)boot_part=$(echo $disk'p1')
+	lslocal=$(ls $local)boot_part=$(echo $disk'p2')
 done
 
 language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
 
 
-#if [[ $uefi == "true" ]]; then
+if [[ $uefi == "true" ]]; then
 bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
-#else
-#bm="grub"
-#fi
+else
+bm="grub"
+fi
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1) || usercancel
 
 
-#if [[ $uefi == "true" ]]; then
+if [[ $uefi == "true" ]]; then
 	dialog --yesno "enable secure boot?" 0 0 --output-fd 1
 	secure_boot=$?
 
-#else
+else
 	secure_boot=1
 
-#fi
+fi
 clear
 
 ARCH="x86_64"
@@ -207,14 +208,14 @@ prepdisk()
 {
 
 if [[ $disk == *"sd"* ]]; then
-	boot_part=$(echo $disk'1')
-	luks_part=$(echo $disk'2')
+	boot_part=$(echo $disk'2')
+	luks_part=$(echo $disk'1')
 elif [[ $disk == *"vd"* ]]; then
-	boot_part=$(echo $disk'1')
-	luks_part=$(echo $disk'2')
+	boot_part=$(echo $disk'2')
+	luks_part=$(echo $disk'1')
 elif [[ $disk == *"nvme"* ]]; then
-	boot_part=$(echo $disk'p1')
-	luks_part=$(echo $disk'p2')
+	boot_part=$(echo $disk'p2')
+	luks_part=$(echo $disk'p1')
 fi
 
 dialog --yesno "enable disk encryption?" 0 0 --output-fd 1
@@ -252,8 +253,14 @@ if [[ $begin == 0 ]]; then
 else exit
 fi
 
+if [[ $uefi == "true" ]]; then
 printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
-
+else
+sfdisk $disk <<EOF
+label: dos
+, , L, *
+EOF
+fi
 
 #Create LUKS2 encrypted partition
 #cryptsetup benchmark   to find the best cypher for your pc
@@ -389,8 +396,8 @@ $crm ln -sf $local /etc/localtime
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
 luks_home_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-home)
-boot_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
-luks_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
+boot_uuid=$(blkid -o value -s UUID  /mnt$disk'2')
+luks_uuid=$(blkid -o value -s UUID  /mnt$disk'1')
 ROOT_UUID=$(blkid -s UUID -o value $diskmap)
 
 if [[ $fs_type != "btrfs"  ]]; then
@@ -430,7 +437,7 @@ hardening()
 {
 #disable root login
 if [[ $adm ==  0 ]]; then
-sed -i 's,^root:x:0:0:root:/root:/bin/sh,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
+sed -i 's,^root:x:0:0:root:/root:/bin/bash,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
 fi
 
 # harden sysctl
@@ -782,8 +789,8 @@ if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	UEFI_BUNDLE_DIR="boot/efi/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
 	mkdir -p /mnt/boot/EFI/Linux
 
-	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
-	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
+	efibootmgr -c -d $disk -p 2 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
+	efibootmgr -c -d $disk -p 2 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 fi
 if [[ $bm == "refind" && $uefi == "true" ]]; then
 	$crm refind-install
