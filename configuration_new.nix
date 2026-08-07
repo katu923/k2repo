@@ -131,6 +131,10 @@ vlc
         persist = true;
      }];
 
+
+#virtualisation.libvirtd.enable = true;
+#programs.dconf.enable = true;
+
 # Enable automatic login for the user.
   services.displayManager.autoLogin.enable = true;
   services.displayManager.autoLogin.user = "xefe";
@@ -154,6 +158,7 @@ vlc
     ll = "ls -l";
     la = "ls -la";
     nix-switch = "sudo nixos-rebuild switch";
+    nix-update = "sudo nixos-rebuild switch --update";
     nix-clean = "sudo nix-env --delete-generations old && sudo nix-store --gc";
     dmesg = "sudo dmesg";
     ss = "ss -tunap";
