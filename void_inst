@@ -187,7 +187,7 @@ xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
 
 apps_office="libreoffice-writer libreoffice-calc"
 
-apps_multimedia="vlc openh264 obs ffmpeg"
+apps_multimedia="vlc openh264 obs ffmpeg mpv"
 
 apps_browser="firefox"
 
