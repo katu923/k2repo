@@ -60,7 +60,6 @@ if [[ ! -z $uefi ]]; then
 	dialog --msgbox "UEFI FILE SYSTEM FOUND!!" 0 0 --output-fd 1
 else
 	dialog --msgbox "UEFI NOT FOUND! OLD COMPUTER..." 0 0 --output-fd 1
-	uefi="false"
 	#	exit
 fi
 
@@ -99,9 +98,11 @@ disk=$(dialog --backtitle "Disks detected are: $diskname" --radiolist "Enter dis
 
 fs_type=$(dialog --radiolist "Choose the file system" 0 0 3 'xfs' 1 on 'ext4' 2 off 'btrfs' 3 off --output-fd 1) || usercancel
 
+if [[ $uefi == "true" ]]; then
 while [ -z $boot_part_size ]; do
 boot_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "Enter efi partition size (default: 512M)" 0 0 512M --output-fd 1) || usercancel
 done
+fi
 
 if [[ $fs_type == "btrfs" ]]; then
 	root_part_size=""
@@ -333,13 +334,14 @@ if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
    	mkdir -p /mnt/home
 	mount /dev/$hostname/home /mnt/home
 fi
-
+if [[ $uefi == "true" ]]; then
 boot_part_name="/boot/efi"
 
 #create efi and boot partition
 mkfs.vfat -F 32 $boot_part
 mkdir /mnt$boot_part_name
 mount $boot_part /mnt$boot_part_name
+fi
 }
 
 prepsys()
@@ -418,8 +420,9 @@ fi
 if [[ $uefi == "true" ]]; then
 echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
 fi
+if [[ $uefi == "true" ]]; then
 echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
-
+fi
 #dracut
 echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
