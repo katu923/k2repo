@@ -233,6 +233,10 @@ dialog --yesno "enable disk encryption?" 0 0 --output-fd 1
 enc_start=$?
 clear
 
+# dialog --yesno "enable disk partition with lvm?" 0 0 --output-fd 1
+# lvm=$?
+#clear
+
 if [[ $enc_start == 0 ]]; then
 	encryption="yes"
 	diskmap="/dev/mapper/"${luks_part/'/dev/'}"_crypt"
@@ -286,10 +290,13 @@ elif [[ $bm != "grub"  &&  $encryption == "yes" ]]; then
 fi
 
 
+
+
 if [[ $fs_type != "btrfs" ]]; then
 	vgcreate $hostname $diskmap
+fi
 
-else
+if [[ $fs_type == "btrfs" ]]; then
 	mkfs.btrfs -L $hostname $diskmap
 fi
 
@@ -303,7 +310,7 @@ elif [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
 	lvcreate --name home -l 100%FREE $hostname
 fi
 
-if [[ $fs_type != "btrfs"  ]]; then
+if [[ $fs_type != "btrfs" ]]; then
 	mkfs.$fs_type -qL root /dev/$hostname/root
 fi
 
