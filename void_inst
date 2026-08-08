@@ -237,8 +237,8 @@ if [[ $fs_type != "btrfs" ]]; then
 dialog --yesno "enable disk partition with lvm?" 0 0 --output-fd 1
 lvm=$?
 fi
-
 clear
+
 
 if [[ $enc_start == 0 ]]; then
 	encryption="yes"
@@ -857,7 +857,7 @@ if [[ $bm == "grub" ]]; then
 
 fi
 
-if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
+if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" && $uefi == "true" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	#dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
@@ -873,8 +873,12 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
-if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" ]]; then
+if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" && $lvm == 1 ]]; then
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+	echo 'GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
+elif [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" && $lvm == 0 ]]; then
+	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+    echo 'GRUB_CMDLINE_LINUX_DEFAULT="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
 fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
