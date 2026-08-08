@@ -121,7 +121,7 @@ fi
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
     local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
-	lslocal=$(ls $local)boot_part=$(echo $disk'p2')
+	lslocal=$(ls $local)boot_part=$(echo $disk'p1')
 done
 
 language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
@@ -129,7 +129,7 @@ language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off '
 
 
 if [[ $uefi == "true" ]]; then
-bm=$(dialog --radiolist "choose your boot manager" 0 0 3 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
+bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off  'limine' 4 off --output-fd 1) || usercancel
 else
 bm="grub"
 fi
@@ -233,9 +233,12 @@ dialog --yesno "enable disk encryption?" 0 0 --output-fd 1
 enc_start=$?
 clear
 
-# dialog --yesno "enable disk partition with lvm?" 0 0 --output-fd 1
-# lvm=$?
-#clear
+if [[ $fs_type != "btrfs" ]]; then
+dialog --yesno "enable disk partition with lvm?" 0 0 --output-fd 1
+lvm=$?
+fi
+
+clear
 
 if [[ $enc_start == 0 ]]; then
 	encryption="yes"
@@ -292,31 +295,39 @@ fi
 
 
 
-if [[ $fs_type != "btrfs" ]]; then
-	vgcreate $hostname $diskmap
+if [[ $lvm == 0 ]]; then
+
+	if [[ $fs_type != "btrfs" ]]; then
+		vgcreate $hostname $diskmap
+	fi
+
+	if [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
+
+		lvcreate --name root -l 100%FREE $hostname
+
+	elif [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
+
+		lvcreate --name root -L $root_part_size $hostname
+		lvcreate --name home -l 100%FREE $hostname
+	fi
+
+	if [[ $fs_type != "btrfs" ]]; then
+		mkfs.$fs_type -qL root /dev/$hostname/root
+	fi
+
+	if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
+		mkfs.$fs_type -qL home /dev/$hostname/home
+	fi
+
+else
+		mkfs.$fs_type $diskmap
 fi
+
 
 if [[ $fs_type == "btrfs" ]]; then
 	mkfs.btrfs -L $hostname $diskmap
 fi
 
-if [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
-
-	lvcreate --name root -l 100%FREE $hostname
-
-elif [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
-
-	lvcreate --name root -L $root_part_size $hostname
-	lvcreate --name home -l 100%FREE $hostname
-fi
-
-if [[ $fs_type != "btrfs" ]]; then
-	mkfs.$fs_type -qL root /dev/$hostname/root
-fi
-
-if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
-	mkfs.$fs_type -qL home /dev/$hostname/home
-fi
 
 if [[ $fs_type == "btrfs" && -z $root_part_size ]]; then
 
@@ -330,9 +341,16 @@ if [[ $fs_type == "btrfs" && -z $root_part_size ]]; then
     umount /mnt
 fi
 
-if [[ $fs_type != "btrfs"  ]]; then
-	mount /dev/$hostname/root /mnt
+if [[ $lvm == 0 ]]; then
+
+	if [[ $fs_type != "btrfs" ]]; then
+		mount /dev/$hostname/root /mnt
+	fi
 else
+	mount $diskmap /mnt
+fi
+
+if [[ $fs_type == "btrfs" ]]; then
 	mount -o $BTRFS_OPTS,subvol=@ $diskmap /mnt
 	mkdir -p /mnt/{home,.snapshots,var/log,var/cache}
 	mount -o $BTRFS_OPTS,subvol=@home $diskmap /mnt/home
@@ -341,24 +359,30 @@ else
 	mount -o $BTRFS_OPTS,subvol=@snapshots $diskmap /mnt/.snapshots
 fi
 
+if [[ $lvm == 0 ]]; then
+
+	if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
+		mkdir -p /mnt/home
+		mount /dev/$hostname/home /mnt/home
+	fi
+else
+	mkdir -p /mnt/home
+	mount $diskmap/home /mnt/home
+fi
+
 for dir in dev proc sys run; do
 	mkdir -p /mnt/$dir
 	mount --rbind /$dir /mnt/$dir
 	mount --make-rslave /mnt/$dir
 done
 
-if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
-   	mkdir -p /mnt/home
-	mount /dev/$hostname/home /mnt/home
-fi
-
 if [[ $uefi == "true" ]]; then
-boot_part_name="/boot/efi"
+	boot_part_name="/boot/efi"
 
-#create efi and boot partition
-mkfs.vfat -F 32 $boot_part
-mkdir /mnt$boot_part_name
-mount $boot_part /mnt$boot_part_name
+	#create efi and boot partition
+	mkfs.vfat -F 32 $boot_part
+	mkdir /mnt$boot_part_name
+	mount $boot_part /mnt$boot_part_name
 fi
 }
 
@@ -426,27 +450,30 @@ fi
 
 ROOT_UUID=$(blkid -s UUID -o value $diskmap)
 
-if [[ $fs_type != "btrfs"  ]]; then
-	echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
-fi
 
 
-if [[ ! -z $root_part_size && $fs_type != "btrfs" ]]; then
-	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
-fi
+# if [[ $fs_type != "btrfs"  ]]; then
+# 	echo -e "UUID=$luks_root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/etc/fstab
+# fi
+#
+#
+# if [[ ! -z $root_part_size && $fs_type != "btrfs" ]]; then
+# 	echo -e "UUID=$luks_home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/etc/fstab
+# fi
 
-if [[ $fs_type = "btrfs" ]]
-    echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
-	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
-	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2 " >> /mnt/etc/fstab
-fi
 
-if [[ $uefi == "true" ]]; then
-echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
-echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
-fi
+# if [[ $fs_type = "btrfs" ]]
+#     echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+# 	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+# 	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
+# 	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
+# 	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2 " >> /mnt/etc/fstab
+# fi
+
+# if [[ $uefi == "true" ]]; then
+# echo "efivarfs /sys/firmware/efi/efivars efivarfs defaults 0 0" >> /mnt/etc/fstab
+# echo "UUID=$boot_uuid	$boot_part_name	vfat	umask=0077	0	1" >> /mnt/etc/fstab
+# fi
 #dracut
 echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
@@ -613,6 +640,9 @@ table inet filter {
 
 configsys()
 {
+
+xgenfstab -U /mnt > /mnt/etc/fstab
+
 #set main and nonfree repo
 
 echo "repository=$void_repo" > /mnt/etc/xbps.d/00-repository-main.conf
