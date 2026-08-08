@@ -872,6 +872,10 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-install $disk
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
+
+if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" ]]; then
+	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
 	#$crm grub-mkconfig -o /boot/grub/grub.cfg
