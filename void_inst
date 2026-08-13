@@ -34,7 +34,7 @@ For XFS or EXT4, you can choose the size of partitions. Leave at the default (25
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
 use all disk space to create the root partition.\n
 For swap, if needed, use zramen.\n
-For superuser, i use doas, sudo isnt installed, also there is an option to disable root login.\n
+For superuser, i use doas, sudo is uninstalled, also there is an option to disable root login.\n
 Firewal nftables and apparmor are installed by default. \n
 To enable secure boot with sbctl, you must set secure boot in uefi to setup mode.  \n
 There is a lot of customization and some bugs...\n
@@ -129,7 +129,7 @@ language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off '
 
 
 if [[ $uefi == "true" ]]; then
-bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off  'limine' 4 off --output-fd 1) || usercancel
+bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off 'limine' 4 off --output-fd 1) || usercancel
 else
 bm="grub"
 fi
@@ -857,7 +857,7 @@ if [[ $bm == "grub" ]]; then
 
 fi
 
-if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" && $uefi == "true" ]]; then
+if [[ $bm == "grub" && $fs_type == "btrfs" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	#dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
@@ -873,18 +873,15 @@ if [[ $bm == "grub" && $uefi != "true" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
-if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" && $lvm == 1 ]]; then
+
+if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" ]]; then
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-	echo 'GRUB_CMDLINE_LINUX_DEFAULT="rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
-	$crm grub-mkconfig -o /boot/grub/grub.cfg
-elif [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" && $lvm == 0 ]]; then
-	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-    echo 'GRUB_CMDLINE_LINUX_DEFAULT="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
-    $crm grub-mkconfig -o /boot/grub/grub.cfg
+    echo 'GRUB_CMDLINE_LINUX="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
+
 fi
 if [[ $bm == "grub" && $uefi == "true" ]]; then
 	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
-	#$crm grub-mkconfig -o /boot/grub/grub.cfg
+	$crm grub-mkconfig -o /boot/grub/grub.cfg
 
 fi
 }
