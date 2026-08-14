@@ -129,9 +129,9 @@ language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off '
 
 
 if [[ $uefi == "true" ]]; then
-bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
+	bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
 else
-bm="grub"
+	bm="grub"
 fi
 
 graphical=$(dialog --radiolist "choose your graphical interface" 0 0 4 'kde' 1 on 'gnome' 2 off 'xfce' 3 off 'minimal' 4 off --output-fd 1) || usercancel
@@ -246,7 +246,7 @@ if [[ $enc_start == 0 ]]; then
 	passwcheck "luks"
 	luks_pw=$pw
 #	echo $root_pw $user_pw $luks_pw >> teste.txt
-	else
+else
 	encryption="no"
     diskmap=$luks_part
 fi
@@ -272,7 +272,7 @@ else exit
 fi
 
 if [[ $uefi == "true" ]]; then
-printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
+	printf 'label: gpt\n, %s, U, *\n, , L\n' "$boot_part_size" | sfdisk -qf "$disk"
 else
 sfdisk $disk <<EOF
 label: dos
