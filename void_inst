@@ -295,7 +295,7 @@ fi
 
 
 
-if [[ $lvm == 0 ]]; then
+# if [[ $lvm == 0 ]]; then
 
 	if [[ $fs_type != "btrfs" ]]; then
 		vgcreate $hostname $diskmap
@@ -319,9 +319,9 @@ if [[ $lvm == 0 ]]; then
 		mkfs.$fs_type -qL home /dev/$hostname/home
 	fi
 
-else
-		mkfs.$fs_type $diskmap
-fi
+# else
+# 		mkfs.$fs_type $diskmap
+# fi
 
 
 if [[ $fs_type == "btrfs" ]]; then
@@ -341,14 +341,14 @@ if [[ $fs_type == "btrfs" && -z $root_part_size ]]; then
     umount /mnt
 fi
 
-if [[ $lvm == 0 ]]; then
+# if [[ $lvm == 0 ]]; then
 
 	if [[ $fs_type != "btrfs" ]]; then
 		mount /dev/$hostname/root /mnt
 	fi
-else
-	mount $diskmap /mnt
-fi
+# else
+# 	mount $diskmap /mnt
+# fi
 
 if [[ $fs_type == "btrfs" ]]; then
 	mount -o $BTRFS_OPTS,subvol=@ $diskmap /mnt
@@ -359,16 +359,16 @@ if [[ $fs_type == "btrfs" ]]; then
 	mount -o $BTRFS_OPTS,subvol=@snapshots $diskmap /mnt/.snapshots
 fi
 
-if [[ $lvm == 0 ]]; then
+# if [[ $lvm == 0 ]]; then
 
 	if [[ $fs_type != "btrfs" && ! -z $root_part_size  ]]; then
 		mkdir -p /mnt/home
 		mount /dev/$hostname/home /mnt/home
 	fi
-else
-	mkdir -p /mnt/home
-	mount $diskmap/home /mnt/home
-fi
+# else
+# 	mkdir -p /mnt/home
+# 	mount $diskmap/home /mnt/home
+# fi
 
 for dir in dev proc sys run; do
 	mkdir -p /mnt/$dir
@@ -415,7 +415,7 @@ fi
 $crm chown root:root /
 $crm chmod 755 /
 
-useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
+useradd -R /mnt -m -g users -G $user_groups $username -s /bin/bash
 
 
 cat << EOF | $crm
@@ -915,9 +915,11 @@ fi
 
 finish()
 {
-
 xbps-reconfigure -far /mnt/
+}
 
+restart()
+{
 dialog --yesno "All done! reboot?" 0 0 --output-fd 1
 end=$?
 clear
@@ -930,7 +932,6 @@ else
  	reboot
 	shutdown -r now
 fi
-
 }
 
 main()
