@@ -65,7 +65,7 @@ fi
 
 
 
-keyb=$(dialog --radiolist "Choose your keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1) || usercancel
+keyb=$(dialog --radiolist "Choose your tty keyboard"  0 0 9 'pt' 1 on 'br-abnt' 2 off 'uk' 3 off 'us' 4 off  "ca" 5 off "it" 6 off "es" 7 off "de" 8 off "fr" 9 off --output-fd 1) || usercancel
 
 #keyb=$(dialog --title "choose your keymap" --fselect /usr/share/kbd/keymaps/ 0 0 --output-fd 1)
 
@@ -85,8 +85,8 @@ done
 passwcheck "user"
 user_pw=$pw
 
-user_groups=$(dialog --checklist "Choose user groups" 0 0 7 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off \
-'storage' 5 off 'network' 6 on 'xbuilder' 7 off --output-fd 1) || usercancel
+user_groups=$(dialog --checklist "Choose user groups" 0 0 10 'wheel' 1 on 'audio' 2 on 'video' 3 on 'kvm' 4 off \
+'storage' 5 off 'network' 6 on 'xbuilder' 7 off 'plugdev' 8 off 'scanner' 9 off 'lp' 10 off --output-fd 1) || usercancel
 user_groups="${user_groups// /,}"
 
 diskname=$(lsblk -l -o NAME,TYPE | grep "disk" | tr -d ' \n')
@@ -124,12 +124,12 @@ while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 	lslocal=$(ls $local)boot_part=$(echo $disk'p1')
 done
 
-language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
-'pt_PT.UTF-8' 5 on 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
+language=$(dialog --radiolist "Choose your language" 0 0 4 'en_US.UTF-8' 1 on 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
+'pt_PT.UTF-8' 5 off 'pt_BR.UTF-8' 6 off --output-fd 1) || usercancel
 
 
 if [[ $uefi == "true" ]]; then
-	bm=$(dialog --radiolist "choose your boot manager" 0 0 4 'grub' 1 on 'efistub' 2 off 'refind' 3 off --output-fd 1) || usercancel
+	bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'grub' 1 on 'efistub' 2 off  --output-fd 1) || usercancel
 else
 	bm="grub"
 fi
@@ -201,8 +201,8 @@ nerd-fonts-symbols-ttf"
 
 rm_services=("agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "udevd" "uuidd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" \
-"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd-eth0" "snapperd")
+en_services=("acpid" "dbus" "chronyd" "udevd" "cupsd" "socklog-unix" "nanoklogd" "NetworkManager" \
+"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd-eth0")
 }
 
 prepdisk()
@@ -375,7 +375,7 @@ if [[ $uefi == "true" ]]; then
 
 	#create efi and boot partition
 	mkfs.vfat -F 32 $boot_part
-	mkdir /mnt$boot_part_name
+	mkdir -p /mnt$boot_part_name
 	mount $boot_part /mnt$boot_part_name
 fi
 
@@ -397,20 +397,20 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 
 if [[ $bm != "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
-	sbsigntool systemd-boot-efistub sbctl refind dracut-uefi opendoas \
+	sbsigntool systemd-boot-efistub sbctl dracut-uefi opendoas \
 	runit-void-apparmor runit-nftables apparmor
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
-	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi snapper opendoas \
+	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi opendoas \
 	runit-void-apparmor runit-nftables apparmor systemd-boot-efistub ukify
 
 elif [[ $bm = "grub" && $uefi != "true" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
-	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub snapper opendoas \
+	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub opendoas \
 	runit-void-apparmor runit-nftables apparmor
 fi
 
@@ -419,8 +419,7 @@ fi
 $crm chown root:root /
 $crm chmod 755 /
 
-useradd -R /mnt -m -g users -G $user_groups $username -s /bin/bash
-
+useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
 
 cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
@@ -431,13 +430,8 @@ set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
 
 
-if [[ $glib == "" ]]; then
-    echo "LANG=$language" > /mnt/etc/locale.conf
-	echo -e "$language UTF-8" >> /mnt/etc/default/libc-locales
-    #xbps-reconfigure -fr /mnt/ glibc-locales
-else
-	echo "LANG=$language" > /mnt/etc/locale.conf
-fi
+
+echo "LANG=$language" > /mnt/etc/locale.conf
 
 $crm ln -sf $local /etc/localtime
 
@@ -696,7 +690,7 @@ $crm ln -sf $local /etc/localtime
 	NameResolvingService=none" > /mnt/etc/iwd/main.conf
 
 if [[ $bm == "grub" && $uefi == "true" ]] ; then
-	cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"
+	cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor loglevel=3"
 	mkdir -p /mnt/etc/kernel
 	echo $cmdline > /mnt/etc/kernel/cmdline
 
@@ -785,7 +779,6 @@ echo -e 'source /home/'$username'/.bash_aliases
 ufetch
 eval "$(starship init bash)"' >> /mnt/home/$username/.bashrc
 
-
 mkdir -p /mnt/home/$username/.config
 $crm chown -R $username:$username /home/$username/.config
 
@@ -852,11 +845,9 @@ if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 fi
-if [[ $bm == "refind" && $uefi == "true" ]]; then
-	$crm refind-install
-fi
+
 if [[ $bm == "grub" ]]; then
-	sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"/' /mnt/etc/default/grub
+	sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor loglevel=3"/' /mnt/etc/default/grub
 
 fi
 
@@ -911,10 +902,7 @@ fi
 # 	vmlinuz="${vmlinuz/'/mnt'}"
 # 	$crm sbctl sign -s $vmlinuz
 # fi
-if [[ $bm == "refind" && $secure_boot == 0  && $uefi == "true" ]]; then
-	$crm sbctl sign -s $boot_part_name/EFI/refind/refind_x64.efi
-	$crm sbctl sign -s $boot_part_name/EFI/refind/drivers_x64/btrfs_x64.efi
-fi
+
 }
 
 finish()
