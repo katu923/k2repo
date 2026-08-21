@@ -689,7 +689,7 @@ $crm ln -sf $local /etc/localtime
 	RoutePriorityOffset=200
 	NameResolvingService=none" > /mnt/etc/iwd/main.conf
 
-if [[ $bm == "grub" && $uefi == "true" ]] ; then
+if [[ $bm == "grub" && $uefi == "true" && $secure_boot == 0 ]] ; then
 	cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor loglevel=3"
 	mkdir -p /mnt/etc/kernel
 	echo $cmdline > /mnt/etc/kernel/cmdline
