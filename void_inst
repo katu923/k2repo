@@ -574,7 +574,7 @@ blacklist thunderbolt
 install thunderbolt /bin/false" > /mnt/etc/modprobe.d/blacklist.conf
 
 #apparmor
-sed -i 's/^#*APPARMOR=.*$/APPARMOR=enforce/i' /mnt/etc/default/apparmor
+
 sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 }
