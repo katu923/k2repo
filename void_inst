@@ -478,9 +478,9 @@ if [[ $bm != "grub" && $uefi == "true" ]]; then
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 if [[ $bm != "grub" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'='"${luks_part/'/dev/'}"'_crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'='"${luks_part/'/dev/'}"'_crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm != "grub" && $fs_type == "btrfs" && $uefi == "true" ]]; then
-	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor video=efifb:nobgrt loglevel=3"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 }
 
@@ -846,23 +846,27 @@ if [[ $bm != "grub" && $uefi == "true"  ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 fi
 
-if [[ $bm == "grub" ]]; then
-	sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="apparmor=1 security=apparmor loglevel=3"/' /mnt/etc/default/grub
-
-fi
-
 if [[ $bm == "grub" && $encryption == "yes" ]]; then
 	echo 'GRUB_BTRFS_ENABLE_CRYPTODISK="true"' >> /mnt/etc/default/grub-btrfs/config
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
-	if [[ uefi == "true" ]]; then
+	if [[ $uefi == "true" ]]; then
 	echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/boot/volume.key
 	else
 	echo $luks_pw | cryptsetup luksAddKey $disk'1' /mnt/boot/volume.key
 	fi
 	$crm chmod 000 /boot/volume.key
 	$crm chmod -R g-rwx,o-rwx /boot
-	echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
+	if [[ $fs_type != "btrfs" ]]; then
+		echo ""${luks_part/'/dev/'}"_crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/etc/crypttab
+	else
+	    echo ""${luks_part/'/dev/'}"_crypt UUID=$ROOT_UUID /boot/volume.key luks" >> /mnt/etc/crypttab
+	fi
+	if [[ $fs_type != "btrfs" ]]; then
+		echo 'GRUB_CMDLINE_LINUX="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
+	else
+		echo 'GRUB_CMDLINE_LINUX="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
+    fi
 	echo 'install_items+=" /boot/volume.key /etc/crypttab "' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
@@ -874,13 +878,13 @@ fi
 
 if [[ $bm == "grub" && $uefi != "true" && $encryption == "yes" ]]; then
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
-    echo 'GRUB_CMDLINE_LINUX="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid'"' >> /mnt/etc/default/grub
-
+    echo 'GRUB_CMDLINE_LINUX="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
 fi
-if [[ $bm == "grub" && $uefi == "true" ]]; then
-	$crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
-	$crm grub-mkconfig -o /boot/grub/grub.cfg
 
+if [[ $bm == "grub" && $uefi == "true" ]]; then
+    $crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
+
+    $crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 }
 
