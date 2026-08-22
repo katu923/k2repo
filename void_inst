@@ -763,6 +763,11 @@ elif [[ $bm == "grub" && $uefi == "false" ]]; then
 	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
+if [[ $bm == "grub" && $encryption == 0 && $secure_boot == 0 ]]; then
+	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
+fi
+
+
 if [[ $bm == "grub" && $encryption == 0 && $secure_boot == 1 ]]; then
 	echo "GRUB_ENABLE_CRYPTODISK=y" >> /mnt/etc/default/grub
 	dd bs=1 count=64 if=/dev/urandom of=/mnt/boot/volume.key
