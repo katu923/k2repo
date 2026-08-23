@@ -123,10 +123,10 @@ zramSwap = {
   # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users."xefe" = {
+  users.users."USERNAME" = {
     shell = pkgs.zsh;
     isNormalUser = true;
-    description = "xefe";
+    description = "USERNAME";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
     packages = with pkgs; [
  kdePackages.kate
@@ -151,7 +151,7 @@ vlc
 
 # Enable automatic login for the user.
   services.displayManager.autoLogin.enable = true;
-  services.displayManager.autoLogin.user = "xefe";
+  services.displayManager.autoLogin.user = "USERNAME";
 
   # Ativa o Zsh no sistema
   programs.zsh = {
