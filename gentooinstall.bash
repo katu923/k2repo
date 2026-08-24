@@ -16,13 +16,13 @@ root_part_size="" # if it is empty it will create only a root partition. (and do
 
 hostname="xpto"
 
-fs_type="btrfs" #xfs or ext4
+fs_type="xfs" #xfs or ext4
 
 disk="/dev/sda" #or /dev/vda for virt-manager
 
 secure_boot="" # better to leave this empty
 
-bl="" #grub (openrc), uki (openrc) or system-boot (systemd)
+bl="uki" #grub (openrc), uki (openrc) or system-boot (systemd)
 
 
 #PREPARE DISKS
@@ -106,26 +106,30 @@ ROOT_UUID=$(blkid -s UUID -o value /dev/mapper/crypt)
 mkfs.vfat -F 32 $efi_part
 mkdir -p /mnt/gentoo/efi/EFI
 mount $efi_part /mnt/gentoo/efi
-echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
 
-if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
-	echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
-	echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
-elif [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
-	echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
-else
-	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
-	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
-	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
-	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
-	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2" >> /mnt/gentoo/etc/fstab
-fi
+# echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+#
+# if [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
+# 	echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
+# 	echo -e "UUID=$home_uuid	/home	$fs_type	defaults,noatime	0	2" >> /mnt/gentoo/etc/fstab
+# elif [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
+# 	echo -e "UUID=$root_uuid	/	$fs_type	defaults,noatime	0	1" >> /mnt/gentoo/etc/fstab
+# else
+# 	echo -e "UUID=$ROOT_UUID / btrfs $BTRFS_OPTS,subvol=@ 0 1
+# 	UUID=$ROOT_UUID /home btrfs $BTRFS_OPTS,subvol=@home 0 2
+# 	UUID=$ROOT_UUID /var/log btrfs $BTRFS_OPTS,subvol=@log 0 2
+# 	UUID=$ROOT_UUID /var/cache btrfs $BTRFS_OPTS,subvol=@cache 0 2
+# 	UUID=$ROOT_UUID /.snapshots btrfs $BTRFS_OPTS,subvol=@snapshots 0 2" >> /mnt/gentoo/etc/fstab
+# fi
  
 #STAGE FILE
 
 cd /mnt/gentoo
 links https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/releases/amd64/autobuilds
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
+
+#fstab
+genfstab /mnt/gentoo > /mnt/gentoo/etc/fstab
 
 #INSTALL BASE SYSTEM
 
@@ -141,13 +145,8 @@ mount --make-slave /mnt/gentoo/run
 
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
-mkdir --parents /mnt/gentoo/etc/portage/repos.conf
-cp /usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
-chroot /mnt/gentoo/ emerge-webrsync && getuto
+chroot /mnt/gentoo/ emerge-webrsync
 
-echo "[gentoobinhost]" > /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "priority = 9999" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
-echo "sync-uri = https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/releases/amd64/binpackages/23.0/x86-64" >> /mnt/gentoo/etc/portage/binrepos.conf/gentoobinhost.conf
 
 
 # sed -i 's@COMMOM_FLAGS="-02 -pipe"@COMMON_FLAGS="-march=native -O2 -pipe"@g' /mnt/gentoo/gentoo/etc/portage/make.conf
@@ -158,22 +157,25 @@ echo 'BINPKG_FORMAT="gpkg"' >> /mnt/gentoo/etc/portage/make.conf
 
  echo 'ACCEPT_LICENSE="*"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'VIDEO_CARDS="qxl"' >> /mnt/gentoo/etc/portage/make.conf >> /mnt/gentoo/etc/portage/make.conf
-echo 'GENTOO_MIRRORS="https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/"' >> /mnt/gentoo/etc/portage/make.conf
+# echo 'GENTOO_MIRRORS="https://ftp.rnl.tecnico.ulisboa.pt/pub/gentoo/gentoo-distfiles/"' >> /mnt/gentoo/etc/portage/make.conf
+
+chroot /mnt/gentoo/ getuto
+
 #openrc
 #echo "Europe/Lisbon" > /mnt/gentoo/etc/timezone
 #chroot /mnt/gentoo emerge --config sys-libs/timezone-data
 #systemd
 ln -sf ../usr/share/zoneinfo/Europe/Lisbon /mnt/gentoo/etc/localtime
 
-echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
+# echo 'GRUB_PLATFORMS="efi-64"' >> /mnt/gentoo/etc/portage/make.conf
 #echo 'USE="pulseaudio"' >> /mnt/gentoo/etc/portage/make.conf
-if [[ $bl == "grub" ]]; then
-echo 'USE="secureboot"' >> /mnt/gentoo/etc/portage/make.conf
-
-# Secure Boot signing keys
-echo 'SECUREBOOT_SIGN_KEY="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
-echo 'SECUREBOOT_SIGN_CERT="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
-fi
+# if [[ $bl == "grub" ]]; then
+# echo 'USE="secureboot"' >> /mnt/gentoo/etc/portage/make.conf
+#
+# # Secure Boot signing keys
+# echo 'SECUREBOOT_SIGN_KEY="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
+# echo 'SECUREBOOT_SIGN_CERT="/root/secureboot/MOK.pem"' >> /mnt/gentoo/etc/portage/make.conf
+# fi
 
 echo "en_US ISO-8859-1" >> /mnt/gentoo/etc/locale.gen
 echo "en_US.UTF-8 UTF-8" >> /mnt/gentoo/etc/locale.gen
@@ -183,7 +185,8 @@ chroot /mnt/gentoo/ locale-gen
  #KERNEL CONFIG
 
  chroot /mnt/gentoo emerge -avgq sys-kernel/linux-firmware sys-firmware/intel-microcode
-  if [[ $bl == "uki" ]]; then
+
+ if [[ $bl == "uki" ]]; then
   #openrc
  #uki
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
@@ -191,18 +194,18 @@ chroot /mnt/gentoo/ locale-gen
  echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
  fi
 
- if [[ $bl == "grub" ]]; then
- #grub
- echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
- echo "sys-kernel/installkernel grub dracut" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-apps/dbus X" >> /mnt/gentoo/etc/portage/package.use/system
- fi
- if [[ $bl == "systemd" ]]; then
- #systemd systemd-boot
- echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
- echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
- fi
+ # if [[ $bl == "grub" ]]; then
+ # #grub
+ # echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
+ # echo "sys-kernel/installkernel grub dracut" >> /mnt/gentoo/etc/portage/package.use/system
+ # echo "sys-apps/dbus X" >> /mnt/gentoo/etc/portage/package.use/system
+ # fi
+ # if [[ $bl == "systemd" ]]; then
+ # #systemd systemd-boot
+ # echo "sys-kernel/installkernel systemd-boot" > /mnt/gentoo/etc/portage/package.use/system
+ # echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
+ # echo "sys-apps/systemd boot cryptsetup" >> /mnt/gentoo/etc/portage/package.use/system
+ # fi
 
 #xfs or ext4
 if [[ fs_type != "btrfs" ]]; then
@@ -211,43 +214,44 @@ else
 #btrfs
  echo "root=UUID='$ROOT_UUID' apparmor=1 security=apparmor quiet" > /mnt/gentoo/etc/cmdline
 fi
-if [[ $bl == "systemd" ]]; then
-
-#systemd
-  chroot /mnt/gentoo systemd-machine-id-setup
-  chroot /mnt/gentoo systemd-firstboot --prompt
-  chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
-  chroot /mnt/gentoo systemctl preset-all
-  chroot /mnt/gentoo bootctl install
-# echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+# if [[ $bl == "systemd" ]]; then
+#
+# #systemd
+#   chroot /mnt/gentoo systemd-machine-id-setup
+#   chroot /mnt/gentoo systemd-firstboot --prompt
+#   chroot /mnt/gentoo systemctl preset-all --preset-mode=enable-only
+#   chroot /mnt/gentoo systemctl preset-all
+#   chroot /mnt/gentoo bootctl install
+# # echo -e "UUID=$boot_uuid	/efi 	    vfat	umask=0077	0	2" >> /mnt/gentoo/etc/fstab
+# fi
 
 if [[ $bl == "uki" ]]; then
  #openrc
- mkdir -p /mnt/gentoo/gentoo/etc/dracut.conf.d
- touch /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'hostonly="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'uefi="yes"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'compress="gzip"' >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- echo 'early_microcode="yes"'  >>  /mnt/gentoo/gentoo/etc/dracut.conf.d/10-dracut.conf
- mkdir -p /mnt/gentoo/gentoo/efi/EFI/Linux
+ mkdir -p /mnt/gentoo/etc/dracut.conf.d
+ touch /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'hostonly="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'add_dracutmodules+=" lvm crypt dm "' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'uefi="yes"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'kernel_cmdline="quiet lsm=capability,landlock,yama,apparmor rd.luks.uuid='$luks_uuid' root=UUID='$root_uuid' rd.lvm.vg='$hostname' rd.luks.allow-discards"' >> /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'compress="gzip"' >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ echo 'early_microcode="yes"'  >>  /mnt/gentoo/etc/dracut.conf.d/10-dracut.conf
+ mkdir -p /mnt/gentoo/efi/EFI/Linux
 fi
 
-if [[ $bl == "grub" ]]; then
-#CONFIG SYSTEM
-#secureboot shim
-chroot /mnt emerge -avgq sys-boot/shim sys-boot/mokutil
-
-chroot /mnt/gentoo mkdir /root/secureboot
-
-chroot /mnt/gentoo openssl req -new -nodes -utf8 -sha256 -x509 -outform PEM \
-    -out /root/secureboot/MOK.pem -keyout /root/secureboot/MOK.pem \
-    -subj "/CN=<$username>/"
-
-
-chroot /mnt/gentoo openssl x509 -inform pem -in /root/secureboot/MOK.pem -outform der -out /boot/sbcert.der
-fi
+# if [[ $bl == "grub" ]]; then
+# #CONFIG SYSTEM
+# #secureboot shim
+# chroot /mnt emerge -avgq sys-boot/shim sys-boot/mokutil
+#
+# chroot /mnt/gentoo mkdir /root/secureboot
+#
+# chroot /mnt/gentoo openssl req -new -nodes -utf8 -sha256 -x509 -outform PEM \
+#     -out /root/secureboot/MOK.pem -keyout /root/secureboot/MOK.pem \
+#     -subj "/CN=<$username>/"
+#
+#
+# chroot /mnt/gentoo openssl x509 -inform pem -in /root/secureboot/MOK.pem -outform der -out /boot/sbcert.der
+# fi
 
 echo $hostname > /mnt/gentoo/etc/hostname
 
@@ -260,7 +264,7 @@ chroot /mnt/gentoo emerge -avgq sudo lvm2 cryptsetup efibootmgr iwd # systemd-ut
 mkdir -p /mnt/gentoo/etc/iwd
 
 echo -e "[General]
-EnableNetworkConfiguration=true
+EnableNetworkConfiguration=false
 [Network]
 RoutePriorityOffset=200
 NameResolvingService=none
@@ -274,32 +278,32 @@ nameserver 149.112.112.11" > /mnt/gentoo/etc/resolv.conf
 #chroot /mnt/gentoo/gentoo/ emerge -aunDN @world
 chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 
-chroot /mnt/gentoo cp /usr/share/shim/BOOTX64.EFI /efi/EFI/gentoo/shimx64.efi
-chroot /mnt/gentoo cp /usr/share/shim/mmx64.efi /efi/EFI/gentoo/mmx64.efi
-chroot /mnt/gentoo cp /usr/lib/grub/grub-x86_64.efi.signed /efi/EFI/gentoo/grubx64.efi
-
-chroot /mnt/gentoo efibootmgr --disk /dev/sda --part 1 --create -L "GRUB via Shim" -l '\EFI\gentoo\shimx64.efi'
-
-echo "GRUB_CFG=/efi/EFI/gentoo/grub.cfg" >> /mnt/env.d/99grub
-
+# chroot /mnt/gentoo cp /usr/share/shim/BOOTX64.EFI /efi/EFI/gentoo/shimx64.efi
+# chroot /mnt/gentoo cp /usr/share/shim/mmx64.efi /efi/EFI/gentoo/mmx64.efi
+# chroot /mnt/gentoo cp /usr/lib/grub/grub-x86_64.efi.signed /efi/EFI/gentoo/grubx64.efi
+#
+# chroot /mnt/gentoo efibootmgr --disk /dev/sda --part 1 --create -L "GRUB via Shim" -l '\EFI\gentoo\shimx64.efi'
+#
+# echo "GRUB_CFG=/efi/EFI/gentoo/grub.cfg" >> /mnt/env.d/99grub
+if [[ $bl == "uki" ]]; then
 
 #CONFIG BOOTLOADER - uefi
- #cp /mnt/gentoo/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/gentoo/efi/EFI/Linux/linux.efi
+ cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
  
  #create uefi boot entry
- #chroot /mnt/gentoo/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
-
+ chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
+fi
 
 #add services
 chroot /mnt/gentoo rc-update add dmcrypt boot
 chroot /mnt/gentoo rc-update add lvm boot
-#chroot /mnt/gentoo rc-update add dhcpcd default
+chroot /mnt/gentoo rc-update add dhcpcd default
 chroot /mnt/gentoo rc-update add iwd default
 #chroot /mnt/gentoo rc-update add apparmor boot
-#chroot /mnt/gentoo/gentoo rc-update add firewalld boot
-#chroot /mnt/gentoo/gentoo rc-update add cronie default
-#chroot /mnt/gentoo/gentoo rc-update add sysklogd default
-#chroot /mnt/gentoo/gentoo rc-update add auditd default
+#chroot /mnt/gentoo rc-update add firewalld boot
+#chroot /mnt/gentoo rc-update add cronie default
+#chroot /mnt/gentoo rc-update add sysklogd default
+#chroot /mnt/gentoo rc-update add auditd default
 
 #systemd
 # chroot /mnt/gentoo systemctl enable lvm2-monitor.service
@@ -307,37 +311,43 @@ chroot /mnt/gentoo rc-update add iwd default
 # chroot /mnt/gentoo useradd -m -G wheel -s /bin/bash $username
 
 #doas
-#echo "permit keepenv :wheel" > /mnt/gentoo/gentoo/etc/doas.conf
-#chroot /mnt/gentoo/gentoo chown -c root:root /etc/doas.conf
-#chroot /mnt/gentoo/gentoo chmod -c 0400 /etc/doas.conf
+#echo "permit keepenv :wheel" > /mnt/gentoo/etc/doas.conf
+#chroot /mnt/gentoo chown -c root:root /etc/doas.conf
+#chroot /mnt/gentoo chmod -c 0400 /etc/doas.conf
 
-#touch /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#chmod +x /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#echo "#!/bin/sh" > /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-#echo "mv /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.last" >> /mnt/gentoo/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+if [[ $bl == "uki" ]]; then
+touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "mv /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.last" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+fi
 
 #secure boot
-# if [[ ! -z $secure_boot ]]; then
-# chroot /mnt/gentoo emerge -avgq sbctl
-# chroot /mnt/gentoo sbctl create-keys
-# chroot /mnt/gentoo sbctl enroll-keys -m -i
-# chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
-# echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+ if [[ ! -z $secure_boot && $bl == "uki" ]]; then
+ chroot /mnt/gentoo emerge -avgq sbctl
+ chroot /mnt/gentoo sbctl create-keys
+ chroot /mnt/gentoo sbctl enroll-keys -m -i
+ chroot /mnt/gentoo sbctl sign -s /mnt/gentoo/efi/EFI/Linux/linux.efi
+ # echo "sbctl sign -s /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+ fi
+# if [[ $bl == "grub" ]]; then
+#
+# chroot /mnt/gentoo emerge -avgq grub
+# mkdir /mnt/gentoo/etc/dracut.conf.d
+# touch /mnt/gentoo/etc/dracut.conf.d/chave
+# echo GRUB_ENABLE_CRYPTODISK=y >> /mnt/gentoo/etc/default/grub
+# dd bs=1 count=64 if=/dev/urandom of=/mnt/gentoo/boot/volume.key
+# echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/gentoo/boot/volume.key
+# chroot /mnt/gentoo chmod 000 /boot/volume.key
+# chroot /mnt/gentoo chmod -R g-rwx,o-rwx /boot
+# echo "crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/gentoo/etc/crypttab
+# echo 'install_items+=" /boot/volume.key /etc/crypttab "' > /mnt/gentoo/etc/dracut.conf.d/chave
+# chroot /mnt/gentoo grub-install --efi-directory=/efi
+# chroot /mnt/gentoo grub-mkconfig -o /efi/EFI/gentoo/grub.cfg
+# chroot /mnt/gentoo mokutil --import /boot/sbcert.der
 # fi
-#chroot /mnt/gentoo emerge -avgq grub
-mkdir /mnt/gentoo/etc/dracut.conf.d
-touch /mnt/gentoo/etc/dracut.conf.d/chave
-echo GRUB_ENABLE_CRYPTODISK=y >> /mnt/gentoo/etc/default/grub
-dd bs=1 count=64 if=/dev/urandom of=/mnt/gentoo/boot/volume.key
-echo $luks_pw | cryptsetup luksAddKey $disk'2' /mnt/gentoo/boot/volume.key
-chroot /mnt/gentoo chmod 000 /boot/volume.key
-chroot /mnt/gentoo chmod -R g-rwx,o-rwx /boot
-echo "crypt UUID=$luks_uuid /boot/volume.key luks" >> /mnt/gentoo/etc/crypttab
-echo 'install_items+=" /boot/volume.key /etc/crypttab "' > /mnt/gentoo/etc/dracut.conf.d/chave
-chroot /mnt/gentoo grub-install --efi-directory=/efi
-chroot /mnt/gentoo grub-mkconfig -o /efi/EFI/gentoo/grub.cfg
-chroot /mnt/gentoo useradd -m -G users,pipewire,wheel -s /bin/bash $username
+chroot /mnt/gentoo useradd -m -g users -G wheel -s /bin/bash $username
 #chroot /mnt/gentoo/gentoo passwd root
 #chroot /mnt/gentoo/gentoo passwd $username
 
@@ -346,18 +356,18 @@ chroot /mnt/gentoo useradd -m -G users,pipewire,wheel -s /bin/bash $username
 # echo "$user_pw\n$user_pw" | passwd -q $username
 # EOF
 
-chroot /mnt/gentoo mokutil --import /boot/sbcert.der
-chroot /mnt/gentoo passwd root
 
-echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
-read tmp
-if [[ $tmp == "y" ]]; then
-	exit
-        
-	 	umount -l /mnt/gentoo/dev{/shm,/pts,}
- 	umount -R /mnt/gentoo
-# 	reboot 
-  shutdown -r now
-fi
+# chroot /mnt/gentoo passwd root
+#
+# echo -e "\nUnmount gentoo installation and reboot?(y/n)\n"
+# read tmp
+# if [[ $tmp == "y" ]]; then
+# 	exit
+#
+# 	 	umount -l /mnt/gentoo/dev{/shm,/pts,}
+#  	umount -R /mnt/gentoo
+# # 	reboot
+# #  shutdown -r now
+# fi
 
 echo -e "\nFinish\n"
