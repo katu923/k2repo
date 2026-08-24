@@ -191,7 +191,7 @@ chroot /mnt/gentoo/ locale-gen
  #uki
  echo "sys-kernel/installkernel dracut uki" > /mnt/gentoo/etc/portage/package.use/system
  echo "sys-apps/systemd-utils boot kernel-install" >> /mnt/gentoo/etc/portage/package.use/system
- echo "sys-fs/lvm2 lvm" > /mnt/gentoo/etc/portage/package.use/system
+ echo "sys-fs/lvm2 lvm" >> /mnt/gentoo/etc/portage/package.use/system
  fi
 
  # if [[ $bl == "grub" ]]; then
