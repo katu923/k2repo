@@ -288,7 +288,7 @@ chroot /mnt/gentoo emerge -avgq sys-kernel/gentoo-kernel-bin
 if [[ $bl == "uki" ]]; then
 
 #CONFIG BOOTLOADER - uefi
- cp /mnt/gentoo/efi/EFI/Linux/*dist.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
+ cp /mnt/gentoo/efi/EFI/Linux/*dist-bin.efi /mnt/gentoo/efi/EFI/Linux/linux.efi
  
  #create uefi boot entry
  chroot /mnt/gentoo efibootmgr -c -d $disk -p 1 -L "Gentoo" -l "\EFI\Linux\linux.efi"
@@ -318,9 +318,9 @@ chroot /mnt/gentoo rc-update add iwd default
 if [[ $bl == "uki" ]]; then
 touch /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 chmod +x /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-echo "#!/bin/sh" > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-echo "cp /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
-echo "mv /efi/EFI/Linux/*dist.efi /efi/EFI/Linux/linux.last" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo '#!/bin/sh' > /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "cp /efi/EFI/Linux/*dist-bin.efi /efi/EFI/Linux/linux.efi" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
+echo "mv /efi/EFI/Linux/*dist-bin.efi /efi/EFI/Linux/linux.last" >> /mnt/gentoo/etc/kernel/postinst.d/95-uefi-boot.install
 fi
 
 #secure boot
@@ -347,7 +347,7 @@ fi
 # chroot /mnt/gentoo grub-mkconfig -o /efi/EFI/gentoo/grub.cfg
 # chroot /mnt/gentoo mokutil --import /boot/sbcert.der
 # fi
-chroot /mnt/gentoo useradd -m -g users -G wheel -s /bin/bash $username
+chroot /mnt/gentoo useradd -m -g users -G wheel,video -s /bin/bash $username
 #chroot /mnt/gentoo/gentoo passwd root
 #chroot /mnt/gentoo/gentoo passwd $username
 
