@@ -748,10 +748,9 @@ fi
 #GRUB
 if [[ $bm == "grub" && $uefi == "true" ]]; then
     $crm grub-install --target=x86_64-efi --efi-directory=$boot_part_name --bootloader-id=Void #	--disable-shim-lock --modules="tpm"
-    $crm grub-mkconfig -o /boot/grub/grub.cfg
+
 elif [[ $bm == "grub" && $uefi == "false" ]]; then
 	$crm grub-install $disk
-	$crm grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
 if [[ $bm == "grub" && $encryption == 0 && $secure_boot == 0 ]]; then
@@ -784,6 +783,7 @@ if [[ $bm == "grub" && $uefi == "false" && $encryption == 0  && $fs_type != "btr
     echo 'GRUB_CMDLINE_LINUX="rd.lvm.vg='$hostname' rd.luks.uuid='$luks_uuid' apparmor=1 security=apparmor"' >> /mnt/etc/default/grub
 fi
 
+
 if [[ $bm == "grub" && $uefi == "true" && $secure_boot == 0 ]] ; then
 	cmdline="root=UUID=$ROOT_UUID apparmor=1 security=apparmor"
 	mkdir -p /mnt/etc/kernel
@@ -804,7 +804,7 @@ PKGNAME="$1"
 VERSION="$2"
 
 
-BOOT_DIR="/boot/efi/EFI/Void"  # Modify this path if your ESP is different
+BOOT_DIR="'$boot_part_name'/EFI/Void"  # Modify this path if your ESP is different
 
 # Define the UKI output path
 UKI_OUTPUT_PATH="${BOOT_DIR}/void-signed-uki.efi"
@@ -865,6 +865,11 @@ echo -e "menuentry 'Void Linux with UKI (Secure Boot)' --class void --class gnu-
 sed -i 's/^GRUB_DEFAULT=0/GRUB_DEFAULT="Void Linux with UKI (Secure Boot)"/' /mnt/etc/default/grub
 
 fi
+
+if [[ $bm == "grub" ]]; then
+	$crm grub-mkconfig -o /boot/grub/grub.cfg
+fi
+
 }
 
 secboot()
