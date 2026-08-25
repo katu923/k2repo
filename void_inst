@@ -353,20 +353,20 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 if [[ $bm == "uki" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbsigntool systemd-boot-efistub sbctl dracut-uefi opendoas \
-	runit-void-apparmor runit-nftables apparmor
+	runit-void-apparmor runit-nftables apparmor zsh
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi opendoas \
-	runit-void-apparmor runit-nftables apparmor systemd-boot-efistub ukify
+	runit-void-apparmor runit-nftables apparmor systemd-boot-efistub ukify zsh
 
 elif [[ $bm = "grub" && $uefi == "false" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
 	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub opendoas \
-	runit-void-apparmor runit-nftables apparmor
+	runit-void-apparmor runit-nftables apparmor zsh
 fi
 
 #chroot
@@ -374,7 +374,7 @@ fi
 $crm chown root:root /
 $crm chmod 755 /
 
-useradd -R /mnt -m -U -G $user_groups $username -s /bin/bash
+useradd -R /mnt -m -U -G $user_groups $username -s /bin/zsh
 
 cat << EOF | $crm
 echo "$root_pw\n$root_pw" | passwd -q root
@@ -418,50 +418,53 @@ fi
 
 mkdir /mnt/etc/sysctl.d
 
-echo -e "dev.tty.ldisc_autoload=0
-fs.protected_symlinks=1
-fs.protected_hardlinks=1
-fs.protected_fifos=2
-fs.protected_regular=2
-fs.suid_dumpable=0
-kernel.core_pattern=|/bin/false
-kernel.dmesg_restrict=1
-kernel.kexec_load_disabled=1
-kernel.yama.ptrace_scope=2
-kernel.kptr_restrict=2
-kernel.printk=3 3 3 3
-kernel.unprivileged_bpf_disabled=1
-kernel.sysrq=4
-kernel.perf_event_paranoid=3
-kernel.randomize_va_space=2
-kernel.msgmnb=65535
-kernel.msgmax=65535
-net.core.bpf_jit_harden=2
-net.ipv4.tcp_syncookies=1
-net.ipv4.tcp_rfc1337=1
-net.ipv4.conf.all.rp_filter=1
-net.ipv4.conf.default.rp_filter=1
-net.ipv4.conf.all.accept_redirects=0
-net.ipv4.conf.default.accept_redirects=0
-net.ipv4.conf.all.secure_redirects=0
-net.ipv4.conf.default.secure_redirects=0
-net.ipv6.conf.all.accept_redirects=0
-net.ipv6.conf.default.accept_redirects=0
-net.ipv4.conf.all.send_redirects=0
-net.ipv4.conf.default.send_redirects=0
-net.ipv4.icmp_echo_ignore_all=1
-net.ipv4.conf.all.accept_source_route=0
-net.ipv4.conf.default.accept_source_route=0
-net.ipv6.conf.all.accept_source_route=0
-net.ipv6.conf.default.accept_source_route=0
-net.ipv6.conf.all.accept_ra=0
-net.ipv6.conf.default.accept_ra=0
-net.ipv4.tcp_sack=0
-net.ipv4.tcp_dsack=0
-net.ipv4.tcp_fack=0
-vm.mmap_rnd_bits=32
-vm.mmap_rnd_compat_bits=16
-vm.unprivileged_userfaultfd=0" > /mnt/etc/sysctl.d/99-void-user.conf
+echo -e "
+# Restringe o acesso ao buffer de mensagens do kernel (dmesg) apenas ao root
+kernel.dmesg_restrict = 1
+
+# Oculta endereços de ponteiros do kernel em /proc para prevenir exploits de memória
+kernel.kptr_restrict = 2
+
+# Restringe o uso de ptrace (evita que um processo intersete ou modifique outro)
+kernel.yama.ptrace_scope = 1
+
+# Desativa dumps de memória (core dumps) para binários SUID
+fs.suid_dumpable = 0
+
+# Proteção contra ataques de negação de serviço (DoS) via Ctrl-Alt-Del
+kernel.ctrl-alt-del = 0
+
+# Ativa a proteção de SYN Cookies para mitigar ataques de SYN Flood
+net.ipv4.tcp_syncookies = 1
+
+# Ativa a filtragem de caminho reverso (impede spoofing de IP de origem)
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Ignora redirecionamentos ICMP (previne ataques Man-in-the-Middle)
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# Não envia redirecionamentos ICMP (esta máquina não age como um router)
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Rejeita pacotes com roteamento estático na origem (Source Routing)
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+net.ipv6.conf.default.accept_source_route = 0
+
+# Ignora pings direcionados ao endereço de broadcast (previne amplificação DoS)
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Regista pacotes suspeitos (como spoofing, pacotes marcados e redirecionamentos)
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+" > /mnt/etc/sysctl.d/99-hardening.conf
+
 
 #doas
 echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /mnt/etc/doas.conf
@@ -527,35 +530,54 @@ firewall()
 {
 #firewall nftables example for a workstation
 
-echo -e 'flush ruleset
+echo -e '
+
+ #!/usr/sbin/nft -f
+
+flush ruleset
 
 table inet filter {
-	chain input {
-		type filter hook input priority 0; policy drop;
-		ct state invalid counter drop comment "early drop of invalid packets"
-		ct state {established, related} counter accept comment "accept all connections related to connections made by us"
-		iif lo accept comment "accept loopback"
-		iif != lo ip daddr 127.0.0.1/8 counter drop comment "drop connections to loopback not coming from loopback"
-		iif != lo ip6 daddr ::1/128 counter drop comment "drop connections to loopback not coming from loopback"
-		ip protocol icmp counter accept comment "accept all ICMP types"
-		meta l4proto ipv6-icmp counter accept comment "accept all ICMP types"
-		udp dport mdns ip daddr 224.0.0.251 counter accept comment "IPv4 mDNS"
-		udp dport mdns ip6 daddr ff02::fb counter accept comment "IPv6 mDNS"
-		#tcp dport 22 counter accept comment "accept SSH"
-		#tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
-        #udp dport 1714-1764 accept comment "accept KDE Connect functionality"
-		counter comment "count dropped packets"
-	}
-	chain forward {
-		type filter hook forward priority 0; policy drop;
-		counter comment "count dropped packets"
-	}
-	# If were not counting packets, this chain can be omitted.
-	chain output {
-		type filter hook output priority 0; policy accept;
-		counter comment "count accepted packets"
-	}
-}' > /mnt/etc/nftables.conf
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # 1. Interface loopback
+        iif "lo" accept
+
+        # 2. Conexões já estabelecidas e relacionadas
+        ct state established,related accept
+
+        # 3. Descartar pacotes inválidos
+        ct state invalid drop
+
+        # 4. Permitir tráfego da interface do virt-manager (libvirt)
+        iifname "virbr*" accept
+
+        # 5. ICMP (IPv4) e ICMPv6 (Essencial para IPv6)
+        ip protocol icmp icmp type echo-request limit rate 5/second accept
+        ip6 nexthdr icmpv6 icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+
+        # 6. Permitir SSH (com registo de log)
+        # tcp dport 22 log prefix "NFTABLES-SSH: " accept
+		# tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
+        # udp dport 1714-1764 accept comment "accept KDE Connect functionality"
+        # 7. Registar logs de bloqueios
+        log prefix "NFTABLES-DROP: " level warn
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+
+        # Permitir que as VMs acedam à internet e comuniquem entre si
+        iifname "virbr*" oifname "virbr*" accept
+        iifname "virbr*" accept
+        oifname "virbr*" ct state established,related accept
+    }
+
+    chain output {
+        type filter hook output priority filter; policy accept;
+    }
+} ' > /mnt/etc/nftables.conf
+
 }
 
 configsys()
@@ -617,8 +639,6 @@ $crm ln -sf $local /etc/localtime
 
 custom()
 {
-echo -e 'source /home/'$username'/.bash_aliases
-ufetch' >> /mnt/home/$username/.bashrc
 
 echo -e "alias xi='doas xbps-install -S'
 alias xu='doas xbps-install -Su'
@@ -635,9 +655,9 @@ alias reboot='doas reboot'
 alias poweroff='doas poweroff'
 alias ss='ss -tunap'
 alias ll='ls -all'
-alias sensors='watch sensors'" > /mnt/home/$username/.bash_aliases
+alias sensors='watch sensors'" > /mnt/home/$username/.aliases
 
-$crm chown $username:$username /home/$username/.bash_aliases
+$crm chown $username:$username /home/$username/.aliases
 
 #fonts
 $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
@@ -652,6 +672,42 @@ for pkg in ${ignore_pkgs[@]}; do
    echo "ignorepkg="$pkg >> /mnt/etc/xbps.d/99-ignorepkgs.conf
    $crm xbps-remove -oOR $pkg -y
 done
+
+#zsh
+
+echo -e "
+# Histórico de comandos
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt appendhistory
+setopt sharehistory
+setopt hist_ignore_dups
+
+# Ativar cores no terminal
+autoload -U colors && colors
+
+# Prompt simples e funcional
+PROMPT='%}%F{cyan}%n@%m %F{green}%~ %# %{ [0m%}'
+
+# Ativar auto-completação básica
+autoload -U compinit
+compinit
+
+# Ativar dicas/completação para comandos do XBPS (se disponível)
+#if [ -f /usr/share/zsh/plugins/xbps-command-not-found/xbps-command-not-found.zsh ]; then
+#    source /usr/share/zsh/plugins/xbps-command-not-found/xbps-command-not-found.zsh
+#fi
+
+ufetch
+source .aliases
+
+
+# Atalhos gerais
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias ll='ls -la'
+" > /mnt/home/$username/.zshrc
 
 }
 
