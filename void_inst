@@ -714,23 +714,11 @@ alias ll='ls -la'
 bootmanag()
 {
 
-#dracut
-echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 
-#EFISTUB
-if [[ $bm == "uki" && $uefi == "true" ]]; then
+#uki
+if [[ $bm == "uki " ]]; then
+	echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
-
-if [[ $bm == "uki" && $fs_type != "btrfs" && $uefi == "true"  ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-elif [[ $bm == "uki" && $fs_type == "btrfs" && $uefi == "true" ]]; then
-	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
-
-
-
-if [[ $bm == "uki" && $uefi == "true"  ]]; then
 	echo -e "#!/bin/sh
 	mv /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
@@ -749,6 +737,13 @@ if [[ $bm == "uki" && $uefi == "true"  ]]; then
 	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
 	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
 fi
+
+if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
+	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+elif [[ $bm == "uki" && $fs_type == "btrfs" ]]; then
+	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+fi
+
 
 #GRUB
 if [[ $bm == "grub" && $uefi == "true" ]]; then
@@ -790,7 +785,7 @@ if [[ $bm == "grub" && $uefi == "false" && $encryption == 0  && $fs_type != "btr
 fi
 
 if [[ $bm == "grub" && $uefi == "true" && $secure_boot == 0 ]] ; then
-	cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"
+	cmdline="root=UUID=$ROOT_UUID apparmor=1 security=apparmor"
 	mkdir -p /mnt/etc/kernel
 	echo $cmdline > /mnt/etc/kernel/cmdline
 
