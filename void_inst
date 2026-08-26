@@ -180,14 +180,14 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 	apps_base="nano ufetch pipewire wireplumber vsv htop bat"
 fi
 
-apps_kde="kde-plasma kde-baseapps ffmpegthumbs NetworkManager discover spectacle \
-flatpak-kcm kwalletmanager kcalc okular gwenview ark xorg-minimal"
+apps_kde="kde-plasma kde-baseapps ffmpegthumbs discover spectacle \
+flatpak-kcm kwalletmanager kcalc okular gwenview ark"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector \
-gnome-text-editor NetworkManager xorg-minimal"
+gnome-text-editor"
 
 apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin \
-xfce4-whiskermenu-plugin NetworkManager labwc xorg-minimal"
+xfce4-whiskermenu-plugin labwc"
 
 apps_office="libreoffice-writer libreoffice-calc"
 
@@ -466,7 +466,7 @@ net.ipv4.conf.default.log_martians = 1
 
 
 #doas
-echo "permit persist setenv {PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin} :wheel" > /mnt/etc/doas.conf
+echo "permit persist :$username" > /mnt/etc/doas.conf
 
 $crm << EOF
 chown -c root:root /etc/doas.conf
@@ -474,7 +474,8 @@ chmod -c 0400 /etc/doas.conf
 EOF
 
 #ssh / cron hardening permissions
-echo -e "PasswordAuthentication no
+echo -e "
+PasswordAuthentication no
 PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
 
 $crm << EOF
@@ -687,7 +688,10 @@ setopt hist_ignore_dups
 autoload -U colors && colors
 
 # Prompt simples e funcional
-PROMPT='%}%F{cyan}%n@%m %F{green}%~ %# %'
+#PROMPT='%}%F{cyan}%n@%m %F{green}%~ %# %'
+PROMPT='%F{green}%n%f@%F{yellow}%m%f:%F{cyan}%~%f$ '
+
+
 
 # Ativar auto-completação básica
 autoload -U compinit
@@ -729,22 +733,20 @@ if [[ $bm == "uki" ]]; then
 	echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo -e "#!/bin/sh
-	mv $boot_part_name/EFI/Linux/linux-*.efi $boot_part_name/EFI/Linux/linuxOLD.efi" \
+	mv $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp $boot_part_name/EFI/Linux/linux-*.efi $boot_part_name/EFI/Linux/linux.efi" \
+	cp $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 
-	echo -e 'CREATE_UEFI_BUNDLES=yes
-	UEFI_BUNDLE_DIR="'$boot_part_name'/EFI/Linux/"' >> /mnt/etc/default/dracut-uefi-hook
-	mkdir -p /mnt/$boot_part_name/EFI/Linux
+	echo -e 'CREATE_UEFI_BUNDLES=yes' >> /mnt/etc/default/dracut-uefi-hook
 
-	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\Linux\linuxOLD.efi"
-	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\Linux\linux.efi"
+	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\void\linuxOLD.efi"
+	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\void\linux.efi"
 fi
 
 if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
@@ -813,7 +815,7 @@ PKGNAME="$1"
 VERSION="$2"
 
 
-BOOT_DIR="'$boot_part_name'/EFI/Void"  # Modify this path if your ESP is different
+BOOT_DIR="'$boot_part_name'/EFI/void"  # Modify this path if your ESP is different
 
 # Define the UKI output path
 UKI_OUTPUT_PATH="${BOOT_DIR}/void-signed-uki.efi"
@@ -852,10 +854,10 @@ ukify build \
 #echo "UKI updated successfully: ${UKI_OUTPUT_PATH}"
 
 # After the UKI is successfully built, sign it with sbctl
-echo "Signing UKI with sbctl..."
-sbctl sign -s "${UKI_OUTPUT_PATH}"
+#echo "Signing UKI with sbctl..."
+#sbctl sign -s "${UKI_OUTPUT_PATH}"
 
-echo "UKI successfully created and signed."
+#echo "UKI successfully created and signed."
 
 
 exit 0 ' > /mnt/etc/kernel.d/post-install/30-ukify-update
@@ -866,8 +868,8 @@ $crm chmod +x /etc/kernel.d/post-install/30-ukify-update
 echo -e "menuentry 'Void Linux with UKI (Secure Boot)' --class void --class gnu-linux --class gnu --class os {
     insmod part_gpt
     insmod fat
-    search --no-floppy --fs-uuid --set=root '$boot_uuid'
-    chainloader /EFI/Void/void-signed-uki.efi
+    search --no-floppy --fs-uuid --set=root $boot_uuid
+    chainloader /EFI/void/void-signed-uki.efi
 }" >> /mnt/etc/grub.d/40_custom
 
 
@@ -888,13 +890,18 @@ if [[ $secure_boot == 0 ]]; then
 
 	$crm sbctl create-keys
 	$crm sbctl enroll-keys -i -m
+
+	echo "SBSIGN_EFI_KERNEL=1" >> /mnt/etc/default/sbsigntool-kernel-hook
+	echo "EFI_CERT_FILE=/var/lib/sbctl/keys/db/db.pem" >> /mnt/etc/default/sbsigntool-kernel-hook
+	echo "EFI_KEY_FILE=/var/lib/sbctl/keys/db/db.key" >> /mnt/etc/default/sbsigntool-kernel-hook
+
 fi
 
-if [[ $secure_boot == 0 && $bm == "uki"  ]]; then
-
-	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-fi
+# if [[ $secure_boot == 0 && $bm == "uki"  ]]; then
+#
+# 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+# 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+# fi
 
 }
 
