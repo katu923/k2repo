@@ -121,13 +121,13 @@ fi
 
 while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 
-    local=$(dialog --backtitle "Use tab, arrow keys and spacebar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
-	lslocal=$(ls $local)
+    local=$(dialog --backtitle "Use tab, arrow keys and space bar to select and expand folders. example /usr/share/zoneinfo/Europe/Lisbon" --title "Choose your timezone" --fselect /usr/share/zoneinfo/ 0 0 --output-fd 1) || usercancel
+	lslocal=$(ls $local)boot_part=$(echo $disk'p1')
 done
 
-language=$(dialog --checklist "Choose your language" 0 0 7 'en_US.UTF-8' 1 on 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
+language=$(dialog --radiolist "Choose your language" 0 0 7 'en_US.UTF-8' 1 on 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 off 'pt_BR.UTF-8' 6 off 'C.UTF-8' 7 on --output-fd 1) || usercancel
-language2="${language// / UTF-8\n}"
+
 
 if [[ $uefi == "true" ]]; then
 	bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'grub' 1 on 'uki' 2 off  --output-fd 1) || usercancel
@@ -389,7 +389,9 @@ echo "LANG=$language" > /mnt/etc/locale.conf
 
 $crm ln -sf $local /etc/localtime
 
-echo "$language2" >>  /mnt/etc/default/libc-locales
+echo "C.UTF-8 UTF-8" >>  /mnt/etc/default/libc-locales
+echo "$language UTF-8" >>  /mnt/etc/default/libc-locales
+
 
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
