@@ -111,7 +111,7 @@ else
 	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "Enter root partition size (default: 25G)" 0 0 25G --output-fd 1) || usercancel
 fi
 
-hostname=$(dialog --inputbox "Enter a hostname" 0 0 xpt099 --output-fd 1) || usercancel
+hostname=$(dialog --inputbox "Enter a hostname" 0 0 xpto --output-fd 1) || usercancel
 
 	glib=$(dialog --radiolist "Choose btw glibc or musl" 0 0 2 'glibc' 1 on 'musl' 2 off --output-fd 1 ) || usercancel
 
@@ -127,7 +127,7 @@ done
 
 language=$(dialog --checklist "Choose your language" 0 0 7 'en_US.UTF-8' 1 on 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 off 'pt_BR.UTF-8' 6 off 'C.UTF-8' 7 on --output-fd 1) || usercancel
-language2="${language// / UTF-8\n}"
+language2="${language// / UTF-8'\n'}"
 
 if [[ $uefi == "true" ]]; then
 	bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'grub' 1 on 'uki' 2 off  --output-fd 1) || usercancel
@@ -287,7 +287,9 @@ fi
 
 if [[ $fs_type != "btrfs" ]]; then
 	vgcreate $hostname $diskmap
-elif [[ $fs_type != "btrfs" && $root_part_size == "" ]]; then
+fi
+
+if [[ $fs_type != "btrfs" && $root_part_size == "" ]]; then
 	lvcreate --name root -l 100%FREE $hostname
 	mkfs.$fs_type -qL root /dev/$hostname/root
 	mount /dev/$hostname/root /mnt
@@ -724,12 +726,12 @@ if [[ $bm == "uki" ]]; then
 	echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo -e "#!/bin/sh
-	mv /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linuxOLD.efi" \
+	mv '$boot_part_name'/EFI/Linux/linux-*.efi '$boot_part_name'/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp /boot/efi/EFI/Linux/linux-*.efi /boot/efi/EFI/Linux/linux.efi" \
+	cp '$boot_part_name'/EFI/Linux/linux-*.efi '$boot_part_name'/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
@@ -861,7 +863,7 @@ $crm chmod +x /etc/kernel.d/post-install/30-ukify-update
 echo -e "menuentry 'Void Linux with UKI (Secure Boot)' --class void --class gnu-linux --class gnu --class os {
     insmod part_gpt
     insmod fat
-    search --no-floppy --fs-uuid --set=root $boot_uuid
+    search --no-floppy --fs-uuid --set=root '$boot_uuid'
     chainloader /EFI/Void/void-signed-uki.efi
 }" >> /mnt/etc/grub.d/40_custom
 
@@ -883,8 +885,9 @@ if [[ $secure_boot == 0 ]]; then
 
 	$crm sbctl create-keys
 	$crm sbctl enroll-keys -i -m
+fi
 
-elif [[ $secure_boot == 0 && $bm == "uki"  ]]; then
+if [[ $secure_boot == 0 && $bm == "uki"  ]]; then
 
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
