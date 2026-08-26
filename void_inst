@@ -286,14 +286,11 @@ fi
 
 
 if [[ $fs_type != "btrfs" ]]; then
-		vgcreate $hostname $diskmap
-
+	vgcreate $hostname $diskmap
 elif [[ $fs_type != "btrfs" &&  -z $root_part_size ]]; then
-
 	lvcreate --name root -l 100%FREE $hostname
 	mkfs.$fs_type -qL root /dev/$hostname/root
 	mount /dev/$hostname/root /mnt
-
 elif [[ $fs_type != "btrfs" && ! -z $root_part_size ]]; then
 	lvcreate --name root -L $root_part_size $hostname
 	lvcreate --name home -l 100%FREE $hostname
@@ -307,7 +304,6 @@ fi
 
 if [[ $fs_type == "btrfs" ]]; then
 	mkfs.btrfs -L $hostname $diskmap
-
 	BTRFS_OPTS="noatime,compress,space_cache=v2,discard=async,ssd"
 	mount -o $BTRFS_OPTS $diskmap /mnt
 	btrfs subvolume create /mnt/@
