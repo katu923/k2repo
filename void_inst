@@ -34,7 +34,7 @@ For XFS or EXT4, you can choose the size of partitions. Leave at the default (25
 create a home partition with the remaining disk space, or leave the field EMPTY, and it will \n
 use all disk space to create the root partition.\n
 For swap, if needed, use zramen.\n
-For superuser, i use doas, sudo is uninstalled, also there is an option to disable root login.\n
+For superuser, i use doas, sudo is uninstalled during install, also there is an option to disable root login.\n
 Firewal nftables and apparmor are installed by default. \n
 To enable secure boot with sbctl, you must set secure boot in uefi to setup mode.  \n
 There is a lot of customization and some bugs...\n
@@ -108,7 +108,7 @@ fi
 if [[ $fs_type == "btrfs" ]]; then
 	root_part_size=""
 else
-	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "Enter root partition size (default: 25G)" 0 0 25G --output-fd 1) || usercancel
+	root_part_size=$(dialog --backtitle "Total disk size is: $disksize" --inputbox "Enter root partition size (default: 25G). If there is more space left, the remaining space will be use to create a home partition OR leave the field empty to create only a root partition with all disk space.)" 0 0 25G --output-fd 1) || usercancel
 fi
 
 hostname=$(dialog --inputbox "Enter a hostname" 0 0 xpto --output-fd 1) || usercancel
@@ -125,9 +125,9 @@ while [ $local == "/usr/share/zoneinfo/" ] || [ -z $lslocal ]; do
 	lslocal=$(ls $local)
 done
 
-language=$(dialog --checklist "Choose your language" 0 0 7 'en_US.UTF-8' 1 on 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
+language=$(dialog --radiolist "Choose your language" 0 0 7 'en_US.UTF-8' 1 off 'en_CA.UTF-8' 2 off 'en_IE.UTF-8' 3 off 'en_GB.UTF-8' 4 off \
 'pt_PT.UTF-8' 5 off 'pt_BR.UTF-8' 6 off 'C.UTF-8' 7 on --output-fd 1) || usercancel
-language2="${language// / UTF-8'\n'}"
+
 
 if [[ $uefi == "true" ]]; then
 	bm=$(dialog --radiolist "choose your boot manager" 0 0 2 'grub' 1 on 'uki' 2 off  --output-fd 1) || usercancel
@@ -379,7 +379,7 @@ echo "$root_pw\n$root_pw" | passwd -q root
 echo "$user_pw\n$user_pw" | passwd -q $username
 EOF
 
-set hostname and language/locale
+#set hostname and language/locale
 echo $hostname > /mnt/etc/hostname
 
 
@@ -387,7 +387,7 @@ echo "LANG=$language" > /mnt/etc/locale.conf
 
 $crm ln -sf $local /etc/localtime
 
-echo "$language2" >>  /mnt/etc/default/libc-locales
+echo "$language UTF-8" >>  /mnt/etc/default/libc-locales
 
 
 luks_root_uuid=$(blkid -o value -s UUID  /mnt/dev/mapper/$hostname-root)
@@ -410,7 +410,7 @@ hardening()
 {
 #disable root login
 if [[ $adm ==  0 ]]; then
-sed -i 's,^root:x:0:0:root:/root:/bin/bash,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
+	sed -i 's,^root:x:0:0:root:/root:/bin/bash,root:x:0:0:root:/root:/sbin/nologin,' /mnt/etc/passwd
 fi
 
 # harden sysctl
@@ -710,9 +710,12 @@ alias ll='ls -la'
 
 #if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
  #   exec startxfce4 --wayland
+ #   exec mango
 #fi
 
 " > /mnt/home/$username/.zshrc
+
+$crm chown $username:$username /mnt/home/$username/.zshrc
 
 #for autologin with agetty1 add --autologin username to /etc/runit/runsvdir/agetty1/conf
 }
@@ -726,12 +729,12 @@ if [[ $bm == "uki" ]]; then
 	echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo -e "#!/bin/sh
-	mv '$boot_part_name'/EFI/Linux/linux-*.efi '$boot_part_name'/EFI/Linux/linuxOLD.efi" \
+	mv $boot_part_name/EFI/Linux/linux-*.efi $boot_part_name/EFI/Linux/linuxOLD.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp '$boot_part_name'/EFI/Linux/linux-*.efi '$boot_part_name'/EFI/Linux/linux.efi" \
+	cp $boot_part_name/EFI/Linux/linux-*.efi $boot_part_name/EFI/Linux/linux.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
@@ -745,9 +748,9 @@ if [[ $bm == "uki" ]]; then
 fi
 
 if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
-	echo 'kernel_cmdline="rd.luks.name='$luks_root_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="loglevel=3 rd.luks.name='$luks_root_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm == "uki" && $fs_type == "btrfs" ]]; then
-	echo 'kernel_cmdline="root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="loglevel=3 root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
 
