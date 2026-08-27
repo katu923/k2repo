@@ -476,7 +476,9 @@ EOF
 #ssh / cron hardening permissions
 echo -e "
 PasswordAuthentication no
-PermitRootLogin no" >> /mnt/etc/ssh/sshd_config
+PermitRootLogin no
+KbdInteractiveAuthentication no
+" >> /mnt/etc/ssh/sshd_config
 
 $crm << EOF
 chown -c root:root /etc/ssh/sshd_config
@@ -733,20 +735,20 @@ if [[ $bm == "uki" ]]; then
 	echo "hostonly=yes" > /mnt/etc/dracut.conf.d/10-boot.conf
 	echo 'uefi="yes"'  >> /mnt/etc/dracut.conf.d/10-boot.conf
 	echo -e "#!/bin/sh
-	mv $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/linuxOLD.efi" \
+	mv $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/void-signed-uki-old.efi" \
 	> /mnt/etc/kernel.d/post-install/10-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/10-uefi-boot
 
 	echo -e "#!/bin/sh
-	cp $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/linux.efi" \
+	cp $boot_part_name/EFI/void/linux-*.efi $boot_part_name/EFI/void/void-signed-uki.efi" \
 	> /mnt/etc/kernel.d/post-install/99-uefi-boot
 	chmod +x /mnt/etc/kernel.d/post-install/99-uefi-boot
 
 
 	echo -e 'CREATE_UEFI_BUNDLES=yes' >> /mnt/etc/default/dracut-uefi-hook
 
-	efibootmgr -c -d $disk -p 1 -L "Void Linux OLD" -l "\EFI\void\linuxOLD.efi"
-	efibootmgr -c -d $disk -p 1 -L "Void Linux" -l "\EFI\void\linux.efi"
+	efibootmgr -c -d $disk -p 1 -L "Void Linux uki OLD" -l "\EFI\void\void-signed-uki-old.efi"
+	efibootmgr -c -d $disk -p 1 -L "Void Linux uki" -l "\EFI\void\void-signed-uki.efi"
 fi
 
 if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
@@ -796,73 +798,11 @@ fi
 
 
 if [[ $bm == "grub" && $uefi == "true" && $secure_boot == 0 ]] ; then
-	cmdline="root=UUID=$ROOT_UUID apparmor=1 security=apparmor"
-	mkdir -p /mnt/etc/kernel
-	echo $cmdline > /mnt/etc/kernel/cmdline
 
-#kernel hook for ukify
-echo -e '#!/bin/sh
+	 cmdline="root=UUID=$ROOT_UUID rw quiet bgrt_disable apparmor=1 security=apparmor"
+	 mkdir -p /mnt/etc/kernel
+	 echo $cmdline > /mnt/etc/kernel/cmdline
 
-# This script is a kernel post-install hook for Void Linux.
-# It automatically updates the Unified Kernel Image (UKI)
-# after a new kernel is installed.
-
-# Exit immediately if a command exits with a non-zero status.
-set -e
-
-# Assign arguments to variables
-PKGNAME="$1"
-VERSION="$2"
-
-
-BOOT_DIR="'$boot_part_name'/EFI/void"  # Modify this path if your ESP is different
-
-# Define the UKI output path
-UKI_OUTPUT_PATH="${BOOT_DIR}/void-signed-uki.efi"
-
-# Define the kernel and initrd paths
-KERNEL_PATH="/boot/vmlinuz-${VERSION}"
-INITRD_PATH="/boot/initramfs-${VERSION}.img"
-
-# Check for required files
-if [ ! -f "${KERNEL_PATH}" ]; then
-    echo "Kernel file not found: ${KERNEL_PATH}"
-    exit 1
-fi
-if [ ! -f "${INITRD_PATH}" ]; then
-    echo "Initramfs file not found: ${INITRD_PATH}"
-    exit 1
-fi
-if [ ! -d "${BOOT_DIR}" ]; then
-    echo "Boot directory not found: ${BOOT_DIR}"
-    exit 1
-fi
-
-echo "Regenerating UKI for kernel ${VERSION}..."
-
-# Use ukify to build the new UKI
-# NOTE: You may need to adjust the --cmdline and other options
-#       to match your system configuration.
-ukify build \
-    --linux="${KERNEL_PATH}" \
-    --initrd="${INITRD_PATH}" \
-    --cmdline="@/etc/kernel/cmdline" \
-    --output="${UKI_OUTPUT_PATH}" \
-    --stub="/usr/lib/systemd/boot/efi/linuxx64.efi.stub" \
-    --uname="${VERSION}"
-
-#echo "UKI updated successfully: ${UKI_OUTPUT_PATH}"
-
-# After the UKI is successfully built, sign it with sbctl
-#echo "Signing UKI with sbctl..."
-#sbctl sign -s "${UKI_OUTPUT_PATH}"
-
-#echo "UKI successfully created and signed."
-
-
-exit 0 ' > /mnt/etc/kernel.d/post-install/30-ukify-update
-
-$crm chmod +x /etc/kernel.d/post-install/30-ukify-update
 
 #grub menu for uki
 echo -e "menuentry 'Void Linux with UKI (Secure Boot)' --class void --class gnu-linux --class gnu --class os {
