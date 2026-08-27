@@ -19,8 +19,12 @@
 
   networking.hostName = "xz30"; # Define your hostname.
   networking.enableIPv6 = false;
-  networking.dhcpcd.enable = false;
-  networking.nameservers = [ "9.9.9.11" "1.1.1.2" ];
+  networking.dhcpcd.enable = true;
+ # networking.nameservers = [ "9.9.9.11" "1.1.1.2" ];
+#dnsforge.de
+networking.nameservers = [ "49.12.223.2" "49.12.43.208" ];
+#networking.nameservers = [ "49.12.67.122" "91.99.154.175" ];
+
  # networking.nameservers = [ "94.140.14.14" "94.140.15.15" ]; # AdGuard DNS
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
@@ -32,7 +36,7 @@
 
 networking.wireless.iwd = {
   enable = true;
- settings.General.EnableNetworkConfiguration = true;
+# settings.General.EnableNetworkConfiguration = true;
   settings = {
     General = {
       # Mantém o anonimato gerando um MAC por rede
@@ -123,10 +127,10 @@ zramSwap = {
   # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users."USERNAME" = {
+  users.users."xefe" = {
     shell = pkgs.zsh;
     isNormalUser = true;
-    description = "USERNAME";
+    description = "xefe";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
     packages = with pkgs; [
  kdePackages.kate
@@ -144,14 +148,14 @@ vlc
     security.sudo.enable = false;
     security.doas.enable = true;
     security.doas.extraRules = [{
-	users = [ "USERNAME" ];
+	users = [ "xefe" ];
 	keepEnv = true;
         persist = true;
      }];
 
 # Enable automatic login for the user.
   services.displayManager.autoLogin.enable = true;
-  services.displayManager.autoLogin.user = "USERNAME";
+  services.displayManager.autoLogin.user = "xefe";
 
   # Ativa o Zsh no sistema
   programs.zsh = {
@@ -181,18 +185,18 @@ vlc
 
 };
 
-programs.foot = {
-  enable = true;
-  settings = {
-    main = {
-      # Sets the font and increases the size (e.g., to 14)
-      font = "Hack:size=15";
-      
-      # Forces foot to launch directly into full-screen mode
-      initial-window-mode = "maximized";
-    };
-  };
-};
+# programs.foot = {
+#   enable = true;
+#   settings = {
+#     main = {
+#       # Sets the font and increases the size (e.g., to 14)
+#       font = "Hack:size=15";
+#
+#       # Forces foot to launch directly into full-screen mode
+#       initial-window-mode = "maximized";
+#     };
+#   };
+# };
 
 
 virtualisation.libvirtd.enable = true;
@@ -223,14 +227,13 @@ ufetch
 ffmpeg
 openh264
 git
-#papirus-icon-theme
-papirus-nord
+kora-icon-theme
 dnsmasq
 #stremio-linux-shell
 iwgtk
 bat
 neovim
-foot
+emacs
  ];
 
 hardware.graphics = {
@@ -262,7 +265,19 @@ security.apparmor.killUnconfinedConfinables = true;
 #services.thermald.enable = true;
 
   # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+
+#services.openssh = {
+#  enable = true;
+#  openFirewall = true;
+#  settings = {
+#    PasswordAuthentication = false;
+#    KbdInteractiveAuthentication = false;
+#    PermitRootLogin = "no";
+#    AllowUsers = [ "xefe" ];
+#    MaxAuthTries = 3;
+#    PerSourcePenalties = "crash:3600s authfail:3600s max:86400s";
+#  };
+#};
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];

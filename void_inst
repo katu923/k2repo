@@ -474,11 +474,11 @@ chmod -c 0400 /etc/doas.conf
 EOF
 
 #ssh / cron hardening permissions
-echo -e "
-PasswordAuthentication no
-PermitRootLogin no
-KbdInteractiveAuthentication no
-" >> /mnt/etc/ssh/sshd_config
+# echo -e "
+# PasswordAuthentication no
+# PermitRootLogin no
+# KbdInteractiveAuthentication no
+# " >> /mnt/etc/ssh/sshd_config
 
 $crm << EOF
 chown -c root:root /etc/ssh/sshd_config
