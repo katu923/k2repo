@@ -830,18 +830,9 @@ if [[ $secure_boot == 0 ]]; then
 
 	$crm sbctl create-keys
 	$crm sbctl enroll-keys -i -m
-
-	echo "SBSIGN_EFI_KERNEL=1" >> /mnt/etc/default/sbsigntool-kernel-hook
-	echo "EFI_CERT_FILE=/var/lib/sbctl/keys/db/db.pem" >> /mnt/etc/default/sbsigntool-kernel-hook
-	echo "EFI_KEY_FILE=/var/lib/sbctl/keys/db/db.key" >> /mnt/etc/default/sbsigntool-kernel-hook
-
-fi
-
-# if [[ $secure_boot == 0 && $bm == "uki"  ]]; then
-#
-# 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-# 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
-# fi
+	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+ 	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+ fi
 
 }
 
