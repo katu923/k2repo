@@ -418,14 +418,32 @@ fi
 mkdir /mnt/etc/sysctl.d
 
 echo -e "
+# Restrict writing to untrusted FIFOs in world-writable sticky directories
+fs.protected_fifos = 2
+
+# Restrict writing to files owned by other users in world-writable sticky directories
+fs.protected_regular = 2
+
+# Restrict unprivileged access to the kernel performance subsystem (perf) to block side-channel attacks
+kernel.perf_event_paranoid = 3
+
+# Disable SysRq magic key combinations to prevent physical access memory dumps or forced reboots
+kernel.sysrq = 0
+
+# Buffer overflow protection (enabling ASLR)
+kernel.randomize_va_space = 2
+
 # Restringe o acesso ao buffer de mensagens do kernel (dmesg) apenas ao root
 kernel.dmesg_restrict = 1
+
+# Append process PID to core dumps to prevent log overwrites
+kernel.core_uses_pid = 1
 
 # Oculta endereços de ponteiros do kernel em /proc para prevenir exploits de memória
 kernel.kptr_restrict = 2
 
 # Restringe o uso de ptrace (evita que um processo intersete ou modifique outro)
-kernel.yama.ptrace_scope = 1
+kernel.yama.ptrace_scope = 2
 
 # Desativa dumps de memória (core dumps) para binários SUID
 fs.suid_dumpable = 0
@@ -462,6 +480,16 @@ net.ipv4.icmp_echo_ignore_broadcasts = 1
 # Regista pacotes suspeitos (como spoofing, pacotes marcados e redirecionamentos)
 net.ipv4.conf.all.log_martians = 1
 net.ipv4.conf.default.log_martians = 1
+# Disable TCP timestamps to mitigate fingerprinting and uptime tracking
+net.ipv4.tcp_timestamps = 0
+
+# Prevent replay attacks (RFC 1323) when TCP timestamps are disabled
+net.ipv4.tcp_tw_reuse = 0
+
+# Fully disable IPv6 protocol at the kernel level to minimize attack surface
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
 " > /mnt/etc/sysctl.d/99-hardening.conf
 
 
