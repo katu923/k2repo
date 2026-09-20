@@ -202,7 +202,7 @@ fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf"
 rm_services=("agetty-tty4" "agetty-tty5" "agetty-tty6")
 
 en_services=("acpid" "dbus" "chronyd" "cupsd" "NetworkManager" \
-"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd")
+"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd" "ufw")
 }
 
 prepdisk()
@@ -351,20 +351,20 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 if [[ $bm == "uki" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbsigntool systemd-boot-efistub sbctl dracut-uefi opendoas \
-	runit-void-apparmor runit-nftables apparmor zsh
+	runit-void-apparmor iptables-nft nftables ufw apparmor zsh
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi opendoas \
-	runit-void-apparmor runit-nftables apparmor systemd-boot-efistub ukify zsh
+	runit-void-apparmor iptables-nft nftables ufw apparmor systemd-boot-efistub ukify zsh
 
 elif [[ $bm = "grub" && $uefi == "false" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
 	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub opendoas \
-	runit-void-apparmor runit-nftables apparmor zsh
+	runit-void-apparmor iptables-nft nftables ufw apparmor zsh
 fi
 
 #chroot
@@ -418,11 +418,52 @@ fi
 mkdir /mnt/etc/sysctl.d
 
 echo -e "
+# Buffer overflow protection (enabling ASLR)
+kernel.randomize_va_space = 2
+
+# IP spoofing protection via Reverse Path Filtering
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Disable IP Source Routing
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+
+# Ignore malicious broadcast ICMP requests and bogus error responses
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.icmp_ignore_bogus_error_messages = 1
+
+# Log packets with impossible (spoofed) source addresses (Martian Packets)
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# Fully disable IPv6 protocol at the kernel level to minimize attack surface
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+# SYN-Flood DoS mitigation
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_synack_retries = 3
+
+# Disable ICMP redirect transmission (Host is not a router)
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
 # Restrict writing to untrusted FIFOs in world-writable sticky directories
 fs.protected_fifos = 2
 
 # Restrict writing to files owned by other users in world-writable sticky directories
 fs.protected_regular = 2
+
+# Append process PID to core dumps to prevent log overwrites
+kernel.core_uses_pid = 1
+
+# Hide kernel pointer addresses in /proc/kallsyms even from root to prevent exploit offset calculations
+kernel.kptr_restrict = 2
+
+# Restrict unprivileged access to the kernel log buffer
+kernel.dmesg_restrict = 1
 
 # Restrict unprivileged access to the kernel performance subsystem (perf) to block side-channel attacks
 kernel.perf_event_paranoid = 3
@@ -430,66 +471,18 @@ kernel.perf_event_paranoid = 3
 # Disable SysRq magic key combinations to prevent physical access memory dumps or forced reboots
 kernel.sysrq = 0
 
-# Buffer overflow protection (enabling ASLR)
-kernel.randomize_va_space = 2
-
-# Restringe o acesso ao buffer de mensagens do kernel (dmesg) apenas ao root
-kernel.dmesg_restrict = 1
-
-# Append process PID to core dumps to prevent log overwrites
-kernel.core_uses_pid = 1
-
-# Oculta endereços de ponteiros do kernel em /proc para prevenir exploits de memória
-kernel.kptr_restrict = 2
-
-# Restringe o uso de ptrace (evita que um processo intersete ou modifique outro)
+# Harden ptrace restrictions to protect active processes against unauthorized memory tracing
 kernel.yama.ptrace_scope = 2
 
-# Desativa dumps de memória (core dumps) para binários SUID
-fs.suid_dumpable = 0
+# Disable unprivileged eBPF execution and enforce JIT hardening (blinding) against modern BPF exploits
+kernel.unprivileged_bpf_disabled = 1
+net.core.bpf_jit_harden = 2
 
-# Proteção contra ataques de negação de serviço (DoS) via Ctrl-Alt-Del
-kernel.ctrl-alt-del = 0
-
-# Ativa a proteção de SYN Cookies para mitigar ataques de SYN Flood
-net.ipv4.tcp_syncookies = 1
-
-# Ativa a filtragem de caminho reverso (impede spoofing de IP de origem)
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-
-# Ignora redirecionamentos ICMP (previne ataques Man-in-the-Middle)
-net.ipv4.conf.all.accept_redirects = 0
-net.ipv4.conf.default.accept_redirects = 0
-net.ipv6.conf.all.accept_redirects = 0
-net.ipv6.conf.default.accept_redirects = 0
-
-# Não envia redirecionamentos ICMP (esta máquina não age como um router)
-net.ipv4.conf.all.send_redirects = 0
-net.ipv4.conf.default.send_redirects = 0
-
-# Rejeita pacotes com roteamento estático na origem (Source Routing)
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-net.ipv6.conf.all.accept_source_route = 0
-net.ipv6.conf.default.accept_source_route = 0
-
-# Ignora pings direcionados ao endereço de broadcast (previne amplificação DoS)
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-
-# Regista pacotes suspeitos (como spoofing, pacotes marcados e redirecionamentos)
-net.ipv4.conf.all.log_martians = 1
-net.ipv4.conf.default.log_martians = 1
 # Disable TCP timestamps to mitigate fingerprinting and uptime tracking
 net.ipv4.tcp_timestamps = 0
 
 # Prevent replay attacks (RFC 1323) when TCP timestamps are disabled
 net.ipv4.tcp_tw_reuse = 0
-
-# Fully disable IPv6 protocol at the kernel level to minimize attack surface
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
 " > /mnt/etc/sysctl.d/99-hardening.conf
 
 
@@ -535,6 +528,31 @@ sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 }
 
+net()
+{
+echo -e
+"# TCP buffer sizes
+net.core.rmem_max=16777216
+net.core.wmem_max=16777216
+net.ipv4.tcp_rmem=4096 87380 16777216
+net.ipv4.tcp_wmem=4096 65536 16777216
+
+# TCP connection optimization
+net.ipv4.tcp_fastopen=3
+net.ipv4.tcp_mtu_probing=1
+net.ipv4.tcp_congestion_control=bbr
+
+# Connection queue
+net.core.somaxconn=65535
+net.core.netdev_max_backlog=65535
+
+# TIME_WAIT optimization
+net.ipv4.tcp_tw_reuse=1
+net.ipv4.tcp_fin_timeout=15
+" > /mnt/etc/sysctl.d/99-network.conf
+}
+
+
 appsinstall()
 {
 XBPS_ARCH=$ARCH xbps-install -SuyR $void_repo -r /mnt xbps
@@ -554,60 +572,6 @@ elif [[ $graphical == "minimal" ]]; then
 	XBPS_ARCH=$ARCH  xbps-install -SyR $void_repo -r /mnt $apps_minimal $fonts
 
 fi
-}
-
-firewall()
-{
-#firewall nftables example for a workstation
-
-echo -e '
-
- #!/usr/sbin/nft -f
-
-flush ruleset
-
-table inet filter {
-    chain input {
-        type filter hook input priority filter; policy drop;
-
-        # 1. Interface loopback
-        iif "lo" accept
-
-        # 2. Conexões já estabelecidas e relacionadas
-        ct state established,related accept
-
-        # 3. Descartar pacotes inválidos
-        ct state invalid drop
-
-        # 4. Permitir tráfego da interface do virt-manager (libvirt)
-        iifname "virbr*" accept
-
-        # 5. ICMP (IPv4) e ICMPv6 (Essencial para IPv6)
-        ip protocol icmp icmp type echo-request limit rate 5/second accept
-        ip6 nexthdr icmpv6 icmpv6 type { destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
-
-        # 6. Permitir SSH (com registo de log)
-        # tcp dport 22 log prefix "NFTABLES-SSH: " accept
-		# tcp dport 1714-1764 accept comment "accept KDE Connect functionality"
-        # udp dport 1714-1764 accept comment "accept KDE Connect functionality"
-        # 7. Registar logs de bloqueios
-        log prefix "NFTABLES-DROP: " level warn
-    }
-
-    chain forward {
-        type filter hook forward priority filter; policy drop;
-
-        # Permitir que as VMs acedam à internet e comuniquem entre si
-        iifname "virbr*" oifname "virbr*" accept
-        iifname "virbr*" accept
-        oifname "virbr*" ct state established,related accept
-    }
-
-    chain output {
-        type filter hook output priority filter; policy accept;
-    }
-} ' > /mnt/etc/nftables.conf
-
 }
 
 configsys()
@@ -752,6 +716,13 @@ alias ll='ls -la'
 $crm chown $username:$username /mnt/home/$username/.zshrc
 
 #for autologin with agetty1 add --autologin username to /etc/runit/runsvdir/agetty1/conf
+
+echo -e
+"# Mount /tmp to memory
+# Add to /etc/fstab:
+tmpfs  /tmp  tmpfs  defaults,noatime,size=2G  0  0
+" >> /mnt/etc/fstab
+
 }
 
 bootmanag()
@@ -893,11 +864,12 @@ prepsys
 appsinstall
 configsys
 hardening
-firewall
+net
 custom
 bootmanag
 secboot
 finish
+#restart
 }
 
 main
