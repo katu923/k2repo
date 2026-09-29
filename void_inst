@@ -657,6 +657,8 @@ $crm chown $username:$username /home/$username/.aliases
 $crm ln -s /usr/share/fontconfig/conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 #xbps-reconfigure -fr fontconfig /mnt/
 
+#iptables to nftables
+$crm ln -s /usr/bin/iptables /usr/bin/iptables-nft
 #ignore packages
 $crm touch /etc/xbps.d/99-ignorepkgs.conf
 
