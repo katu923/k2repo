@@ -753,6 +753,14 @@ echo -e "
 tmpfs  /tmp  tmpfs  defaults,noatime,size=2G  0  0
 " >> /mnt/etc/fstab
 
+#firewall nftables
+#enable ufw
+#iptables-save > save.txt
+#iptables-restore-translate > ruleset.nft
+#ruleset.nft > /etc/nftables.conf
+#disable ufw
+#reboot
+
 }
 
 bootmanag()
