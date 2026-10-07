@@ -167,7 +167,7 @@ crm="chroot /mnt"
 
 apps_base="nano elogind dbus chrony xmirror \
 ufetch pipewire wireplumber vsv btop bat \
-octoxbps flatpak zramen iwd lm_sensors"
+octoxbps flatpak zramen iwd lm_sensors thermald"
 
 apps_optional="hplip hplip-gui gparted"
 
@@ -181,7 +181,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 fi
 
 apps_kde="kde-plasma kde-baseapps ffmpegthumbs discover spectacle \
-flatpak-kcm kwalletmanager kcalc okular gwenview ark"
+flatpak-kcm kwalletmanager kcalc okular gwenview ark konsole"
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector \
 gnome-text-editor"
@@ -189,20 +189,19 @@ gnome-text-editor"
 apps_xfce="xfce4 paper-gtk-theme paper-icon-theme lightdm xfce4-pulseaudio-plugin \
 xfce4-whiskermenu-plugin labwc"
 
-apps_office="libreoffice-writer libreoffice-calc"
+apps_office=""
 
-apps_multimedia="vlc ffmpeg"
+apps_multimedia=""
 
-apps_browser="firefox"
+apps_browser=""
 
-apps_minimal="nano vsv opendoas iwd terminus-font bat"
+apps_minimal="nano vsv opendoas iwd terminus-font bat xtools-minimal"
 
-fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf"
+fonts="font-adobe-source-code-pro terminus-font dejavu-fonts-ttf ttf-ubuntu-font-family"
 
 rm_services=("agetty-tty4" "agetty-tty5" "agetty-tty6")
 
-en_services=("acpid" "dbus" "chronyd" "cupsd" "NetworkManager" \
-"iwd" "sddm" "gdm" "lightdm" "zramen" "grub-btrfs" "dhcpcd" "ufw")
+en_services=("dbus" "chronyd" "iwd" "sddm" "dhcpcd-eth0" "thermald")
 }
 
 prepdisk()
@@ -351,20 +350,20 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 if [[ $bm == "uki" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbsigntool systemd-boot-efistub sbctl dracut-uefi opendoas \
-	runit-void-apparmor iptables-nft nftables ufw apparmor zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi opendoas \
-	runit-void-apparmor iptables-nft nftables ufw apparmor systemd-boot-efistub ukify zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor systemd-boot-efistub ukify zsh
 
 elif [[ $bm = "grub" && $uefi == "false" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
 	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub opendoas \
-	runit-void-apparmor iptables-nft nftables ufw apparmor zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh
 fi
 
 #chroot
@@ -487,19 +486,28 @@ net.ipv4.tcp_tw_reuse = 0
 
 
 #doas
-echo "permit persist :$username" > /mnt/etc/doas.conf
+echo -e "
+permit persist :wheel
+permit nopass $username as root cmd xbps-install
+permit nopass $username as root cmd dmesg
+permit nopass $username as root cmd intel_gpu_top
+permit nopass $username as root cmd reboot
+permit nopass $username as root cmd poweroff
+permit nopass $username as root cmd vsv
+permit nopass $username as root cmd sv
+" > /mnt/etc/doas.conf
 
 $crm << EOF
 chown -c root:root /etc/doas.conf
 chmod -c 0400 /etc/doas.conf
 EOF
 
-#ssh / cron hardening permissions
-# echo -e "
-# PasswordAuthentication no
-# PermitRootLogin no
-# KbdInteractiveAuthentication no
-# " >> /mnt/etc/ssh/sshd_config
+#ssh hardening
+echo -e "
+PasswordAuthentication no
+PermitRootLogin no
+KbdInteractiveAuthentication no
+" >> /mnt/etc/ssh/sshd_config
 
 $crm << EOF
 chown -c root:root /etc/ssh/sshd_config
@@ -530,8 +538,8 @@ sed -i 's/^#*write-cache/write-cache/i' /mnt/etc/apparmor/parser.conf
 
 net()
 {
-echo -e
-"# TCP buffer sizes
+echo -e "
+# TCP buffer sizes
 net.core.rmem_max=16777216
 net.core.wmem_max=16777216
 net.ipv4.tcp_rmem=4096 87380 16777216
@@ -595,10 +603,24 @@ if [[ $graphical != "minimal" ]]; then
 
 	#start pipewire.desktop for kde gnome etc
 	$crm ln -s /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
+	
+	#alsa
+	$crm mkdir -p /etc/alsa/conf.d
+    $crm ln -s /usr/share/alsa/alsa.conf.d/50-pipewire.conf /etc/alsa/conf.d
+    $crm ln -s /usr/share/alsa/alsa.conf.d/99-pipewire-default.conf /etc/alsa/conf.d
 
 	#octoxbps-notifier
 	$crm ln -s /usr/share/applications/octoxbps-notifier.desktop /etc/xdg/autostart/octoxbps-notifier.desktop
 fi
+
+echo -e "
+[General]
+DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
+[Wayland]
+CompositorCommand=kwin_wayland --drm --no-lockscreen --no-global-shortcuts --locale1
+" > /mnt/etc/sddm.cond.d/wayland.conf
+
 
 #disable services
 for serv1 in ${rm_services[@]}; do
@@ -625,7 +647,9 @@ $crm ln -sf $local /etc/localtime
 
 	echo -e "[General]
 	EnableNetworkConfiguration=false
+	AddressRandomization=network
 	[Network]
+	EnableIPv6=false
 	RoutePriorityOffset=200
 	NameResolvingService=none" > /mnt/etc/iwd/main.conf
 }
@@ -701,11 +725,6 @@ bindkey  "^[[3~"  delete-char
 # Ativar auto-completação básica
 autoload -Uz compinit
 compinit
-
-# Ativar dicas/completação para comandos do XBPS (se disponível)
-#if [ -f /usr/share/zsh/plugins/xbps-command-not-found/xbps-command-not-found.zsh ]; then
-#    source /usr/share/zsh/plugins/xbps-command-not-found/xbps-command-not-found.zsh
-#fi
 
 ufetch
 source .aliases
