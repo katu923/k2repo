@@ -166,10 +166,10 @@ fi
 crm="chroot /mnt"
 
 apps_base="nano elogind dbus chrony xmirror \
-ufetch pipewire wireplumber vsv btop bat \
-octoxbps flatpak zramen iwd lm_sensors thermald"
+ufetch pipewire wireplumber alsa-pipewire vsv btop bat \
+octoxbps flatpak zramen iwd lm_sensors thermald xtools-minimal"
 
-apps_optional="hplip hplip-gui gparted"
+apps_optional="hplip hplip-gui gparted fprintd"
 
 apps_intel="mesa-dri mesa intel-ucode intel-gpu-tools intel-video-accel libva-utils"
 
@@ -181,7 +181,7 @@ if [[ $disk == "/dev/vda" ]]; then #virtual machine
 fi
 
 apps_kde="kde-plasma kde-baseapps ffmpegthumbs discover spectacle \
-flatpak-kcm kwalletmanager kcalc okular gwenview ark konsole"
+flatpak-kcm kwalletmanager kcalc okular gwenview ark konsole dolphin "
 
 apps_gnome="gnome-core gnome-console gnome-tweaks gnome-browser-connector \
 gnome-text-editor"
