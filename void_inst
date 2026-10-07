@@ -350,20 +350,23 @@ cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
 if [[ $bm == "uki" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbsigntool systemd-boot-efistub sbctl dracut-uefi opendoas \
-	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh zsh-autosuggestions zsh-history-substring-search \
+	zsh-syntax-highlighting
 
 	chroot /mnt xbps-alternatives -s dracut-uefi
 
 elif [[ $bm = "grub" && $uefi == "true" ]]; then
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup lvm2 efibootmgr \
 	sbctl grub-btrfs grub-btrfs-runit btrfs-progs grub-x86_64-efi opendoas \
-	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor systemd-boot-efistub ukify zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor systemd-boot-efistub ukify zsh sh-autosuggestions \
+	zsh-history-substring-search zsh-syntax-highlighting
 
 elif [[ $bm = "grub" && $uefi == "false" ]]; then
 
 	XBPS_ARCH=$ARCH xbps-install -SyR $void_repo -r /mnt base-system binutils zstd cryptsetup \
 	lvm2 grub-btrfs grub-btrfs-runit btrfs-progs grub opendoas \
-	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh
+	runit-void-apparmor runit-nftables iptables-nft nftables ufw apparmor zsh sh-autosuggestions zsh-history-substring-search \
+	zsh-syntax-highlighting
 fi
 
 #chroot
