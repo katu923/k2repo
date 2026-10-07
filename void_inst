@@ -683,14 +683,23 @@ setopt hist_ignore_dups
 # Ativar cores no terminal
 autoload -U colors && colors
 
+#syntax highlighting
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Autosuggestions
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# History substring search
+source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+
 # Prompt simples e funcional
 #PROMPT='%}%F{cyan}%n@%m %F{green}%~ %# %'
 PROMPT='%F{green}%n%f@%F{yellow}%m%f:%F{cyan}%~%f$ '
 
-
+bindkey  "^[[3~"  delete-char
 
 # Ativar auto-completação básica
-autoload -U compinit
+autoload -Uz compinit
 compinit
 
 # Ativar dicas/completação para comandos do XBPS (se disponível)
@@ -719,8 +728,8 @@ $crm chown $username:$username /mnt/home/$username/.zshrc
 
 #for autologin with agetty1 add --autologin username to /etc/runit/runsvdir/agetty1/conf
 
-echo -e
-"# Mount /tmp to memory
+echo -e "
+# Mount /tmp to memory
 # Add to /etc/fstab:
 tmpfs  /tmp  tmpfs  defaults,noatime,size=2G  0  0
 " >> /mnt/etc/fstab
@@ -753,9 +762,9 @@ if [[ $bm == "uki" ]]; then
 fi
 
 if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
-	echo 'kernel_cmdline="loglevel=3 rd.luks.uuid='$luks_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="bgrt_disable quiet loglevel=3 rd.luks.uuid='$luks_uuid' rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm == "uki" && $fs_type == "btrfs" ]]; then
-	echo 'kernel_cmdline="loglevel=3 root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="bgrt_disable quiet loglevel=3 root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
 
 
@@ -830,7 +839,7 @@ secboot()
 if [[ $secure_boot == 0 ]]; then
 
 	$crm sbctl create-keys
-	$crm sbctl enroll-keys -i -m
+	$crm sbctl enroll-keys -i
 	echo 'uefi_secureboot_cert="/var/lib/sbctl/keys/db/db.pem"' >> /mnt/etc/dracut.conf.d/10-boot.conf
  	echo 'uefi_secureboot_key="/var/lib/sbctl/keys/db/db.key"' >> /mnt/etc/dracut.conf.d/10-boot.conf
  fi
