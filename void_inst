@@ -753,7 +753,7 @@ if [[ $bm == "uki" ]]; then
 fi
 
 if [[ $bm == "uki" && $fs_type != "btrfs" ]]; then
-	echo 'kernel_cmdline="loglevel=3 rd.luks.name='$luks_root_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
+	echo 'kernel_cmdline="loglevel=3 rd.luks.uuid='$luks_uuid'=crypt rd.lvm.vg='$hostname' root=/dev/'$hostname'/root rd.luks.allow-discards apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 elif [[ $bm == "uki" && $fs_type == "btrfs" ]]; then
 	echo 'kernel_cmdline="loglevel=3 root=UUID='$ROOT_UUID' apparmor=1 security=apparmor"' >> /mnt/etc/dracut.conf.d/10-boot.conf
 fi
